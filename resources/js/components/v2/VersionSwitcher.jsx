@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 const OPTIONS = [
     { id: 'v1', label: 'V1 · EN', href: '/' },
     { id: 'v2', label: 'V2 · ع', href: '/v2' },
-    { id: 'v3', label: 'V3 · Editorial', href: '/second' },
+    { id: 'v3', label: 'V3', href: '/second' },
 ];
 
 // Floating toggle so the client can jump between the three concepts.
