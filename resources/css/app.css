@@ -1,0 +1,368 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.{js,jsx}';
+
+@theme {
+    /* AL MAJD brand palette — built around #5b0520 */
+    --color-wine-50: #fbf2f5;
+    --color-wine-100: #f6dfe7;
+    --color-wine-200: #eab8c8;
+    --color-wine-300: #d98aa5;
+    --color-wine-400: #b8446b;
+    --color-wine-500: #8f1f45;
+    --color-wine-600: #741133;
+    --color-wine-700: #5b0520;
+    --color-wine-800: #430418;
+    --color-wine-900: #2c0210;
+    --color-wine-950: #1a0109;
+
+    --color-gold-200: #f0e0b6;
+    --color-gold-300: #e4cd8f;
+    --color-gold-400: #d4af5f;
+    --color-gold-500: #c9a24b;
+    --color-gold-600: #a9843a;
+
+    --color-ivory: #f7f2ea;
+    --color-cream: #efe6d7;
+    --color-ink: #14060c;
+    --color-ink-soft: #200910;
+
+    --font-display: 'Cinzel', ui-serif, Georgia, serif;
+    --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
+    --font-sans: 'Jost', ui-sans-serif, system-ui, sans-serif;
+
+    /* Arabic (V2) — vintage calligraphic + premium */
+    --font-ar-display: 'Aref Ruqaa', 'Amiri', serif;
+    --font-ar-body: 'Amiri', serif;
+    --font-ar-kufi: 'Reem Kufi', sans-serif;
+    --font-ar-modern: 'Marhey', 'Reem Kufi', sans-serif;
+
+    /* Editorial (V3) — magazine luxury */
+    --font-editorial: 'Playfair Display', ui-serif, Georgia, serif;
+    --font-grotesk: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+    --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        background-color: var(--color-ink);
+        color: var(--color-ivory);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+    }
+
+    img,
+    video {
+        max-width: 100%;
+    }
+
+    /* Only auto-height non-fill images — absolute/fill images need explicit height */
+    img:not([class*='h-']):not([class*='absolute']),
+    video:not([class*='h-']):not([class*='absolute']) {
+        height: auto;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font: inherit;
+        max-width: 100%;
+    }
+
+    /* Prevent iOS date/time inputs from blowing out layout */
+    input[type='date'],
+    input[type='time'] {
+        min-width: 0;
+    }
+
+    ::selection {
+        background-color: var(--color-gold-500);
+        color: var(--color-ink);
+    }
+}
+
+@layer utilities {
+    .font-display {
+        font-family: var(--font-display);
+    }
+
+    .font-serif-lux {
+        font-family: var(--font-serif);
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .gold-text {
+        background: linear-gradient(135deg, #f0e0b6 0%, #d4af5f 45%, #a9843a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .lux-grain::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+        opacity: 0.04;
+        pointer-events: none;
+        mix-blend-mode: overlay;
+    }
+
+    .hairline {
+        background: linear-gradient(90deg, transparent, rgba(201, 162, 75, 0.6), transparent);
+    }
+
+    /* Arabic font utilities (V2) */
+    .font-ar-display {
+        font-family: var(--font-ar-display);
+    }
+    .font-ar-body {
+        font-family: var(--font-ar-body);
+    }
+    .font-ar-kufi {
+        font-family: var(--font-ar-kufi);
+    }
+    .font-ar-modern {
+        font-family: var(--font-ar-modern);
+    }
+
+    .gold-border-glow {
+        box-shadow:
+            0 0 0 1px rgba(201, 162, 75, 0.25),
+            0 0 30px -6px rgba(201, 162, 75, 0.35);
+    }
+
+    .radial-vignette {
+        background: radial-gradient(circle at 50% 40%, transparent 30%, rgba(10, 3, 6, 0.85) 100%);
+    }
+
+    /* Editorial (V3) font utilities */
+    .font-editorial {
+        font-family: var(--font-editorial) !important;
+    }
+    .font-grotesk {
+        font-family: var(--font-grotesk) !important;
+    }
+
+    /* Numeric font weights used across all versions */
+    .font-400 {
+        font-weight: 400;
+    }
+    .font-500 {
+        font-weight: 500;
+    }
+    .font-600 {
+        font-weight: 600;
+    }
+    .font-700 {
+        font-weight: 700;
+    }
+    .font-800 {
+        font-weight: 800;
+    }
+
+    .wine-text {
+        background: linear-gradient(120deg, #8f1f45 0%, #5b0520 60%, #741133 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .no-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .paper-texture {
+        background-image:
+            radial-gradient(circle at 20% 20%, rgba(91, 5, 32, 0.04), transparent 40%),
+            radial-gradient(circle at 80% 60%, rgba(201, 162, 75, 0.05), transparent 40%);
+    }
+
+    /* Light editorial page — isolates V3 from the global dark body styles */
+    .editorial-page {
+        background-color: #f7f2ea;
+        color: #14060c;
+        font-family: var(--font-grotesk);
+        min-height: 100svh;
+    }
+
+    .editorial-page input,
+    .editorial-page select,
+    .editorial-page textarea {
+        color: #14060c;
+        color-scheme: light;
+    }
+
+    .editorial-page input[type='date'],
+    .editorial-page input[type='time'] {
+        color-scheme: light;
+    }
+}
+
+/* Custom scrollbar — desktop only */
+@media (min-width: 1024px) {
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #14060c;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #5b0520;
+        border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #741133;
+    }
+}
+
+/* Marquee */
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+.animate-marquee {
+    animation: marquee 32s linear infinite;
+}
+
+@media (max-width: 640px) {
+    .animate-marquee {
+        animation-duration: 22s;
+    }
+}
+
+/* Slow ken-burns for hero */
+@keyframes kenburns {
+    0% {
+        transform: scale(1.08) translate(0, 0);
+    }
+    100% {
+        transform: scale(1.22) translate(-1.5%, -1.5%);
+    }
+}
+.animate-kenburns {
+    animation: kenburns 22s ease-out forwards;
+}
+
+/* Shine sweep */
+@keyframes shine {
+    0% {
+        transform: translateX(-120%) skewX(-20deg);
+    }
+    60%,
+    100% {
+        transform: translateX(220%) skewX(-20deg);
+    }
+}
+.animate-shine {
+    animation: shine 4.5s ease-in-out infinite;
+}
+
+/* Floating dust/particles (V2) */
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.7;
+    }
+    90% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(-120px) translateX(20px);
+        opacity: 0;
+    }
+}
+
+/* Slow gold glow pulse */
+@keyframes glowPulse {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.06);
+    }
+}
+.animate-glow {
+    animation: glowPulse 6s ease-in-out infinite;
+}
+
+/* Gentle vertical bob */
+@keyframes bob {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+.animate-bob {
+    animation: bob 5s ease-in-out infinite;
+}
+
+/* Slow rotation for ornaments */
+@keyframes spinSlow {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+.animate-spin-slow {
+    animation: spinSlow 40s linear infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .animate-marquee,
+    .animate-kenburns,
+    .animate-shine,
+    .animate-glow,
+    .animate-bob,
+    .animate-spin-slow {
+        animation: none !important;
+    }
+}
+
+/* RTL adjustments for V2 */
+[dir='rtl'] .marquee-rtl {
+    animation-direction: reverse;
+}
+
+/* Lock body when mobile menu is open */
+body.menu-open {
+    overflow: hidden;
+}
