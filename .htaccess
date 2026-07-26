@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Shared hosting: project root is the vhost docroot.
+    # Send all traffic into /public so /images, /build, and Laravel routes work.
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
