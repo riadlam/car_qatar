@@ -1,117 +1,280 @@
-import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
-import { fadeUp, IMG, stagger } from './motion';
+import { useLayoutEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { IMG } from './motion';
+import { useSectionAnim } from './useSectionAnim';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const DETAILS = [
     {
-        n: '01',
-        title: 'Hotel lobby or arrivals',
-        copy: 'Met at the lobby or at Hamad arrivals. The door is opened, luggage is handled — before you ask.',
+        title: 'A welcome like no other',
+        copy: 'The door is opened for you. Your luggage is stowed. Everything is taken care of.',
+        img: IMG.ride1,
     },
     {
-        n: '02',
-        title: 'Flight-aware timing',
-        copy: 'We track your flight into HIA and adjust for delays, with complimentary wait time built in.',
+        title: 'You set the tone',
+        copy: 'Sit back and relax. Music and temperature will be adjusted to your preferences.',
+        img: IMG.ride2,
     },
     {
-        n: '03',
-        title: 'Calm between destinations',
-        copy: 'A quiet cabin, chargers, and refreshments — hotel to airport, or airport to hotel, without stress.',
+        title: 'Recharge your batteries',
+        copy: 'Stay connected on the go with universal chargers for iOS and Android.',
+        img: IMG.ride3,
     },
 ];
 
-const scaleWrap = {
-    hidden: { opacity: 0, scale: 0.95 },
-    show: { opacity: 1, scale: 1, transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] } },
+const GLASS = {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundImage:
+        'radial-gradient(rgba(0,0,0,.15), rgba(0,0,0,0) 90%), radial-gradient(circle at 80% 200%, rgba(255,255,255,.25), rgba(255,255,255,0) 80%), linear-gradient(rgba(15,19,25,.2))',
+    boxShadow: '0 2px 8px 0 rgba(6,10,13,.12), inset 4px 4px 8px rgba(0,0,0,.06)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
 };
 
-export default function Experience() {
-    const ref = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: ref,
-        offset: ['start end', 'end start'],
-    });
-    const imgY = useTransform(scrollYProgress, [0, 1], ['-8%', '8%']);
+function PinnedSlides() {
+    const containerRef = useRef(null);
+    const slideRefs = useRef([]);
+
+    useLayoutEffect(() => {
+        const mm = gsap.matchMedia();
+
+        mm.add('(min-width: 1024px)', () => {
+            const container = containerRef.current;
+            const slides = slideRefs.current.filter(Boolean);
+            if (!container || !slides.length) return;
+
+            slides.forEach((el, i) => {
+                gsap.set(el, { zIndex: slides.length - i, yPercent: 0 });
+            });
+
+            // Copied 1:1 from Blacklane’s RideSection GSAP setup
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: container,
+                    start: '-104 top',
+                    end: '+=200%',
+                    scrub: 1,
+                    pin: true,
+                    anticipatePin: 1,
+                    invalidateOnRefresh: true,
+                },
+            });
+
+            slides.forEach((el, i) => {
+                if (i < slides.length - 1) {
+                    tl.to(el, { yPercent: -110, ease: 'none', duration: 1 }, i);
+                }
+            });
+
+            // Refresh after images load so pin distances are correct
+            const imgs = container.querySelectorAll('img');
+            let pending = imgs.length;
+            const done = () => {
+                pending -= 1;
+                if (pending <= 0) ScrollTrigger.refresh();
+            };
+            imgs.forEach((img) => {
+                if (img.complete) done();
+                else {
+                    img.addEventListener('load', done, { once: true });
+                    img.addEventListener('error', done, { once: true });
+                }
+            });
+
+            return () => {
+                tl.scrollTrigger?.kill();
+                tl.kill();
+            };
+        });
+
+        return () => mm.revert();
+    }, []);
 
     return (
-        <section id="experience" ref={ref} className="relative overflow-hidden bg-ink-soft py-16 sm:py-24 lg:py-32">
-            <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:gap-14 sm:px-6 lg:grid-cols-2 lg:gap-20">
-                <motion.div
-                    variants={scaleWrap}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-80px' }}
-                    className="relative order-2 h-[320px] overflow-hidden rounded-2xl sm:h-[420px] lg:order-1 lg:h-[600px]"
-                >
-                    <motion.img
-                        style={{ y: imgY }}
-                        src={IMG.interior}
-                        alt="Refined car interior"
-                        className="absolute inset-0 h-[125%] w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-wine-950/60 to-transparent" />
-                    <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/10 bg-ink/40 p-4 backdrop-blur-md sm:inset-x-8 sm:bottom-8 sm:p-6">
-                        <p className="font-serif-lux text-lg italic text-ivory/90 sm:text-xl">
-                            “Step in. Breathe out.”
-                        </p>
-                        <p className="mt-2 font-sans text-[10px] tracking-[0.16em] text-gold-400 uppercase sm:text-xs sm:tracking-[0.2em]">
-                            The AL MAJD standard
-                        </p>
-                    </div>
-                </motion.div>
-
-                <div className="order-1 lg:order-2">
-                    <motion.p
-                        variants={fadeUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                        className="mb-4 font-sans text-[10px] font-500 tracking-[0.3em] text-gold-400 uppercase sm:mb-5 sm:text-[11px] sm:tracking-[0.4em]"
+        <div
+            ref={containerRef}
+            className="relative z-[2] hidden overflow-hidden rounded-2xl lg:block"
+            style={{
+                // Identical to .RideSection_imageContainer__40TAg
+                width: '100%',
+                height: 'calc(100vh - 96px - 24px)',
+                margin: '0 auto',
+                borderRadius: 16,
+            }}
+        >
+            <ul
+                className="relative m-0 h-full w-full list-none p-0"
+                style={{ margin: 0, padding: 0, listStyle: 'none' }}
+            >
+                {DETAILS.map((item, i) => (
+                    <div
+                        key={item.title}
+                        ref={(el) => {
+                            slideRefs.current[i] = el;
+                        }}
+                        className="absolute inset-0 text-left"
+                        style={{
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            willChange: 'transform',
+                        }}
                     >
-                        The experience
-                    </motion.p>
-                    <motion.h2
-                        variants={fadeUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                        className="font-display text-3xl leading-tight font-600 text-ivory sm:text-4xl lg:text-5xl"
-                    >
-                        Every detail, a <span className="gold-text italic font-serif-lux">quiet luxury.</span>
-                    </motion.h2>
-                    <motion.p
-                        variants={fadeUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                        className="mt-5 max-w-md font-serif-lux text-base text-ivory/60 sm:mt-6 sm:text-lg"
-                    >
-                        Thoughtful details and discreet service turn every hotel–airport transfer into a calm, private moment.
-                    </motion.p>
-
-                    <motion.ul
-                        variants={stagger(0.1, 0.15)}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true, margin: '-60px' }}
-                        className="mt-8 space-y-6 sm:mt-10 sm:space-y-8"
-                    >
-                        {DETAILS.map((d) => (
-                            <motion.li key={d.n} variants={fadeUp} className="group flex gap-4 sm:gap-6">
-                                <span className="shrink-0 font-display text-base font-500 text-gold-500/70 transition-colors group-hover:text-gold-400 sm:text-lg">
-                                    {d.n}
-                                </span>
-                                <div className="min-w-0 flex-1 border-b border-white/8 pb-5 sm:pb-6">
-                                    <h3 className="font-display text-lg font-500 text-ivory sm:text-xl">{d.title}</h3>
-                                    <p className="mt-2 font-sans text-sm leading-relaxed text-ivory/55">
-                                        {d.copy}
-                                    </p>
+                        {/* ImageCard_background-image + RideSection_slide */}
+                        <li
+                            className="relative flex h-full w-full list-none flex-col overflow-hidden p-0"
+                            style={{ borderRadius: 16 }}
+                        >
+                            {/* ImageCard_media-container + RideSection_slideMedia */}
+                            <div className="relative flex min-h-0 flex-1">
+                                <img
+                                    src={item.img}
+                                    alt={item.title}
+                                    loading="lazy"
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        objectPosition: 'center',
+                                        borderRadius: 16,
+                                        willChange: 'transform',
+                                        display: 'block',
+                                    }}
+                                />
+                            </div>
+                            {/* ImageCard_content */}
+                            <div
+                                className="absolute right-0 bottom-0 left-0 m-6 rounded-lg p-6"
+                                style={GLASS}
+                            >
+                                <h3
+                                    className="m-0 text-white"
+                                    style={{
+                                        fontFamily: 'Geist, sans-serif',
+                                        fontWeight: 500,
+                                        fontSize: 28,
+                                        lineHeight: '36px',
+                                        letterSpacing: '0.25px',
+                                    }}
+                                >
+                                    {item.title}
+                                </h3>
+                                <div
+                                    className="mt-1 text-white"
+                                    style={{
+                                        fontFamily: 'Geist, sans-serif',
+                                        fontWeight: 400,
+                                        fontSize: 18,
+                                        lineHeight: '26px',
+                                        letterSpacing: '0.25px',
+                                    }}
+                                >
+                                    {item.copy}
                                 </div>
-                            </motion.li>
-                        ))}
-                    </motion.ul>
-                </div>
+                            </div>
+                        </li>
+                    </div>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+export default function Experience() {
+    const rootRef = useSectionAnim();
+
+    return (
+        <section
+            id="experience"
+            ref={rootRef}
+            data-anim="section"
+            className="bg-white px-4 pt-12 pb-5 text-center sm:px-8 sm:pt-14 lg:px-12 lg:pt-24 lg:pb-5"
+        >
+            <div className="mx-auto max-w-[1170px] max-lg:px-0 max-lg:pt-0" style={{ margin: '0 auto' }}>
+                <h2
+                    data-anim="title"
+                    className="font-fragment mx-auto mb-4 max-w-[800px] text-ink-text sm:mb-6 max-lg:text-[2rem] max-lg:leading-9"
+                    style={{
+                        fontSize: 'clamp(1.75rem, 6vw, 104px)',
+                        lineHeight: 'clamp(2.25rem, 7vw, 120px)',
+                        fontWeight: 400,
+                        letterSpacing: '0.25px',
+                        margin: '0 auto 16px',
+                    }}
+                >
+                    Step in. Breathe out.
+                </h2>
+                <p
+                    data-anim="subtitle"
+                    className="font-fragment mx-auto max-w-[36rem] text-ink-text lg:max-w-none"
+                    style={{
+                        fontSize: 'clamp(1.0625rem, 2vw, 32px)',
+                        lineHeight: 'clamp(1.625rem, 2.5vw, 40px)',
+                        fontWeight: 400,
+                        marginBottom: 'clamp(2rem, 5vw, 72px)',
+                    }}
+                >
+                    Thoughtful details and discreet service transform every journey into your personal sanctuary.
+                </p>
             </div>
+
+            {/* Mobile / tablet carousel — desktop uses PinnedSlides */}
+            <ul
+                className="m-0 -mx-4 flex list-none gap-4 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:gap-5 sm:px-0 lg:hidden"
+                style={{
+                    scrollSnapType: 'x mandatory',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'none',
+                }}
+            >
+                {DETAILS.map((item) => (
+                    <li
+                        key={item.title}
+                        data-anim="item"
+                        className="relative shrink-0 overflow-hidden text-left"
+                        style={{
+                            flex: '0 0 85%',
+                            height: 'min(420px, 70svh)',
+                            borderRadius: 16,
+                            scrollSnapAlign: 'center',
+                        }}
+                    >
+                        <img
+                            data-anim="img"
+                            src={item.img}
+                            alt={item.title}
+                            loading="lazy"
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                            }}
+                        />
+                        <div className="absolute right-0 bottom-0 left-0 m-4 rounded-lg p-5" style={GLASS}>
+                            <h3
+                                className="m-0 text-white"
+                                style={{ fontFamily: 'Geist, sans-serif', fontWeight: 500, fontSize: 24 }}
+                            >
+                                {item.title}
+                            </h3>
+                            <p
+                                className="mt-1 mb-0 text-white"
+                                style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, lineHeight: '24px' }}
+                            >
+                                {item.copy}
+                            </p>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+
+            <PinnedSlides />
         </section>
     );
 }

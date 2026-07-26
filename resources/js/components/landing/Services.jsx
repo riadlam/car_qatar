@@ -1,118 +1,282 @@
-import { motion } from 'motion/react';
-import { fadeUp, IMG } from './motion';
+import { useLayoutEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { IMG } from './motion';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const SERVICES = [
     {
-        tag: 'Airport to hotel',
-        title: 'Land, then lounge.',
-        copy: 'Flight-tracked pickup at Hamad International Airport, then a calm ride to your Doha hotel — with complimentary wait time.',
-        img: IMG.airport,
+        tag: 'Airport transfers',
+        title: 'Smooth landings, every time.',
+        copy: 'Delayed flight? Chauffeurs track arrivals and adjust accordingly. Plus, you have 1 hour of complimentary wait time just in case.',
+        img: IMG.service1,
+        href: '#airport',
     },
     {
-        tag: 'Hotel to airport',
-        title: 'Lobby to gate, on time.',
-        copy: 'Your chauffeur meets you at the hotel, handles luggage, and delivers you to HIA without the rush.',
-        img: IMG.hourly,
+        tag: 'Hourly and full day hire',
+        title: 'Seize the day.',
+        copy: "Reserve a dedicated chauffeur from 2 to 24 hours. They'll be on standby as long as you need them.",
+        img: IMG.service2,
+        href: '#hourly',
     },
     {
-        tag: 'Meet & greet',
-        title: 'Welcomed by name.',
-        copy: 'Name-board reception at arrivals and escort to your vehicle — the Qatar arrival you expect.',
-        img: IMG.intercity,
+        tag: 'City-to-city',
+        title: 'Between cities, done better.',
+        copy: 'Turn long-distance journeys into time well spent. Arrive refreshed, not stressed.',
+        img: IMG.service3,
+        href: '#city-to-city',
     },
     {
-        tag: 'Hotel-area hire',
-        title: 'Hours between stays.',
-        copy: 'Keep a chauffeur on standby across West Bay, The Pearl, Lusail, and beyond — between check-in and your flight.',
-        img: IMG.events,
+        tag: 'Enterprise and agency solutions',
+        title: 'Corporate travel, simplified.',
+        copy: 'One platform for companies and agencies to book, track, and account for every journey.',
+        img: IMG.service4,
+        href: '#business',
     },
 ];
 
-function Card({ service, index }) {
-    const wide = index === 0 || index === 3;
-    return (
-        <motion.article
-            variants={fadeUp}
-            className={`group relative overflow-hidden rounded-2xl border border-white/5 ${
-                wide ? 'lg:col-span-7' : 'lg:col-span-5'
-            }`}
-        >
-            <div className="relative h-[340px] w-full overflow-hidden sm:h-[380px] lg:h-[420px]">
-                <img
-                    src={service.img}
-                    alt={service.tag}
-                    className="h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-transparent transition-opacity duration-500 lg:via-ink/40 lg:group-hover:from-wine-950/95" />
-            </div>
+export default function Services() {
+    const sectionRef = useRef(null);
+    const titleRef = useRef(null);
+    const subtitleRef = useRef(null);
+    const titleBlockRef = useRef(null);
+    const cardsRef = useRef(null);
+    const trackRef = useRef(null);
+    const [index, setIndex] = useState(0);
 
-            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 lg:p-8">
-                <span className="font-sans text-[10px] font-500 tracking-[0.24em] text-gold-400 uppercase sm:text-[11px] sm:tracking-[0.3em]">
-                    {service.tag}
-                </span>
-                <h3 className="mt-2 font-display text-xl font-500 text-ivory sm:mt-3 sm:text-2xl lg:text-3xl">
-                    {service.title}
-                </h3>
-                {/* Always visible on touch/mobile; expand on hover for desktop */}
-                <div className="grid grid-rows-[1fr] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid-rows-[0fr] lg:group-hover:grid-rows-[1fr]">
-                    <p className="overflow-hidden pt-3 font-sans text-sm leading-relaxed text-ivory/70 transition-colors duration-500 lg:pt-0 lg:text-ivory/0 lg:group-hover:pt-4 lg:group-hover:text-ivory/70">
-                        {service.copy}
+    useLayoutEffect(() => {
+        const section = sectionRef.current;
+        const title = titleRef.current;
+        const subtitle = subtitleRef.current;
+        const titleBlock = titleBlockRef.current;
+        const cards = cardsRef.current;
+        if (!section || !title || !subtitle || !titleBlock || !cards) return;
+
+        const ctx = gsap.context(() => {
+            const mm = gsap.matchMedia();
+
+            // Desktop-only: scrub reveals + bg shift + title collapse (keeps PC behavior + reverse)
+            mm.add('(min-width: 1024px)', () => {
+                gsap.fromTo(
+                    title,
+                    { y: 50, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        ease: 'power1.out',
+                        immediateRender: false,
+                        scrollTrigger: {
+                            trigger: title,
+                            start: 'top 85%',
+                            end: 'top 60%',
+                            scrub: 2,
+                            invalidateOnRefresh: true,
+                        },
+                    },
+                );
+                gsap.fromTo(
+                    subtitle,
+                    { y: 50, opacity: 0 },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        ease: 'power1.out',
+                        immediateRender: false,
+                        scrollTrigger: {
+                            trigger: subtitle,
+                            start: 'top 85%',
+                            end: 'top 60%',
+                            scrub: 2,
+                            invalidateOnRefresh: true,
+                        },
+                    },
+                );
+
+                gsap.to(section, {
+                    backgroundColor: '#fbf8f2',
+                    ease: 'power2.out',
+                    scrollTrigger: {
+                        trigger: cards,
+                        start: 'top 50%',
+                        end: 'top 50%',
+                        toggleActions: 'play none none reverse',
+                    },
+                });
+
+                gsap.fromTo(
+                    titleBlock,
+                    { y: 0, opacity: 1, scale: 1 },
+                    {
+                        y: -280,
+                        opacity: 0,
+                        scale: 0.85,
+                        ease: 'none',
+                        immediateRender: false,
+                        scrollTrigger: {
+                            trigger: cards,
+                            start: 'top 60%',
+                            end: 'top 30%',
+                            scrub: 1,
+                            invalidateOnRefresh: true,
+                        },
+                    },
+                );
+
+                gsap.fromTo(
+                    cards,
+                    { opacity: 0.3, y: 50 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        ease: 'none',
+                        immediateRender: false,
+                        scrollTrigger: {
+                            trigger: cards,
+                            start: 'top 80%',
+                            end: 'top 30%',
+                            scrub: 1,
+                            invalidateOnRefresh: true,
+                        },
+                    },
+                );
+            });
+
+            // Mobile / tablet: light fade-in only (no scrub — scrub sticks touch scroll)
+            mm.add('(max-width: 1023px)', () => {
+                gsap.from([title, subtitle], {
+                    y: 36,
+                    opacity: 0,
+                    duration: 0.8,
+                    stagger: 0.08,
+                    ease: 'power1.out',
+                    scrollTrigger: {
+                        trigger: titleBlock,
+                        start: 'top 88%',
+                        toggleActions: 'play none none reverse',
+                    },
+                });
+
+                gsap.from(cards, {
+                    y: 28,
+                    opacity: 0,
+                    duration: 0.75,
+                    ease: 'power2.out',
+                    scrollTrigger: {
+                        trigger: cards,
+                        start: 'top 90%',
+                        toggleActions: 'play none none reverse',
+                    },
+                });
+            });
+        }, section);
+
+        return () => ctx.revert();
+    }, []);
+
+    const scrollTo = (i) => {
+        const el = trackRef.current;
+        if (!el) return;
+        const slide = el.children[i];
+        if (!slide) return;
+        slide.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+        setIndex(i);
+    };
+
+    const onScroll = () => {
+        const el = trackRef.current;
+        if (!el) return;
+        const slides = [...el.children];
+        let best = 0;
+        let bestDist = Infinity;
+        slides.forEach((s, i) => {
+            const d = Math.abs(s.offsetLeft - el.scrollLeft);
+            if (d < bestDist) {
+                bestDist = d;
+                best = i;
+            }
+        });
+        setIndex(best);
+    };
+
+    return (
+        <section id="services" ref={sectionRef} className="overflow-hidden bg-tint text-center">
+            <div
+                ref={titleBlockRef}
+                className="mx-auto flex min-h-[100svh] w-full items-center justify-center px-4 py-16 sm:px-8 lg:px-12"
+            >
+                <div className="flex max-w-[900px] flex-col items-center justify-center gap-3 text-center sm:gap-4 lg:gap-6">
+                    <h2
+                        ref={titleRef}
+                        className="font-fragment m-0 text-[1.75rem] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[2.75rem] sm:leading-[3.25rem] lg:text-[6.5rem] lg:leading-[7.5rem]"
+                    >
+                        Arrive at your best.
+                    </h2>
+                    <p
+                        ref={subtitleRef}
+                        className="font-geist m-0 max-w-[34rem] text-[1.125rem] leading-7 font-500 tracking-[0.15px] text-ink-text sm:text-[1.5rem] sm:leading-8 lg:max-w-none lg:text-[1.75rem] lg:leading-9 lg:tracking-[0.25px]"
+                    >
+                        Effortless journeys, tailored to you.
                     </p>
                 </div>
-                <span className="mt-4 inline-flex items-center gap-2 font-sans text-[11px] font-500 tracking-[0.16em] text-ivory/70 uppercase sm:mt-5 sm:text-[12px] sm:tracking-[0.18em]">
-                    Learn more
-                    <svg
-                        className="transition-transform duration-300 group-hover:translate-x-1"
-                        width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    >
-                        <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                </span>
             </div>
-        </motion.article>
-    );
-}
 
-export default function Services() {
-    return (
-        <section id="services" className="relative bg-ink py-16 sm:py-24 lg:py-32">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                <div className="mb-10 flex flex-col justify-between gap-5 sm:mb-16 sm:gap-6 lg:flex-row lg:items-end">
-                    <motion.div
-                        variants={fadeUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true, margin: '-80px' }}
+            <div ref={cardsRef} className="pb-10 sm:pb-12 lg:pb-16">
+                <div className="mx-auto max-w-[1440px] text-left">
+                    <div
+                        ref={trackRef}
+                        onScroll={onScroll}
+                        aria-label="Book services"
+                        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-6 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-6 lg:gap-5 lg:px-12 [&::-webkit-scrollbar]:hidden"
                     >
-                        <p className="mb-4 font-sans text-[10px] font-500 tracking-[0.3em] text-gold-400 uppercase sm:mb-5 sm:text-[11px] sm:tracking-[0.4em]">
-                            Our services
-                        </p>
-                        <h2 className="max-w-xl font-display text-3xl leading-tight font-600 text-ivory sm:text-4xl lg:text-5xl">
-                            Hotel and airport, <span className="gold-text italic font-serif-lux">done properly.</span>
-                        </h2>
-                    </motion.div>
-                    <motion.p
-                        variants={fadeUp}
-                        initial="hidden"
-                        whileInView="show"
-                        viewport={{ once: true }}
-                        className="max-w-sm font-serif-lux text-base text-ivory/60 sm:text-lg"
-                    >
-                        Built for Qatar stays — transfers between Doha hotels and Hamad International Airport, held to one standard: impeccable.
-                    </motion.p>
+                        {SERVICES.map((s) => (
+                            <article
+                                key={s.tag}
+                                // Mobile/tablet: one card peek; desktop unchanged 50%
+                                className="group w-[85%] shrink-0 snap-start rounded-2xl bg-transparent transition-colors hover:bg-white sm:w-[70%] lg:w-[calc(50%-0.625rem)]"
+                            >
+                                <div className="h-[220px] overflow-hidden rounded-2xl sm:h-[260px] lg:h-[312px]">
+                                    <img
+                                        src={s.img}
+                                        alt={s.tag}
+                                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                    />
+                                </div>
+                                <div className="px-1 pt-4 pb-2 sm:px-2 sm:pt-5">
+                                    <p className="font-geist text-[14px] leading-5 tracking-[0.15px] text-muted">
+                                        {s.tag}
+                                    </p>
+                                    <h3 className="font-fragment mt-2 text-[1.375rem] leading-8 font-400 text-ink-text sm:text-[2rem] sm:leading-10">
+                                        {s.title}
+                                    </h3>
+                                    <p className="font-geist mt-3 text-[15px] leading-6 tracking-[0.15px] text-ink-text/80 sm:text-[16px]">
+                                        {s.copy}
+                                    </p>
+                                    <a
+                                        href={s.href}
+                                        className="font-geist mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-wine-700 px-4 py-2 text-[16px] font-500 text-wine-700 transition hover:bg-page sm:mt-5"
+                                    >
+                                        Learn more
+                                    </a>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+
+                    <div className="mt-1 flex justify-center gap-2 px-4 sm:mt-2 sm:px-6">
+                        {SERVICES.map((_, i) => (
+                            <button
+                                key={i}
+                                type="button"
+                                aria-label={`Go to slide ${i + 1}`}
+                                onClick={() => scrollTo(i)}
+                                className={`h-2 w-2 rounded-full transition ${
+                                    index === i ? 'bg-wine-700' : 'bg-wine-700/25'
+                                }`}
+                            />
+                        ))}
+                    </div>
                 </div>
-
-                <motion.div
-                    variants={{ show: { transition: { staggerChildren: 0.15 } } }}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: '-60px' }}
-                    className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12"
-                >
-                    {SERVICES.map((s, i) => (
-                        <Card key={s.tag} service={s} index={i} />
-                    ))}
-                </motion.div>
             </div>
         </section>
     );

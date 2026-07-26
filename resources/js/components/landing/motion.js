@@ -1,4 +1,4 @@
-// Shared animation variants for the AL MAJD landing page.
+// Shared animation variants + image paths.
 export const EASE = [0.22, 1, 0.36, 1];
 
 export const fadeUp = {
@@ -37,9 +37,23 @@ export const scaleIn = {
     show: { opacity: 1, scale: 1, transition: { duration: 1, ease: EASE } },
 };
 
-// Curated luxury imagery (Unsplash).
+/** Exact assets from saveweb2zip-com-www-blacklane-com/images (V1 home) */
 export const IMG = {
-    hero: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=2100&q=80',
+    hero: '/images/bg.e8e3285679399bbb.jpg',
+    service1: '/images/1.879377e626f27fdd.webp',
+    service2: '/images/2.9ae17562d88c590d.webp',
+    service3: '/images/3.a05cc4329bbe2ee0.webp',
+    service4: '/images/4.13f5624e9bdcc2ee.webp',
+    platform: '/images/img.59bf95b01983baf4.png',
+    ride1: '/images/ride-1.510c61ecb0d86e20.webp',
+    ride2: '/images/ride-2.1ffe259f4c10fd5e.webp',
+    ride3: '/images/ride-3.76756924ac2f6197.webp',
+    appStoreLight: '/images/app-store-logo-light.5f768b87b08b58e5.svg',
+    playStoreLight: '/images/playstore-logo-light.2938f2b1a073fbc4.svg',
+    appStoreDark: '/images/app-store-logo-dark.5dc6643c29136385.svg',
+    playStoreDark: '/images/playstore-logo-dark.083f89dd5c62e18d.svg',
+
+    // Kept for V2 / V3 pages
     heroAlt: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=2100&q=80',
     airport: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1400&q=80',
     hourly: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1400&q=80',

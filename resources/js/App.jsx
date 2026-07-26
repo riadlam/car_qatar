@@ -1,24 +1,40 @@
+import { useRef } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
-import HomeV2 from './pages/HomeV2';
-import Second from './pages/Second';
+import Chauffeurs from './pages/Chauffeurs';
+import Business from './pages/Business';
+import Corporations from './pages/Corporations';
+import TravelAgencies from './pages/TravelAgencies';
+import StrategicPartnerships from './pages/StrategicPartnerships';
+import Help from './pages/Help';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import CompleteProfile from './pages/CompleteProfile';
+import Account from './pages/Account';
+import Journeys from './pages/Journeys';
+import JourneyRide from './pages/JourneyRide';
+import ChauffeurPortal from './pages/ChauffeurPortal';
+import Booking from './pages/Booking';
+import Checkout from './pages/Checkout';
 
 function GuestRoute({ children }) {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, loading, consumeReturnTo } = useAuth();
+    const redirectRef = useRef(null);
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-300">
+            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">
                 Loading...
             </div>
         );
     }
 
     if (isAuthenticated) {
-        return <Navigate to="/" replace />;
+        if (!redirectRef.current) {
+            redirectRef.current = consumeReturnTo();
+        }
+        return <Navigate to={redirectRef.current || '/'} replace />;
     }
 
     return children;
@@ -30,8 +46,14 @@ export default function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/v2" element={<HomeV2 />} />
-                    <Route path="/second" element={<Second />} />
+                    <Route path="/partners" element={<Chauffeurs />} />
+                    <Route path="/chauffeurs" element={<Navigate to="/partners" replace />} />
+                    <Route path="/business" element={<Business />} />
+                    <Route path="/buisness" element={<Navigate to="/business" replace />} />
+                    <Route path="/corporations" element={<Corporations />} />
+                    <Route path="/travel-agencies" element={<TravelAgencies />} />
+                    <Route path="/strategic-partnerships" element={<StrategicPartnerships />} />
+                    <Route path="/help" element={<Help />} />
                     <Route
                         path="/login"
                         element={
@@ -40,14 +62,18 @@ export default function App() {
                             </GuestRoute>
                         }
                     />
-                    <Route
-                        path="/register"
-                        element={
-                            <GuestRoute>
-                                <Register />
-                            </GuestRoute>
-                        }
-                    />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/complete-profile" element={<CompleteProfile />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/journeys" element={<Journeys />} />
+                    <Route path="/journeys/ride/:id/track" element={<JourneyRide mode="track" />} />
+                    <Route path="/journeys/ride/:id" element={<JourneyRide mode="details" />} />
+                    <Route path="/journeys/:tab" element={<Journeys />} />
+                    <Route path="/chauffeur" element={<ChauffeurPortal />} />
+                    <Route path="/chauffeur/:tab" element={<ChauffeurPortal />} />
+                    <Route path="/booking" element={<Booking />} />
+                    <Route path="/booking/checkout" element={<Checkout />} />
+                    <Route path="/booking/checkout/" element={<Checkout />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </BrowserRouter>

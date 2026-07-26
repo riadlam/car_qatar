@@ -1,5 +1,41 @@
 @import 'tailwindcss';
 
+@font-face {
+    font-family: 'PP Fragment';
+    src: url('/fonts/PPFragment-GlareRegular.woff2') format('woff2'),
+        url('/fonts/PPFragment-GlareRegular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('/fonts/Geist-Regular.woff2') format('woff2'),
+        url('/fonts/Geist-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('/fonts/Geist-Medium.woff2') format('woff2'),
+        url('/fonts/Geist-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('/fonts/Geist-SemiBold.woff2') format('woff2'),
+        url('/fonts/Geist-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -19,6 +55,13 @@
     --color-wine-900: #2c0210;
     --color-wine-950: #1a0109;
 
+    /* Soft title/section tint — stand-in for Blacklane’s #aecff3 */
+    --color-hero-title: #f0c5d2;
+    --color-tint: #f0c5d2;
+    --color-page: #fbf8f2;
+    --color-ink-text: #0f1319;
+    --color-muted: #6e6e73;
+
     --color-gold-200: #f0e0b6;
     --color-gold-300: #e4cd8f;
     --color-gold-400: #d4af5f;
@@ -33,6 +76,8 @@
     --font-display: 'Cinzel', ui-serif, Georgia, serif;
     --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
     --font-sans: 'Jost', ui-sans-serif, system-ui, sans-serif;
+    --font-fragment: 'PP Fragment', ui-serif, Georgia, serif;
+    --font-geist: 'Geist', ui-sans-serif, system-ui, sans-serif;
 
     /* Arabic (V2) — vintage calligraphic + premium */
     --font-ar-display: 'Aref Ruqaa', 'Amiri', serif;
@@ -55,10 +100,10 @@
 
     body {
         font-family: var(--font-sans);
-        background-color: var(--color-ink);
-        color: var(--color-ivory);
+        background-color: var(--color-page);
+        color: var(--color-ink-text);
         -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
+        overflow-x: clip;
     }
 
     img,
@@ -101,6 +146,14 @@
         font-family: var(--font-serif);
     }
 
+    .font-fragment {
+        font-family: var(--font-fragment);
+    }
+
+    .font-geist {
+        font-family: var(--font-geist);
+    }
+
     .text-balance {
         text-wrap: balance;
     }
@@ -110,6 +163,107 @@
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
+    }
+
+    /* Blacklane-parity hero glass surfaces (wine accents instead of blue) */
+    .bl-glass-dark {
+        background-color: rgba(0, 0, 0, 0.2);
+        background-image:
+            radial-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0) 90%),
+            radial-gradient(circle at 80% 200%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 80%),
+            linear-gradient(rgba(15, 19, 25, 0.2));
+        box-shadow:
+            0 2px 8px 0 rgba(6, 10, 13, 0.12),
+            inset 4px 4px 8px rgba(0, 0, 0, 0.06);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* Mobile nav hamburger — frosted glass (dark over hero / light after scroll) */
+    .nav-burger,
+    .nav-user {
+        box-shadow:
+            0 2px 10px rgba(6, 10, 13, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(18px) saturate(1.35);
+        -webkit-backdrop-filter: blur(18px) saturate(1.35);
+        transition:
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease,
+            color 0.25s ease;
+    }
+
+    .nav-burger--dark,
+    .nav-user--dark {
+        background-color: rgba(0, 0, 0, 0.22);
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 70%),
+            linear-gradient(rgba(15, 19, 25, 0.18));
+        color: #fff;
+    }
+
+    .nav-burger--light,
+    .nav-user--light {
+        background-color: rgba(251, 248, 242, 0.55);
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 75%),
+            linear-gradient(rgba(255, 255, 255, 0.35));
+        box-shadow:
+            0 2px 12px rgba(6, 10, 13, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        color: var(--color-ink-text);
+    }
+
+    /* Desktop glass Sign in (Blacklane GlassButton parity) */
+    .nav-signin {
+        box-shadow:
+            0 2px 10px rgba(6, 10, 13, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(18px) saturate(1.35);
+        -webkit-backdrop-filter: blur(18px) saturate(1.35);
+        cursor: pointer;
+    }
+
+    header a,
+    header button {
+        cursor: pointer;
+    }
+
+    .nav-signin--dark {
+        background-color: rgba(0, 0, 0, 0.22);
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 70%),
+            linear-gradient(rgba(15, 19, 25, 0.18));
+        color: #fff;
+    }
+
+    .nav-signin--light {
+        background-color: rgba(251, 248, 242, 0.55);
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 75%),
+            linear-gradient(rgba(255, 255, 255, 0.35));
+        box-shadow:
+            0 2px 12px rgba(6, 10, 13, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        color: var(--color-ink-text);
+    }
+
+    .nav-dd--dark {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        background:
+            radial-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0) 90%),
+            radial-gradient(circle at 80% 200%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 80%),
+            linear-gradient(rgba(15, 19, 25, 0.55));
+        border: 1px solid hsla(0, 0%, 100%, 0.35);
+        box-shadow: 0 2px 8px 0 rgba(6, 10, 13, 0.12);
+    }
+
+    .nav-dd--light {
+        background: #fff;
+        border: 1px solid rgba(15, 19, 25, 0.08);
+        box-shadow: 0 8px 24px rgba(6, 10, 13, 0.12);
     }
 
     .lux-grain::before {
@@ -173,6 +327,51 @@
     }
     .font-800 {
         font-weight: 800;
+    }
+
+    /* Chauffeur offers filter range thumbs */
+    .chauffeur-range {
+        margin: 0;
+        height: 100%;
+    }
+    .chauffeur-range:focus {
+        outline: none;
+    }
+    .chauffeur-range::-webkit-slider-runnable-track {
+        height: 6px;
+        background: transparent;
+        border: none;
+    }
+    .chauffeur-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        margin-top: -8px;
+        border-radius: 9999px;
+        background: #5b0520;
+        border: 3px solid #fbf8f2;
+        box-shadow: 0 4px 12px rgba(91, 5, 32, 0.35);
+        cursor: grab;
+        transition: transform 0.15s ease;
+    }
+    .chauffeur-range:active::-webkit-slider-thumb {
+        cursor: grabbing;
+        transform: scale(1.08);
+    }
+    .chauffeur-range::-moz-range-track {
+        height: 6px;
+        background: transparent;
+        border: none;
+    }
+    .chauffeur-range::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border-radius: 9999px;
+        background: #5b0520;
+        border: 3px solid #fbf8f2;
+        box-shadow: 0 4px 12px rgba(91, 5, 32, 0.35);
+        cursor: grab;
     }
 
     .wine-text {
@@ -362,7 +561,328 @@
     animation-direction: reverse;
 }
 
-/* Lock body when mobile menu is open */
+/* Lock body when mobile menu is open (no touch-action:none — that can stick scroll) */
 body.menu-open {
     overflow: hidden;
+}
+
+/* Mobile / tablet landing polish — desktop unchanged */
+@supports (padding: env(safe-area-inset-top)) {
+    .safe-pad-top {
+        padding-top: env(safe-area-inset-top);
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Prevent accidental horizontal bounce from carousels */
+    .snap-x {
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Excellence icons — keep vectors crisp (no CSS blur inheritance) */
+    .excellence-icon,
+    .excellence-icon svg {
+        filter: none !important;
+        -webkit-filter: none !important;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+
+    /* Comfortable tap targets in landing */
+    #services a,
+    #excellence a,
+    #help a,
+    footer a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    footer .grid a {
+        min-height: auto;
+    }
+}
+
+/* Corporations — Blacklane StrToHtml link wipe (wine instead of blue) */
+.corp-scroll-top {
+    text-decoration: none;
+    border-radius: 2px;
+    padding: 0 4px;
+    margin: 0 -4px;
+    background-image:
+        linear-gradient(var(--color-wine-700), var(--color-wine-700)),
+        linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0));
+    background-size: calc(100% - 8px) 1px, 105% 100%;
+    background-position: 4px 85%, 0 0;
+    background-repeat: no-repeat;
+    transition:
+        background-size 0.4s,
+        background-image 0.4s;
+}
+
+.corp-scroll-top:hover,
+.corp-scroll-top:focus {
+    background-size: 0 1px, 105% 100%;
+    background-image:
+        linear-gradient(var(--color-wine-700), var(--color-wine-700)),
+        linear-gradient(var(--color-wine-100), var(--color-wine-100));
+}
+
+/* Complete profile — react-international-phone */
+.almajd-phone.react-international-phone-input-container {
+    width: 100%;
+    --react-international-phone-height: 48px;
+    --react-international-phone-background-color: #fff;
+    --react-international-phone-text-color: #0f1319;
+    --react-international-phone-font-size: 16px;
+    --react-international-phone-border-radius: 8px;
+    --react-international-phone-border-color: #d8d8dc;
+    --react-international-phone-border-color-hover: #aeaeae;
+    --react-international-phone-border-color-focus: #5b0520;
+    --react-international-phone-country-selector-background-color-hover: #fbf2f5;
+    --react-international-phone-country-selector-background-color-focus: #fbf2f5;
+    --react-international-phone-country-selector-border-color: #d8d8dc;
+    --react-international-phone-country-selector-arrow-color: #6e6e73;
+    --react-international-phone-dropdown-item-background-color-hover: #fbf2f5;
+    --react-international-phone-selected-dropdown-item-background-color: #f6dfe7;
+    --react-international-phone-dropdown-shadow: 0 12px 32px rgba(15, 19, 25, 0.14);
+    --react-international-phone-dropdown-border-color: #e8e8ea;
+}
+
+.almajd-phone .react-international-phone-input {
+    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    width: 100%;
+}
+
+.almajd-phone .react-international-phone-country-selector-button {
+    padding-inline: 12px;
+}
+
+.almajd-phone .react-international-phone-country-selector-dropdown {
+    max-height: 280px;
+    border-radius: 12px;
+    overflow: auto;
+    z-index: 50;
+}
+
+.almajd-phone .react-international-phone-country-selector-dropdown__list-item {
+    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    padding: 10px 12px;
+}
+
+/* Booking — vehicle selection */
+.booking-page .booking-vehicle-card:has(input:checked) {
+    border-color: var(--color-wine-700);
+    box-shadow: 0 0 0 1px var(--color-wine-700);
+}
+
+.booking-page .booking-sidebar {
+    background: var(--color-page);
+}
+
+/* Checkout mobile route map (Leaflet) — keep map under UI chrome */
+.almajd-route-map.leaflet-container {
+    background: #e8e6e1;
+    font: inherit;
+    z-index: 0 !important;
+}
+
+.almajd-route-map .leaflet-pane,
+.almajd-route-map .leaflet-control,
+.almajd-route-map .leaflet-top,
+.almajd-route-map .leaflet-bottom {
+    z-index: auto;
+}
+
+.almajd-route-map .leaflet-map-pane {
+    z-index: 1 !important;
+}
+
+.almajd-route-map .leaflet-tile-pane {
+    z-index: 1 !important;
+}
+
+.almajd-route-map .leaflet-overlay-pane {
+    z-index: 2 !important;
+}
+
+.almajd-route-map .leaflet-marker-pane {
+    z-index: 3 !important;
+}
+
+.almajd-route-map .leaflet-tooltip-pane,
+.almajd-route-map .leaflet-popup-pane,
+.almajd-route-map .leaflet-shadow-pane {
+    z-index: 4 !important;
+}
+
+.almajd-map-marker {
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.almajd-pin-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 120px;
+}
+
+.almajd-pin-label {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 6px;
+    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f1319;
+    box-shadow: 0 1px 4px rgba(15, 19, 25, 0.12);
+}
+
+.almajd-pin-b {
+    display: flex;
+    height: 26px;
+    width: 26px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 3px solid #5b0520;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(15, 19, 25, 0.15);
+}
+
+.almajd-pin-b-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 999px;
+    background: #5b0520;
+}
+
+.almajd-car-marker {
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.almajd-car-wrap {
+    position: relative;
+    display: flex;
+    height: 52px;
+    width: 52px;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 6px 14px rgba(91, 5, 32, 0.28));
+    will-change: transform;
+}
+
+.almajd-car-glow {
+    position: absolute;
+    inset: 10px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(91, 5, 32, 0.22) 0%, rgba(91, 5, 32, 0) 70%);
+    animation: almajd-car-glow 2.4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.almajd-car-rot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    transform-origin: 50% 55%;
+    will-change: transform;
+    transition: none;
+}
+
+@keyframes almajd-car-glow {
+    0%,
+    100% {
+        transform: scale(0.92);
+        opacity: 0.55;
+    }
+    50% {
+        transform: scale(1.18);
+        opacity: 0.9;
+    }
+}
+
+/* MapLibre trip map */
+.almajd-ml-map .maplibregl-ctrl-bottom-right {
+    right: 8px;
+    bottom: 8px;
+}
+
+.almajd-ml-map .maplibregl-ctrl-group {
+    border: 0 !important;
+    box-shadow: 0 2px 10px rgba(15, 19, 25, 0.12) !important;
+    overflow: hidden;
+    border-radius: 10px !important;
+}
+
+.almajd-ml-map .maplibregl-ctrl button {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.almajd-ml-pin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+}
+
+.almajd-ml-pin-label {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 2px 6px;
+    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f1319;
+    box-shadow: 0 1px 4px rgba(15, 19, 25, 0.12);
+}
+
+.almajd-ml-pin-a {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 3px solid #5b0520;
+    background: #f0c5d2;
+    box-shadow: 0 2px 8px rgba(15, 19, 25, 0.18);
+}
+
+.almajd-ml-pin-b {
+    display: flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 3px solid #5b0520;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(15, 19, 25, 0.15);
+}
+
+.almajd-ml-pin-b > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #5b0520;
+}
+
+.almajd-ml-car {
+    pointer-events: none;
 }
