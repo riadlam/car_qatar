@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatMoney } from '../../data/journeys';
-import { VEHICLES } from '../../data/bookingVehicles';
+import { VEHICLE_CATALOG } from '../../data/bookingVehicles';
 import { IconPassengers, IconLuggage } from '../booking/icons';
 
 function ContactSheet({ open, onClose, chauffeur, bookingNumber }) {
@@ -74,7 +74,7 @@ export default function JourneyRideSidebar({
     trackingProgress = 0.35,
 }) {
     const navigate = useNavigate();
-    const vehicle = VEHICLES.find((v) => v.id === j.vehicle_id) || null;
+    const vehicle = VEHICLE_CATALOG.find((v) => v.id === j.vehicle_id) || null;
     const isTrack = mode === 'track';
     const canTrack =
         j.status === 'upcoming' &&

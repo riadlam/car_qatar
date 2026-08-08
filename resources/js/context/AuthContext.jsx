@@ -91,21 +91,27 @@ export function AuthProvider({ children }) {
     const completeProfile = useCallback(
         (profile) => {
             const email = profile.email || getPendingEmail();
+            const isCompany = profile.accountType === 'company';
+            const displayName = isCompany
+                ? profile.companyName || email
+                : [profile.firstName, profile.lastName].filter(Boolean).join(' ');
             const nextUser = {
                 id: `local_${Date.now()}`,
                 email,
-                name: [profile.firstName, profile.lastName].filter(Boolean).join(' '),
-                title: profile.title,
-                first_name: profile.firstName,
-                last_name: profile.lastName,
-                phone: profile.phone,
-                company: '',
+                name: displayName,
+                account_type: isCompany ? 'company' : 'individual',
+                title: isCompany ? '' : profile.title || '',
+                first_name: isCompany ? '' : profile.firstName || '',
+                last_name: isCompany ? '' : profile.lastName || '',
+                phone: profile.phone || '',
+                company: isCompany ? profile.companyName || '' : '',
+                preferred_language: profile.preferredLanguage || '',
                 street_address: '',
-                has_password: true,
+                has_password: Boolean(profile.password),
                 payment_methods: [],
                 marketing_emails: true,
                 booking_notifications: 'email_sms',
-                language: 'en',
+                language: profile.preferredLanguage || 'en',
             };
             persistSession(nextUser, `local_${Date.now()}`);
             sessionStorage.removeItem(PENDING_EMAIL_KEY);

@@ -7,6 +7,11 @@ import Business from './pages/Business';
 import Corporations from './pages/Corporations';
 import TravelAgencies from './pages/TravelAgencies';
 import StrategicPartnerships from './pages/StrategicPartnerships';
+import IconicPlaces from './pages/IconicPlaces';
+import Hotels from './pages/Hotels';
+import Malls from './pages/Malls';
+import Beaches from './pages/Beaches';
+import Restaurants from './pages/Restaurants';
 import Help from './pages/Help';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -53,6 +58,11 @@ export default function App() {
                     <Route path="/corporations" element={<Corporations />} />
                     <Route path="/travel-agencies" element={<TravelAgencies />} />
                     <Route path="/strategic-partnerships" element={<StrategicPartnerships />} />
+                    <Route path="/iconic-places" element={<IconicPlaces />} />
+                    <Route path="/hotels" element={<Hotels />} />
+                    <Route path="/malls" element={<Malls />} />
+                    <Route path="/beaches" element={<Beaches />} />
+                    <Route path="/restaurants" element={<Restaurants />} />
                     <Route path="/help" element={<Help />} />
                     <Route
                         path="/login"

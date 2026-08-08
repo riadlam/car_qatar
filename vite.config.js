@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-    // LAN IP used when opening the app via http://192.168.1.5:8000
+    // LAN IP used when opening the app via http://192.168.1.10:8000
     const hmrHost = env.VITE_DEV_HOST || '192.168.1.5';
 
     return {

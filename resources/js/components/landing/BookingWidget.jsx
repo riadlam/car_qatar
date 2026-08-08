@@ -3,9 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 
 const TABS = [
+    { id: 'tourist_trip', label: 'Tourist trip', value: 'transfer' },
     { id: 'one_way', label: 'One way', value: 'transfer' },
-    { id: 'by_hour', label: 'By the hour', value: 'hourly' },
+    { id: 'multi_local', label: 'Multi-local', value: 'transfer' },
+    { id: 'multi_destination', label: 'Multi Destination', value: 'transfer' },
+    { id: 'by_hour', label: 'By hour', value: 'hourly' },
+    { id: 'international_trip', label: 'International trip', value: 'transfer' },
+    { id: 'school_chauffeur', label: 'School chauffeur', value: 'transfer' },
 ];
+
+const HOURLY_TAB = 'by_hour';
 
 const Chevron = (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -68,19 +75,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     />
                 </Field>
 
-                {tab === 'one_way' ? (
-                    <Field id={`dropoff-location-${stacked ? 'm' : 'd'}`} label="Drop-off location">
-                        <input
-                            id={`dropoff-location-${stacked ? 'm' : 'd'}`}
-                            name="dropoff-location"
-                            className={inputCls}
-                            placeholder="Address, airport, hotel, ..."
-                            autoComplete="off"
-                            role="combobox"
-                            aria-expanded="false"
-                        />
-                    </Field>
-                ) : (
+                {tab === HOURLY_TAB ? (
                     <Field id={`duration-${stacked ? 'm' : 'd'}`} label="Duration" endAdornment={Chevron}>
                         <select
                             id={`duration-${stacked ? 'm' : 'd'}`}
@@ -96,6 +91,18 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                             <option value="8">8 hours (200 km included)</option>
                             <option value="12">12 hours (250 km included)</option>
                         </select>
+                    </Field>
+                ) : (
+                    <Field id={`dropoff-location-${stacked ? 'm' : 'd'}`} label="Drop-off location">
+                        <input
+                            id={`dropoff-location-${stacked ? 'm' : 'd'}`}
+                            name="dropoff-location"
+                            className={inputCls}
+                            placeholder="Address, airport, hotel, ..."
+                            autoComplete="off"
+                            role="combobox"
+                            aria-expanded="false"
+                        />
                     </Field>
                 )}
             </div>
@@ -155,65 +162,50 @@ function BookingForm({ tab, stacked = false, onSearch }) {
     );
 }
 
-function InfoCard({ onDark = false }) {
-    return (
-        <div
-            data-anim="hero-info"
-            className="mt-6 flex flex-col items-center justify-center px-1 text-center sm:mt-8 lg:hidden"
-        >
-            <h2
-                className={`font-fragment text-[1.125rem] leading-7 font-400 tracking-[0.25px] sm:text-[2rem] sm:leading-10 ${
-                    onDark ? 'text-white' : 'text-ink-text'
-                }`}
-            >
-                <span className="block">Set your pickup in over 64 countries.</span>
-                <span className="block">We&apos;ll be there on time.</span>
-            </h2>
-        </div>
-    );
-}
-
 function TabPills({ tab, setTab, className = '' }) {
     return (
         <div
             role="radiogroup"
-            aria-label="Category selection"
-            className={`bl-glass-dark relative inline-grid w-full max-w-md grid-cols-2 gap-1 rounded-full border border-white/25 p-1.5 ${className}`}
+            aria-label="Trip type selection"
+            className={`bl-glass-dark relative w-full max-w-full rounded-2xl border border-white/25 p-1.5 ${className}`}
         >
-            {TABS.map((t) => {
-                const active = tab === t.id;
-                return (
-                    <button
-                        key={t.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        onClick={() => setTab(t.id)}
-                        className={`font-geist rounded-full px-3 py-2.5 text-center text-[15px] leading-5 font-500 tracking-[0.15px] transition ${
-                            active ? 'bg-wine-700 text-white shadow-sm' : 'text-white hover:bg-white/10'
-                        }`}
-                    >
-                        {t.label}
-                    </button>
-                );
-            })}
+            <div className="-mx-0.5 flex gap-1 overflow-x-auto px-0.5 py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden">
+                {TABS.map((t) => {
+                    const active = tab === t.id;
+                    return (
+                        <button
+                            key={t.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setTab(t.id)}
+                            className={`font-geist shrink-0 rounded-full px-3 py-2.5 text-center text-[13px] leading-4 font-500 tracking-[0.15px] whitespace-nowrap transition sm:px-3.5 sm:text-[14px] sm:leading-5 lg:px-4 lg:text-[15px] ${
+                                active ? 'bg-wine-700 text-white shadow-sm' : 'text-white hover:bg-white/10'
+                            }`}
+                        >
+                            {t.label}
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }
 
 export default function BookingWidget({ variant = 'desktop' }) {
-    const [tab, setTab] = useState('one_way');
+    const [tab, setTab] = useState('tourist_trip');
     const navigate = useNavigate();
     const isMobile = variant === 'mobile';
 
-    const goBooking = ({ pickup, dropoff, time, date, tab, duration }) => {
+    const goBooking = ({ pickup, dropoff, time, date, tab: selectedTab, duration }) => {
         const q = new URLSearchParams();
         if (pickup) q.set('pickup', pickup);
         if (dropoff) q.set('dropoff', dropoff);
         if (time) q.set('time', time);
         if (date) q.set('date', date);
-        const mode = tab === 'by_hour' ? 'hourly' : 'transfer';
+        const mode = selectedTab === HOURLY_TAB ? 'hourly' : 'transfer';
         q.set('mode', mode);
+        q.set('service', selectedTab);
         if (mode === 'hourly' && duration) q.set('duration', duration);
         navigate(`/booking?${q.toString()}`);
     };
@@ -221,8 +213,8 @@ export default function BookingWidget({ variant = 'desktop' }) {
     if (isMobile) {
         return (
             <div data-cy="booking-widget" className="mx-auto flex w-full max-w-full flex-col items-center justify-center">
-                {/* Sticky glass tabs — same look as screenshot */}
-                <div className="sticky top-[72px] z-30 mb-4 flex w-full justify-center py-2">
+                {/* Sticky glass tabs — scrollable on narrow screens */}
+                <div className="sticky top-[72px] z-30 mb-4 w-full py-2">
                     <TabPills tab={tab} setTab={setTab} />
                 </div>
 
@@ -240,16 +232,14 @@ export default function BookingWidget({ variant = 'desktop' }) {
                         </motion.div>
                     </AnimatePresence>
                 </div>
-
-                <InfoCard onDark />
             </div>
         );
     }
 
     return (
         <div data-cy="booking-widget" className="mx-auto flex w-full max-w-full flex-col items-center justify-center">
-            <div className="mb-6 flex justify-center">
-                <TabPills tab={tab} setTab={setTab} className="w-auto min-w-[280px]" />
+            <div className="mb-6 w-full max-w-[1120px]">
+                <TabPills tab={tab} setTab={setTab} />
             </div>
 
             <div className="bl-glass-dark w-full max-w-full overflow-hidden rounded-lg border border-white/15 p-6" role="search">
@@ -265,8 +255,6 @@ export default function BookingWidget({ variant = 'desktop' }) {
                     </motion.div>
                 </AnimatePresence>
             </div>
-
-            <InfoCard onDark />
         </div>
     );
 }

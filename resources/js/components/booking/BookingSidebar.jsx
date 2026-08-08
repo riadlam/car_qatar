@@ -15,6 +15,7 @@ export default function BookingSidebar({
     pickupPeriod,
     mapLat,
     mapLng,
+    seatAddon = 'none',
 }) {
     const { isAuthenticated, setReturnTo } = useAuth();
     const navigate = useNavigate();
@@ -42,6 +43,11 @@ export default function BookingSidebar({
     const selectVehicle = () => {
         const q = new URLSearchParams(params);
         q.set('vehicle', vehicle.id);
+        if (seatAddon && seatAddon !== 'none') {
+            q.set('seat', seatAddon);
+        } else {
+            q.delete('seat');
+        }
         if (forGuest && selectedGuest) {
             q.set('guest', selectedGuest.id);
         } else {

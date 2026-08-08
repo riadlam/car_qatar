@@ -1,7 +1,7 @@
 const CDN = 'https://service-catalog-assets.blacklane.com/Service+Catalog+Assets';
 
-/** Vehicle catalog for /booking — layout mirrors Blacklane; accents use AL MAJD wine. */
-export const VEHICLES = [
+/** Full catalog (journeys / history). Booking page uses VEHICLES only. */
+export const VEHICLE_CATALOG = [
     {
         id: 'business',
         name: 'Business Class',
@@ -280,12 +280,22 @@ export const VEHICLES = [
     },
 ];
 
+/** Options shown on /booking — Business Class & First Class removed. */
+export const VEHICLES = VEHICLE_CATALOG.filter((v) => v.id === 'van');
+
 export const INCLUDED = [
     { id: 'meet', label: 'Personal meet & greet', icon: 'meet' },
     { id: 'cancel', label: 'Free to cancel up to 1 hour before pickup', icon: 'cancel' },
     { id: 'chargers', label: 'iOS and Android chargers onboard', icon: 'chargers' },
     { id: 'wipes', label: 'Complimentary tissues & sanitizing wipes', icon: 'wipes' },
     { id: 'water', label: 'Complimentary chilled water included', icon: 'water' },
+];
+
+/** Optional seat add-ons selectable in What’s included */
+export const SEAT_ADDONS = [
+    { id: 'none', label: 'No seat needed' },
+    { id: 'child_seat', label: 'Child seat' },
+    { id: 'baby_seat', label: 'Baby seat' },
 ];
 
 export function formatMoney(amount, currency = 'US$') {

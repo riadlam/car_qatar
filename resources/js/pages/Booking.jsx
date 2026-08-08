@@ -12,7 +12,7 @@ import {
     IconPassengers,
     IncludedIcon,
 } from '../components/booking/icons';
-import { INCLUDED, VEHICLES, formatMoney } from '../data/bookingVehicles';
+import { INCLUDED, SEAT_ADDONS, VEHICLES, formatMoney } from '../data/bookingVehicles';
 
 function formatTimeParts(timeStr) {
     if (!timeStr) return { time: '10:15', period: 'pm' };
@@ -27,15 +27,18 @@ function formatTimeParts(timeStr) {
 
 export default function Booking() {
     const [params] = useSearchParams();
-    const initialVehicle = params.get('vehicle') || 'business';
+    const initialVehicle = params.get('vehicle') || 'van';
     const [selectedId, setSelectedId] = useState(
-        () => VEHICLES.find((v) => v.id === initialVehicle)?.id || 'business',
+        () => VEHICLES.find((v) => v.id === initialVehicle)?.id || VEHICLES[0]?.id || 'van',
     );
     const [vehicleIndex, setVehicleIndex] = useState(0);
     const [highlightIndex, setHighlightIndex] = useState(0);
     const [capacityTab, setCapacityTab] = useState('luggage');
     const [luggageId, setLuggageId] = useState('cabin_asset');
     const [seatingId, setSeatingId] = useState('maximum_asset');
+    const [seatAddon, setSeatAddon] = useState(
+        () => params.get('seat') || 'none',
+    );
     const detailsRef = useRef(null);
     const vehicleTrackRef = useRef(null);
 
@@ -55,6 +58,19 @@ export default function Booking() {
         setSeatingId(vehicle.seatingOptions[0]?.id || 'maximum_asset');
         setCapacityTab('luggage');
     }, [vehicle]);
+
+    const selectSeatAddon = (id) => {
+        setSeatAddon(id);
+        if (id === 'child_seat') {
+            setSeatingId('child_seat_asset');
+            setCapacityTab('seating');
+        } else if (id === 'baby_seat') {
+            setSeatingId('baby_seat_asset');
+            setCapacityTab('seating');
+        } else if (seatingId === 'child_seat_asset' || seatingId === 'baby_seat_asset') {
+            setSeatingId(vehicle.seatingOptions[0]?.id || 'maximum_asset');
+        }
+    };
 
     useEffect(() => {
         const idx = VEHICLES.findIndex((v) => v.id === selectedId);
@@ -100,7 +116,11 @@ export default function Booking() {
                             <div role="radiogroup" aria-label="Select vehicle class">
                                 <div
                                     ref={vehicleTrackRef}
-                                    className="booking-vehicle-track flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                    className={`booking-vehicle-track flex gap-3 pb-2 scroll-smooth ${
+                                        VEHICLES.length > 1
+                                            ? 'overflow-x-auto snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+                                            : 'overflow-visible'
+                                    }`}
                                 >
                                     {VEHICLES.map((v) => {
                                         const checked = v.id === selectedId;
@@ -108,7 +128,11 @@ export default function Booking() {
                                             <label
                                                 key={v.id}
                                                 data-cy="vehicle-card"
-                                                className={`booking-vehicle-card relative w-[min(280px,78vw)] shrink-0 cursor-pointer snap-start overflow-hidden rounded-2xl border bg-white transition sm:w-[300px] ${
+                                                className={`booking-vehicle-card relative shrink-0 cursor-pointer overflow-hidden rounded-2xl border bg-white transition ${
+                                                    VEHICLES.length === 1
+                                                        ? 'w-full max-w-xl snap-none'
+                                                        : 'w-[min(280px,78vw)] snap-start sm:w-[300px]'
+                                                } ${
                                                     checked
                                                         ? 'border-wine-700 shadow-[0_0_0_1px_#5b0520]'
                                                         : 'border-[#e5e3df] hover:border-[#cfcbc3]'
@@ -159,6 +183,7 @@ export default function Booking() {
                             </div>
                         </div>
 
+                        {VEHICLES.length > 1 && (
                         <div className="mt-3 flex gap-2">
                             <button
                                 type="button"
@@ -179,6 +204,7 @@ export default function Booking() {
                                 <IconChevronRight />
                             </button>
                         </div>
+                        )}
 
                         <button
                             type="button"
@@ -200,6 +226,7 @@ export default function Booking() {
                         pickupPeriod={pickupPeriod}
                         mapLat={mapLat}
                         mapLng={mapLng}
+                        seatAddon={seatAddon}
                     />
                 </div>
 
@@ -309,6 +336,58 @@ export default function Booking() {
                                         </p>
                                     </div>
                                 ))}
+                            </div>
+
+                            <div className="mt-8 rounded-2xl border border-[#e8e6e1] bg-white p-4 sm:p-5">
+                                <p className="font-geist m-0 text-[15px] leading-6 font-500 text-ink-text">
+                                    Need a child or baby seat?
+                                </p>
+                                <p className="font-geist mt-1 m-0 text-[14px] leading-5 text-muted">
+                                    Select one if you need it for this trip — complimentary when requested.
+                                </p>
+                                <div
+                                    role="radiogroup"
+                                    aria-label="Child or baby seat"
+                                    className="mt-4 flex flex-wrap gap-2"
+                                >
+                                    {SEAT_ADDONS.map((opt) => {
+                                        const on = opt.id === seatAddon;
+                                        return (
+                                            <label
+                                                key={opt.id}
+                                                className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-4 py-2 text-[14px] transition ${
+                                                    on
+                                                        ? 'border-wine-700 bg-wine-50 text-wine-800 shadow-[0_0_0_1px_#5b0520]'
+                                                        : 'border-[#e0ddd6] bg-white text-ink-text hover:border-[#c9c5bc]'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="seat-addon"
+                                                    className="sr-only"
+                                                    value={opt.id}
+                                                    checked={on}
+                                                    onChange={() => selectSeatAddon(opt.id)}
+                                                />
+                                                <span
+                                                    className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                                        on
+                                                            ? 'border-wine-700'
+                                                            : 'border-[#c9c5bc]'
+                                                    }`}
+                                                    aria-hidden="true"
+                                                >
+                                                    <span
+                                                        className={`h-2 w-2 rounded-full transition ${
+                                                            on ? 'bg-wine-700' : 'bg-transparent'
+                                                        }`}
+                                                    />
+                                                </span>
+                                                {opt.label}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </section>
 
@@ -423,7 +502,16 @@ export default function Booking() {
                                                                 className="sr-only"
                                                                 value={opt.id}
                                                                 checked={on}
-                                                                onChange={() => setSeatingId(opt.id)}
+                                                                onChange={() => {
+                                                                    setSeatingId(opt.id);
+                                                                    if (opt.id === 'child_seat_asset') {
+                                                                        setSeatAddon('child_seat');
+                                                                    } else if (opt.id === 'baby_seat_asset') {
+                                                                        setSeatAddon('baby_seat');
+                                                                    } else {
+                                                                        setSeatAddon('none');
+                                                                    }
+                                                                }}
                                                             />
                                                             {opt.label}
                                                         </label>

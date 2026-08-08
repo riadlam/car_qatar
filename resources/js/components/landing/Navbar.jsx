@@ -23,6 +23,21 @@ const BUSINESS = [
     { label: 'Strategic partnerships', href: '/strategic-partnerships' },
 ];
 
+const EXPLORE_QATAR = [
+    { label: 'Iconic places in Qatar', href: '/iconic-places' },
+    { label: 'Hotels', href: '/hotels' },
+    { label: 'Malls and shoppings', href: '/malls' },
+    { label: 'Beaches and resorts', href: '/beaches' },
+    { label: 'Restaurants & Business Lunch', href: '/restaurants' },
+];
+
+const CONTACT_US = [
+    { label: 'Call us', href: '#' },
+    { label: 'WhatsApp', href: '#' },
+    { label: 'Leave a message', href: '#' },
+    { label: 'Email', href: '#' },
+];
+
 const LANGS = [{ label: 'English (US)', href: '#' }];
 
 function Chevron({ open }) {
@@ -213,16 +228,17 @@ export default function Navbar() {
                     <ul className="m-0 flex list-none items-center gap-1 p-0 xl:gap-2">
                         <li>
                             <a
-                                href="/"
+                                href="/#book"
                                 className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
                                     light
                                         ? 'text-ink-text/85 hover:text-ink-text'
                                         : 'text-white/90 hover:text-white'
                                 }`}
                             >
-                                Home
+                                Book
                             </a>
                         </li>
+                        <NavDropdown label="Explore Qatar" items={EXPLORE_QATAR} light={light} />
                         <NavDropdown label="For business" items={BUSINESS} light={light} />
                         <li>
                             <a
@@ -248,6 +264,7 @@ export default function Navbar() {
                                 Help
                             </a>
                         </li>
+                        <NavDropdown label="Contact us" items={CONTACT_US} light={light} />
                         <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
                         <li className="ml-1">
                             <Link
@@ -346,14 +363,15 @@ export default function Navbar() {
                         <ul className="flex max-h-[calc(100svh-72px)] flex-col overflow-y-auto px-4 py-4 sm:px-6">
                             <li>
                                 <a
-                                    href="/"
+                                    href="/#book"
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    Home
+                                    Book
                                 </a>
                             </li>
                             {[
+                                { key: 'explore', label: 'Explore Qatar', items: EXPLORE_QATAR },
                                 { key: 'business', label: 'For business', items: BUSINESS },
                             ].map((group) => (
                                 <li key={group.key} className="border-b border-ink-text/8">
@@ -410,6 +428,45 @@ export default function Navbar() {
                                     Help
                                 </a>
                             </li>
+                            {[
+                                { key: 'contact', label: 'Contact us', items: CONTACT_US },
+                            ].map((group) => (
+                                <li key={group.key} className="border-b border-ink-text/8">
+                                    <button
+                                        type="button"
+                                        className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
+                                        onClick={() =>
+                                            setMobileAcc(mobileAcc === group.key ? null : group.key)
+                                        }
+                                        aria-expanded={mobileAcc === group.key}
+                                    >
+                                        {group.label}
+                                        <Chevron open={mobileAcc === group.key} />
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {mobileAcc === group.key && (
+                                            <motion.ul
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden pb-2"
+                                            >
+                                                {group.items.map((item) => (
+                                                    <li key={item.label}>
+                                                        <a
+                                                            href={item.href}
+                                                            onClick={() => setOpen(false)}
+                                                            className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
+                                                        >
+                                                            {item.label}
+                                                        </a>
+                                                    </li>
+                                                ))}
+                                            </motion.ul>
+                                        )}
+                                    </AnimatePresence>
+                                </li>
+                            ))}
                             <li>
                                 <Link
                                     to="/journeys"

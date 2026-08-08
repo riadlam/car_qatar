@@ -1,11 +1,11 @@
-import { VEHICLES } from './bookingVehicles';
+import { VEHICLE_CATALOG } from './bookingVehicles';
 
 export const JOURNEYS_KEY = 'almajd_journeys';
 
 const CDN = 'https://service-catalog-assets.blacklane.com/Service+Catalog+Assets';
 
 function vehicleMeta(id) {
-    const v = VEHICLES.find((x) => x.id === id) || VEHICLES[0];
+    const v = VEHICLE_CATALOG.find((x) => x.id === id) || VEHICLE_CATALOG[0];
     return {
         vehicle_id: v.id,
         vehicle: v.name,
@@ -378,8 +378,8 @@ export function getAllJourneys() {
         actions: j.actions || (j.status === 'upcoming' ? ['details', 'edit'] : ['details', 'rebook']),
         vehicle_image:
             j.vehicle_image ||
-            VEHICLES.find((v) => v.id === j.vehicle_id || v.name === j.vehicle)?.main?.sm ||
-            `${CDN}/Business+Class/Main/Desktop_Web_Business_Class_Main%402x.png`,
+            VEHICLE_CATALOG.find((v) => v.id === j.vehicle_id || v.name === j.vehicle)?.main?.sm ||
+            `${CDN}/Business+Van/Main/Desktop_Web_Van_Class_Main%402x.png`,
         lat: j.lat || 36.7538,
         lng: j.lng || 3.0588,
     }));

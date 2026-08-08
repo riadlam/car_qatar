@@ -96,6 +96,9 @@ export default function CheckoutMobile({
     cards,
     notes,
     setNotes,
+    preferredLanguage = '',
+    setPreferredLanguage,
+    preferredLanguages = [],
     canBook,
     booking,
     onBook,
@@ -108,6 +111,7 @@ export default function CheckoutMobile({
 }) {
     const [editOpen, setEditOpen] = useState(false);
     const [notesOpen, setNotesOpen] = useState(false);
+    const [langOpen, setLangOpen] = useState(false);
     const [cardsOpen, setCardsOpen] = useState(false);
     const [offerOpen, setOfferOpen] = useState(false);
     const [offerCode, setOfferCode] = useState('');
@@ -263,7 +267,7 @@ export default function CheckoutMobile({
                     <IconChevronDown />
                 </button>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <button
                         type="button"
                         onClick={() => setNotesOpen((v) => !v)}
@@ -277,6 +281,22 @@ export default function CheckoutMobile({
                     </button>
                     <button
                         type="button"
+                        onClick={() => setLangOpen((v) => !v)}
+                        className="font-geist inline-flex cursor-pointer items-center gap-1 text-[14px] font-500 text-ink-text"
+                    >
+                        Language
+                        {preferredLanguage ? (
+                            <span className="rounded-full bg-wine-50 px-2 py-0.5 text-[12px] text-wine-800">
+                                {preferredLanguages.find((l) => l.id === preferredLanguage)?.label ||
+                                    preferredLanguage}
+                            </span>
+                        ) : null}
+                        <span className={`transition ${langOpen ? 'rotate-180' : ''}`}>
+                            <IconChevronDown />
+                        </span>
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => setOfferOpen(true)}
                         className="font-geist inline-flex cursor-pointer items-center gap-1 text-[14px] font-500 text-ink-text"
                     >
@@ -284,6 +304,54 @@ export default function CheckoutMobile({
                         {appliedOffer ? appliedOffer : 'Apply promotion'}
                     </button>
                 </div>
+
+                {langOpen && setPreferredLanguage && (
+                    <div
+                        role="radiogroup"
+                        aria-label="Preferred chauffeur language"
+                        className="mt-3 flex flex-wrap gap-2"
+                    >
+                        <label
+                            className={`font-geist inline-flex min-h-9 cursor-pointer items-center rounded-full border px-3 py-1.5 text-[13px] ${
+                                preferredLanguage === ''
+                                    ? 'border-wine-700 bg-wine-50 text-wine-800'
+                                    : 'border-[#e0ddd6] bg-white text-ink-text'
+                            }`}
+                        >
+                            <input
+                                type="radio"
+                                name="preferred-language-mobile"
+                                className="sr-only"
+                                checked={preferredLanguage === ''}
+                                onChange={() => setPreferredLanguage('')}
+                            />
+                            No preference
+                        </label>
+                        {preferredLanguages.map((lang) => {
+                            const on = preferredLanguage === lang.id;
+                            return (
+                                <label
+                                    key={lang.id}
+                                    title={lang.name}
+                                    className={`font-geist inline-flex min-h-9 cursor-pointer items-center rounded-full border px-3 py-1.5 text-[13px] ${
+                                        on
+                                            ? 'border-wine-700 bg-wine-50 text-wine-800'
+                                            : 'border-[#e0ddd6] bg-white text-ink-text'
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="preferred-language-mobile"
+                                        className="sr-only"
+                                        checked={on}
+                                        onChange={() => setPreferredLanguage(lang.id)}
+                                    />
+                                    {lang.label}
+                                </label>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {notesOpen && (
                     <textarea

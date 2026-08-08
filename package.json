@@ -25,8 +25,10 @@
         "motion": "^12.42.2",
         "react": "^19.2.7",
         "react-credit-cards-2": "^1.2.0",
+        "react-datepicker": "^9.1.0",
         "react-dom": "^19.2.7",
         "react-international-phone": "^4.8.0",
-        "react-router-dom": "^7.18.1"
+        "react-router-dom": "^7.18.1",
+        "react-select": "^5.10.2"
     }
 }

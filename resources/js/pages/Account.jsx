@@ -5,8 +5,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { useAuth } from '../context/AuthContext';
+import { PREFERRED_LANGUAGES } from '../data/languages';
 
-const TITLES = ['Mr.', 'Mrs.'];
+const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Mx.'];
 const LANGUAGES = [
     { value: 'en', label: 'English' },
     { value: 'fr', label: 'Français' },
@@ -111,6 +112,9 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save' 
 }
 
 function displayName(user) {
+    if (user?.account_type === 'company') {
+        return user.company || user.name || '—';
+    }
     const parts = [user?.title, user?.first_name || user?.name, user?.last_name]
         .filter(Boolean)
         .join(' ')
@@ -193,14 +197,22 @@ export default function Account() {
                     <div className="mt-8 rounded-2xl border border-[#e8e8ea] bg-white px-5 sm:px-8">
                         <Section title="Personal information">
                             <Row
+                                label="Account type"
+                                value={
+                                    user.account_type === 'company' ? 'Company' : 'Individual'
+                                }
+                            />
+                            <Row
                                 label="Name"
                                 value={displayName(user)}
                                 onEdit={() =>
-                                    openEdit('name', {
-                                        title: user.title || 'Mr.',
-                                        first_name: user.first_name || '',
-                                        last_name: user.last_name || '',
-                                    })
+                                    user.account_type === 'company'
+                                        ? openEdit('company', { company: user.company || '' })
+                                        : openEdit('name', {
+                                              title: user.title || 'Mr.',
+                                              first_name: user.first_name || '',
+                                              last_name: user.last_name || '',
+                                          })
                                 }
                             />
                             <Row
@@ -208,10 +220,28 @@ export default function Account() {
                                 value={user.phone || '—'}
                                 onEdit={() => openEdit('phone', { phone: user.phone || '' })}
                             />
+                            {user.account_type === 'company' ? (
+                                <Row
+                                    label="Company"
+                                    value={user.company || '—'}
+                                    onEdit={() =>
+                                        openEdit('company', { company: user.company || '' })
+                                    }
+                                />
+                            ) : null}
                             <Row
-                                label="Company"
-                                value={user.company || '—'}
-                                onEdit={() => openEdit('company', { company: user.company || '' })}
+                                label="Preferred language"
+                                value={
+                                    PREFERRED_LANGUAGES.find(
+                                        (l) => l.id === user.preferred_language,
+                                    )?.name ||
+                                    (user.preferred_language ? user.preferred_language : '—')
+                                }
+                                onEdit={() =>
+                                    openEdit('preferred_language', {
+                                        preferred_language: user.preferred_language || '',
+                                    })
+                                }
                             />
                             <Row
                                 label="Street address"
@@ -429,6 +459,60 @@ export default function Account() {
                     value={draft.company}
                     onChange={(e) => setDraft({ ...draft, company: e.target.value })}
                 />
+            </EditModal>
+
+            {/* Preferred language */}
+            <EditModal
+                open={edit === 'preferred_language'}
+                title="Preferred language"
+                onClose={closeEdit}
+                onSave={() => {
+                    updateUser({ preferred_language: draft.preferred_language || '' });
+                    closeEdit();
+                }}
+            >
+                <div role="radiogroup" aria-label="Preferred language" className="flex flex-wrap gap-2">
+                    <label
+                        className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[14px] ${
+                            !draft.preferred_language
+                                ? 'border-wine-700 bg-wine-50 text-wine-800'
+                                : 'border-[#e0ddd6] bg-white text-ink-text'
+                        }`}
+                    >
+                        <input
+                            type="radio"
+                            name="acct-pref-lang"
+                            className="sr-only"
+                            checked={!draft.preferred_language}
+                            onChange={() => setDraft({ ...draft, preferred_language: '' })}
+                        />
+                        No preference
+                    </label>
+                    {PREFERRED_LANGUAGES.map((lang) => {
+                        const on = draft.preferred_language === lang.id;
+                        return (
+                            <label
+                                key={lang.id}
+                                className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[14px] ${
+                                    on
+                                        ? 'border-wine-700 bg-wine-50 text-wine-800'
+                                        : 'border-[#e0ddd6] bg-white text-ink-text'
+                                }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="acct-pref-lang"
+                                    className="sr-only"
+                                    checked={on}
+                                    onChange={() =>
+                                        setDraft({ ...draft, preferred_language: lang.id })
+                                    }
+                                />
+                                {lang.label}
+                            </label>
+                        );
+                    })}
+                </div>
             </EditModal>
 
             {/* Address */}

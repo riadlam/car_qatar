@@ -1,0 +1,57 @@
+/** Hotels in Qatar — local photos + hotel destinations for the scheduler */
+
+export const HOTEL_IMG = {
+    hero: '/images/hotels/hero.jpg',
+    fourSeasons: '/images/hotels/four-seasons.jpg',
+    sharq: '/images/hotels/sharq.jpg',
+    mandarin: '/images/hotels/mandarin.jpg',
+    stRegis: '/images/hotels/st-regis.jpg',
+    wDoha: '/images/hotels/w-doha.jpg',
+    marriott: '/images/hotels/marriott.jpg',
+    intercontinental: '/images/hotels/intercontinental.jpg',
+    ritz: '/images/hotels/ritz.jpg',
+    marsaMalaz: '/images/hotels/marsa-malaz.jpg',
+    bananaIsland: '/images/hotels/banana-island.jpg',
+    seoLobby: '/images/hotels/seo-lobby.jpg',
+    seoTransfer: '/images/hotels/seo-transfer.jpg',
+    seoAirport: '/images/hotels/seo-airport.jpg',
+};
+
+/** Hotels shown in the hero appointment scheduler */
+export const HOTEL_DESTINATIONS = [
+    { id: 'sheraton-grand', label: 'Sheraton Grand Doha', area: 'West Bay' },
+    { id: 'four-seasons', label: 'Four Seasons Hotel Doha', area: 'West Bay' },
+    { id: 'ritz', label: 'The Ritz-Carlton, Doha', area: 'West Bay Lagoon' },
+    { id: 'raffles', label: 'Raffles Doha', area: 'West Bay' },
+    { id: 'fairmont', label: 'Fairmont Doha', area: 'West Bay' },
+    { id: 'mandarin', label: 'Mandarin Oriental, Doha', area: 'MIA Park' },
+    { id: 'st-regis', label: 'The St. Regis Doha', area: 'West Bay' },
+    { id: 'w-doha', label: 'W Doha', area: 'West Bay' },
+    { id: 'intercontinental-beach', label: 'InterContinental Doha Beach & Spa', area: 'West Bay' },
+    { id: 'intercontinental-city', label: 'InterContinental Doha The City', area: 'West Bay' },
+    { id: 'grand-hyatt', label: 'Grand Hyatt Doha', area: 'West Bay' },
+    { id: 'hyatt-regency-oryx', label: 'Hyatt Regency Oryx Doha', area: 'Airport Road' },
+    { id: 'hilton-doha', label: 'Hilton Doha', area: 'West Bay' },
+    { id: 'hilton-pearl', label: 'Hilton Doha The Pearl', area: 'The Pearl' },
+    { id: 'marriott-marquis', label: 'Marriott Marquis City Center Doha', area: 'West Bay' },
+    { id: 'le-royal-meridien', label: 'Le Royal Méridien Doha', area: 'West Bay' },
+    { id: 'pullman-west-bay', label: 'Pullman Doha West Bay', area: 'West Bay' },
+    { id: 'banyan-tree', label: 'Banyan Tree Doha', area: 'West Bay' },
+    { id: 'the-ned', label: 'The Ned Doha', area: 'Msheireb' },
+    { id: 'sharq', label: 'Sharq Village & Spa, a Ritz-Carlton Hotel', area: 'Al Corniche' },
+    { id: 'al-messila', label: 'Al Messila, a Luxury Collection Resort & Spa', area: 'Al Messila' },
+    { id: 'sealine-resort', label: 'Sealine Beach Resort', area: 'Mesaieed' },
+    { id: 'banana-island', label: 'Banana Island Resort Doha by Anantara', area: 'Banana Island' },
+    { id: 'radisson-blu', label: 'Radisson Blu Doha', area: 'Salwa Road' },
+    { id: 'millennium', label: 'Millennium Hotel Doha', area: 'Bin Mahmoud' },
+    { id: 'la-cigale', label: 'La Cigale Hotel Doha', area: 'Bin Mahmoud' },
+    { id: 'steigenberger', label: 'Steigenberger Hotel Doha', area: 'Al Sadd' },
+    { id: 'dusit', label: 'Dusit Doha Hotel', area: 'West Bay' },
+    { id: 'dusit-d2-salwa', label: 'DusitD2 Salwa Doha', area: 'Salwa Road' },
+    { id: 'the-curve', label: 'The Curve Hotel', area: 'Lusail' },
+    { id: 'fraser-suites', label: 'Fraser Suites Doha', area: 'West Bay' },
+    { id: 'kempinski-residences', label: 'Kempinski Residences & Suites Doha', area: 'West Bay' },
+    { id: 'somerset-west-bay', label: 'Somerset West Bay Suites', area: 'West Bay' },
+];
+
+export const BOOK_HREF = '/#book';

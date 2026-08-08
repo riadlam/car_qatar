@@ -11,6 +11,7 @@ import { findGuestById } from '../data/bookingGuests';
 import { addJourney } from '../data/journeys';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
+import { PREFERRED_LANGUAGES } from '../data/languages';
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -66,7 +67,7 @@ export default function Checkout() {
     const navigate = useNavigate();
     const { isAuthenticated, loading, user, updateUser, setReturnTo } = useAuth();
 
-    const vehicleId = params.get('vehicle') || 'business';
+    const vehicleId = params.get('vehicle') || 'van';
     const vehicle = useMemo(
         () => VEHICLES.find((v) => v.id === vehicleId) || VEHICLES[0],
         [vehicleId],
@@ -96,6 +97,7 @@ export default function Checkout() {
     const [booking, setBooking] = useState(false);
     const [done, setDone] = useState(false);
     const [notes, setNotes] = useState('');
+    const [preferredLanguage, setPreferredLanguage] = useState('');
     const [reference, setReference] = useState('');
     const [appliedOffer, setAppliedOffer] = useState('');
     const [billing, setBilling] = useState({
@@ -207,6 +209,13 @@ export default function Checkout() {
                     ? guestDisplayName(selectedGuest)
                     : 'For myself',
                 for_guest: Boolean(selectedGuest),
+                preferred_language: preferredLanguage
+                    ? PREFERRED_LANGUAGES.find((l) => l.id === preferredLanguage)?.name ||
+                      preferredLanguage
+                    : '',
+                preferred_language_code: preferredLanguage || '',
+                notes: notes || '',
+                seat: params.get('seat') || '',
                 actions: ['details', 'edit', 'cancel'],
                 created_at: new Date().toISOString(),
             };
@@ -273,6 +282,9 @@ export default function Checkout() {
                 cards={cards}
                 notes={notes}
                 setNotes={setNotes}
+                preferredLanguage={preferredLanguage}
+                setPreferredLanguage={setPreferredLanguage}
+                preferredLanguages={PREFERRED_LANGUAGES}
                 canBook={Boolean(selectedCardId)}
                 booking={booking}
                 onBook={onBook}
@@ -518,7 +530,93 @@ export default function Checkout() {
                                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 text-ink-text">
                                     Pickup preferences
                                 </h2>
+
                                 <div className="mt-5">
+                                    <p className="font-geist m-0 text-[14px] text-muted">
+                                        Preferred language{' '}
+                                        <span className="text-muted/80">(optional)</span>
+                                    </p>
+                                    <p className="font-geist mt-1 m-0 text-[13px] leading-5 text-muted">
+                                        Language you&apos;d like your chauffeur to speak with you.
+                                    </p>
+                                    <div
+                                        role="radiogroup"
+                                        aria-label="Preferred chauffeur language"
+                                        className="mt-3 flex flex-wrap gap-2"
+                                    >
+                                        <label
+                                            className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[13px] transition sm:text-[14px] ${
+                                                preferredLanguage === ''
+                                                    ? 'border-wine-700 bg-wine-50 text-wine-800 shadow-[0_0_0_1px_#5b0520]'
+                                                    : 'border-[#e0ddd6] bg-white text-ink-text hover:border-[#c9c5bc]'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="preferred-language"
+                                                className="sr-only"
+                                                value=""
+                                                checked={preferredLanguage === ''}
+                                                onChange={() => setPreferredLanguage('')}
+                                            />
+                                            <span
+                                                className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                                    preferredLanguage === ''
+                                                        ? 'border-wine-700'
+                                                        : 'border-[#c9c5bc]'
+                                                }`}
+                                                aria-hidden="true"
+                                            >
+                                                <span
+                                                    className={`h-2 w-2 rounded-full ${
+                                                        preferredLanguage === ''
+                                                            ? 'bg-wine-700'
+                                                            : 'bg-transparent'
+                                                    }`}
+                                                />
+                                            </span>
+                                            No preference
+                                        </label>
+                                        {PREFERRED_LANGUAGES.map((lang) => {
+                                            const on = preferredLanguage === lang.id;
+                                            return (
+                                                <label
+                                                    key={lang.id}
+                                                    title={lang.name}
+                                                    className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[13px] transition sm:text-[14px] ${
+                                                        on
+                                                            ? 'border-wine-700 bg-wine-50 text-wine-800 shadow-[0_0_0_1px_#5b0520]'
+                                                            : 'border-[#e0ddd6] bg-white text-ink-text hover:border-[#c9c5bc]'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="preferred-language"
+                                                        className="sr-only"
+                                                        value={lang.id}
+                                                        checked={on}
+                                                        onChange={() => setPreferredLanguage(lang.id)}
+                                                    />
+                                                    <span
+                                                        className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                                                            on ? 'border-wine-700' : 'border-[#c9c5bc]'
+                                                        }`}
+                                                        aria-hidden="true"
+                                                    >
+                                                        <span
+                                                            className={`h-2 w-2 rounded-full ${
+                                                                on ? 'bg-wine-700' : 'bg-transparent'
+                                                            }`}
+                                                        />
+                                                    </span>
+                                                    <span aria-label={lang.name}>{lang.label}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="mt-6">
                                     <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-notes">
                                         Additional details (optional)
                                     </label>

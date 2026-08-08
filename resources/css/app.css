@@ -179,6 +179,20 @@
         -webkit-backdrop-filter: blur(16px);
     }
 
+    /* Light glass — same structure as home booking, ink theme for Explore pages */
+    .bl-glass-light {
+        background-color: rgba(255, 255, 255, 0.88);
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 90%),
+            radial-gradient(circle at 80% 200%, rgba(91, 5, 32, 0.06), rgba(255, 255, 255, 0) 80%),
+            linear-gradient(rgba(251, 248, 242, 0.55));
+        box-shadow:
+            0 2px 8px 0 rgba(6, 10, 13, 0.08),
+            inset 4px 4px 8px rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
     /* Mobile nav hamburger — frosted glass (dark over hero / light after scroll) */
     .nav-burger,
     .nav-user {
@@ -886,3 +900,98 @@ body.menu-open {
 .almajd-ml-car {
     pointer-events: none;
 }
+
+/* Explore Qatar appointment scheduler — home-widget underline fields, light theme */
+.scheduler-datepicker .react-datepicker-wrapper {
+    display: block;
+    width: 100%;
+}
+
+.scheduler-input-underline {
+    font-family: inherit;
+    width: 100%;
+    min-width: 0;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: 0.15px;
+    color: #0f1319;
+    outline: none;
+    cursor: pointer;
+}
+
+.scheduler-input-underline::placeholder {
+    color: rgba(15, 19, 25, 0.35);
+}
+
+.scheduler-field--invalid > div {
+    border-bottom-color: #b8446b !important;
+}
+
+.react-datepicker-popper {
+    z-index: 70 !important;
+}
+
+.almajd-calendar.react-datepicker {
+    font-family: inherit;
+    border: 1px solid #e8e8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(15, 19, 25, 0.16);
+}
+
+.almajd-calendar .react-datepicker__header {
+    background: #fbf8f2;
+    border-bottom: 1px solid #e8e8ea;
+    padding-top: 12px;
+}
+
+.almajd-calendar .react-datepicker__current-month,
+.almajd-calendar .react-datepicker-time__header,
+.almajd-calendar .react-datepicker__day-name {
+    color: #0f1319;
+    font-weight: 500;
+}
+
+.almajd-calendar .react-datepicker__day--selected,
+.almajd-calendar .react-datepicker__day--keyboard-selected,
+.almajd-calendar .react-datepicker__time-list-item--selected {
+    background: #5b0520 !important;
+    color: #fff !important;
+}
+
+.almajd-calendar .react-datepicker__day:hover,
+.almajd-calendar .react-datepicker__time-list-item:hover {
+    background: rgba(91, 5, 32, 0.1) !important;
+}
+
+.almajd-calendar .react-datepicker__day--today {
+    font-weight: 600;
+    color: #5b0520;
+}
+
+.almajd-calendar .react-datepicker__navigation-icon::before {
+    border-color: #0f1319;
+}
+
+.almajd-calendar .react-datepicker__time-container,
+.almajd-calendar .react-datepicker__time,
+.almajd-calendar .react-datepicker__time-box {
+    border-color: #e8e8ea;
+}
+
+.almajd-select__menu {
+    font-family: inherit;
+}
+
+.almajd-select__control {
+    min-height: 28px !important;
+}
+
+.almajd-select__control--is-focused {
+    box-shadow: none !important;
+}
+
