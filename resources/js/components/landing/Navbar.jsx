@@ -10,17 +10,12 @@ const LIGHT_TOP_PATHS = [
     '/corporations',
     '/travel-agencies',
     '/strategic-partnerships',
+    '/business-solutions',
+    '/about-us',
     '/help',
     '/account',
     '/journeys',
     '/chauffeur',
-];
-
-const BUSINESS = [
-    { label: 'Overview', href: '/business' },
-    { label: 'Corporations', href: '/corporations' },
-    { label: 'Travel agencies', href: '/travel-agencies' },
-    { label: 'Strategic partnerships', href: '/strategic-partnerships' },
 ];
 
 const EXPLORE_QATAR = [
@@ -239,32 +234,31 @@ export default function Navbar() {
                             </a>
                         </li>
                         <NavDropdown label="Explore Qatar" items={EXPLORE_QATAR} light={light} />
-                        <NavDropdown label="For business" items={BUSINESS} light={light} />
                         <li>
                             <a
-                                href="/partners"
+                                href="/business-solutions"
                                 className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
                                     light
                                         ? 'text-ink-text/85 hover:text-ink-text'
                                         : 'text-white/90 hover:text-white'
                                 }`}
                             >
-                                For chauffeurs
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href="/help"
-                                className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
-                                    light
-                                        ? 'text-ink-text/85 hover:text-ink-text'
-                                        : 'text-white/90 hover:text-white'
-                                }`}
-                            >
-                                Help
+                                Business solutions
                             </a>
                         </li>
                         <NavDropdown label="Contact us" items={CONTACT_US} light={light} />
+                        <li>
+                            <a
+                                href="/about-us"
+                                className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
+                                    light
+                                        ? 'text-ink-text/85 hover:text-ink-text'
+                                        : 'text-white/90 hover:text-white'
+                                }`}
+                            >
+                                About us
+                            </a>
+                        </li>
                         <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
                         <li className="ml-1">
                             <Link
@@ -277,7 +271,7 @@ export default function Navbar() {
                                 }`}
                             >
                                 <UserIcon />
-                                Sign in
+                                Sign in / Sign up
                             </Link>
                         </li>
                         <AnimatePresence initial={false}>
@@ -316,12 +310,13 @@ export default function Navbar() {
                     </AnimatePresence>
                     <Link
                         to={loginHref}
-                        aria-label="Sign in"
-                        className={`nav-user flex h-11 w-11 items-center justify-center rounded-full border ${
+                        aria-label="Sign in or sign up"
+                        className={`nav-user font-geist flex h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[13px] font-500 whitespace-nowrap ${
                             light ? 'nav-user--light border-ink-text/12' : 'nav-user--dark border-white/25'
                         }`}
                     >
                         <UserIcon />
+                        <span>Sign in / Sign up</span>
                     </Link>
                     <button
                         type="button"
@@ -372,7 +367,6 @@ export default function Navbar() {
                             </li>
                             {[
                                 { key: 'explore', label: 'Explore Qatar', items: EXPLORE_QATAR },
-                                { key: 'business', label: 'For business', items: BUSINESS },
                             ].map((group) => (
                                 <li key={group.key} className="border-b border-ink-text/8">
                                     <button
@@ -412,20 +406,11 @@ export default function Navbar() {
                             ))}
                             <li>
                                 <a
-                                    href="/partners"
+                                    href="/business-solutions"
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    For chauffeurs
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="/help"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
-                                >
-                                    Help
+                                    Business solutions
                                 </a>
                             </li>
                             {[
@@ -468,6 +453,15 @@ export default function Navbar() {
                                 </li>
                             ))}
                             <li>
+                                <a
+                                    href="/about-us"
+                                    onClick={() => setOpen(false)}
+                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                >
+                                    About us
+                                </a>
+                            </li>
+                            <li>
                                 <Link
                                     to="/journeys"
                                     onClick={() => setOpen(false)}
@@ -501,7 +495,7 @@ export default function Navbar() {
                                     className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
                                 >
                                     <UserIcon />
-                                    Sign in
+                                    Sign in / Sign up
                                 </Link>
                                 <a
                                     href="/#book"

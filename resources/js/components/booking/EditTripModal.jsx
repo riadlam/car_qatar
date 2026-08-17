@@ -1,17 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { HOUR_OPTIONS as DURATION_OPTIONS } from '../../data/bookingServices';
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
-
-const DURATION_OPTIONS = [
-    { value: '2', label: '2 hours (80 km included)' },
-    { value: '3', label: '3 hours (100 km included)' },
-    { value: '4', label: '4 hours (120 km included)' },
-    { value: '6', label: '6 hours (160 km included)' },
-    { value: '8', label: '8 hours (200 km included)' },
-    { value: '12', label: '12 hours (250 km included)' },
-];
 
 /**
  * Edit trip sheet — same fields as home booking widget (light theme for checkout).

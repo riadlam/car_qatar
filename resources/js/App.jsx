@@ -22,6 +22,8 @@ import JourneyRide from './pages/JourneyRide';
 import ChauffeurPortal from './pages/ChauffeurPortal';
 import Booking from './pages/Booking';
 import Checkout from './pages/Checkout';
+import BusinessSolutions from './pages/BusinessSolutions';
+import AboutUs from './pages/AboutUs';
 
 function GuestRoute({ children }) {
     const { isAuthenticated, loading, consumeReturnTo } = useAuth();
@@ -64,6 +66,8 @@ export default function App() {
                     <Route path="/beaches" element={<Beaches />} />
                     <Route path="/restaurants" element={<Restaurants />} />
                     <Route path="/help" element={<Help />} />
+                    <Route path="/business-solutions" element={<BusinessSolutions />} />
+                    <Route path="/about-us" element={<AboutUs />} />
                     <Route
                         path="/login"
                         element={

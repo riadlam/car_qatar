@@ -12,6 +12,7 @@ import { addJourney } from '../data/journeys';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
+import { durationLabel } from '../data/bookingServices';
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -189,13 +190,13 @@ export default function Checkout() {
                 mode: trip.mode === 'hourly' ? 'hourly' : 'transfer',
                 mode_label: trip.mode === 'hourly' ? 'Hourly hire' : 'City transfer',
                 pickup: trip.pickup,
-                dropoff: trip.mode === 'hourly' ? `Hourly · ${trip.duration}h` : trip.dropoff,
+                dropoff: trip.mode === 'hourly' ? `Hourly · ${durationLabel(trip.duration)}` : trip.dropoff,
                 date: trip.date,
                 time: trip.time,
                 date_label: dateLabel,
                 time_label: `${pickupTime} ${pickupPeriod}`,
                 arrive_label: trip.mode === 'hourly' ? `Until end of hire` : undefined,
-                duration_label: trip.mode === 'hourly' ? `${trip.duration} hours` : undefined,
+                duration_label: trip.mode === 'hourly' ? durationLabel(trip.duration) : undefined,
                 vehicle_id: vehicle.id,
                 vehicle: vehicle.name,
                 vehicle_similar: vehicle.similar,

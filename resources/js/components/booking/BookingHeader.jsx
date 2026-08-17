@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from '../landing/Logo';
+import { durationLabel } from '../../data/bookingServices';
 
 const SERVICES = [
     { label: 'City-to-City rides', href: '/#services' },
@@ -12,21 +13,6 @@ const SERVICES = [
     { label: 'Limousine service', href: '/#services' },
 ];
 
-const BUSINESS = [
-    { label: 'Overview', href: '/business' },
-    { label: 'Corporations', href: '/corporations' },
-    { label: 'Travel agencies', href: '/travel-agencies' },
-    { label: 'Strategic partnerships', href: '/strategic-partnerships' },
-];
-
-const DURATION_LABELS = {
-    '2': '2 hours (80 km included)',
-    '3': '3 hours (100 km included)',
-    '4': '4 hours (120 km included)',
-    '6': '6 hours (160 km included)',
-    '8': '8 hours (200 km included)',
-    '12': '12 hours (250 km included)',
-};
 
 function Chevron({ open }) {
     return (
@@ -145,10 +131,7 @@ export default function BookingHeader() {
         const pickup = params.get('pickup') || 'Embassy Of Algeria';
         const dropoff = params.get('dropoff') || '';
         const duration = params.get('duration') || '2';
-        const destination =
-            mode === 'transfer' && dropoff
-                ? dropoff
-                : DURATION_LABELS[duration] || DURATION_LABELS['2'];
+        const destination = mode === 'transfer' && dropoff ? dropoff : durationLabel(duration);
         return {
             pickup,
             destination,
@@ -237,7 +220,6 @@ export default function BookingHeader() {
                         <ul className="mx-auto flex max-h-[calc(100svh-72px)] max-w-lg flex-col overflow-y-auto px-4 py-4 sm:px-6 lg:max-w-xl">
                             {[
                                 { key: 'services', label: 'Our services', items: SERVICES },
-                                { key: 'business', label: 'For business', items: BUSINESS },
                             ].map((group) => (
                                 <li key={group.key} className="border-b border-ink-text/8">
                                     <button
@@ -275,20 +257,20 @@ export default function BookingHeader() {
                             ))}
                             <li>
                                 <a
-                                    href="/partners"
+                                    href="/business-solutions"
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    For chauffeurs
+                                    Business solutions
                                 </a>
                             </li>
                             <li>
                                 <a
-                                    href="/help"
+                                    href="/about-us"
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    Help
+                                    About us
                                 </a>
                             </li>
                             <li className="mt-3 flex flex-col gap-3 pb-2">
@@ -298,7 +280,7 @@ export default function BookingHeader() {
                                     className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
                                 >
                                     <UserIcon />
-                                    Sign in
+                                    Sign in / Sign up
                                 </Link>
                                 <a
                                     href="/#book"

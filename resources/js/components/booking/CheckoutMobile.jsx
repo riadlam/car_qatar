@@ -5,15 +5,7 @@ import RouteMap from './RouteMap';
 import EditTripModal from './EditTripModal';
 import AddGuestModal, { guestDisplayName } from './AddGuestModal';
 import { IconChevronDown, IconPassengers, IconPerson } from './icons';
-
-const DURATION_LABELS = {
-    '2': '2 hours',
-    '3': '3 hours',
-    '4': '4 hours',
-    '6': '6 hours',
-    '8': '8 hours',
-    '12': '12 hours',
-};
+import { durationHours, durationLabel } from '../../data/bookingServices';
 
 function formatLongDate(dateStr) {
     const d = dateStr ? new Date(`${dateStr}T12:00:00`) : new Date();
@@ -136,13 +128,11 @@ export default function CheckoutMobile({
     );
 
     const isHourly = trip.mode === 'hourly';
-    const dropLabel = isHourly
-        ? DURATION_LABELS[trip.duration] || 'By the hour'
-        : trip.dropoff || 'Drop-off';
+    const dropLabel = isHourly ? durationLabel(trip.duration) : trip.dropoff || 'Drop-off';
 
-    const etaMins = isHourly ? Number(trip.duration || 2) * 60 : 50;
+    const etaMins = isHourly ? durationHours(trip.duration) * 60 : 50;
     const arriveTime = addMinutes(trip.time, isHourly ? 0 : etaMins);
-    const etaLabel = isHourly ? DURATION_LABELS[trip.duration] || `${trip.duration}h` : `${etaMins} min`;
+    const etaLabel = isHourly ? durationLabel(trip.duration) : `${etaMins} min`;
 
     const dateLabel = useMemo(() => formatLongDate(trip.date), [trip.date]);
 
