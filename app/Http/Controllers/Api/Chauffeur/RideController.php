@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreChauffeurLocationRequest;
 use App\Http\Resources\ChauffeurRideResource;
 use App\Models\CancellationReason;
-use App\Models\ChauffeurLocation;
 use App\Models\RideAssignment;
-use App\Models\RideEvent;
 use App\Services\Dispatch\DispatchService;
 use App\Services\Tracking\TrackingService;
 use Illuminate\Http\JsonResponse;
@@ -93,78 +91,60 @@ class RideController extends Controller
     {
         $chauffeur = $request->user()->chauffeur;
         $data = $request->validated();
-        $recordedAt = isset($data['recorded_at']) ? now()->parse($data['recorded_at']) : now();
+        $lat = (float) $data['latitude'];
+        $lng = (float) $data['longitude'];
 
-        ChauffeurLocation::query()->create([
-            'chauffeur_id' => $chauffeur->id,
-            'latitude' => $data['latitude'],
-            'longitude' => $data['longitude'],
-            'accuracy' => $data['accuracy'] ?? null,
-            'heading' => $data['heading'] ?? null,
-            'speed' => $data['speed'] ?? null,
-            'recorded_at' => $recordedAt,
-        ]);
+        $assignment = RideAssignment::query()
+            ->where('chauffeur_id', $chauffeur->id)
+            ->where('booking_id', $data['booking_id'] ?? 0)
+            ->whereIn('status', DispatchService::ONGOING)
+            ->with('booking.pickupLocation', 'booking.dropoffLocation', 'booking.stops.location')
+            ->first();
+
+        if (! $assignment?->booking) {
+            return response()->json(['ignored' => true, 'message' => 'No active trip.']);
+        }
+
+        $booking = $assignment->booking;
+        $pickup = $booking->pickupLocation;
+        $dropoff = $this->tracking->dropoffPoint($booking);
+        if (! $this->tracking->shouldAcceptFix(
+            $chauffeur,
+            $lat,
+            $lng,
+            $pickup?->latitude !== null ? (float) $pickup->latitude : null,
+            $pickup?->longitude !== null ? (float) $pickup->longitude : null,
+            $dropoff?->latitude !== null ? (float) $dropoff->latitude : null,
+            $dropoff?->longitude !== null ? (float) $dropoff->longitude : null,
+            $assignment->status,
+        )) {
+            return response()->json(['ignored' => true, 'message' => 'Unmoved.']);
+        }
+
+        $recordedAt = isset($data['recorded_at']) ? now()->parse($data['recorded_at']) : now();
+        $before = $assignment->status;
 
         $chauffeur->forceFill([
-            'current_latitude' => $data['latitude'],
-            'current_longitude' => $data['longitude'],
+            'current_latitude' => $lat,
+            'current_longitude' => $lng,
             'last_location_at' => $recordedAt,
         ])->save();
 
-        $assignment = null;
-        if (! empty($data['booking_id'])) {
-            $assignment = RideAssignment::query()
-                ->where('chauffeur_id', $chauffeur->id)
-                ->where('booking_id', $data['booking_id'])
-                ->with('booking.pickupLocation', 'booking.dropoffLocation')
-                ->first();
-        } else {
-            $assignment = RideAssignment::query()
-                ->where('chauffeur_id', $chauffeur->id)
-                ->whereIn('status', ['en_route', 'arrived', 'in_progress', 'assigned'])
-                ->with('booking.pickupLocation', 'booking.dropoffLocation')
-                ->orderByDesc('assigned_at')
-                ->first();
+        $this->dispatch->applyLocationProgress($assignment, $chauffeur->fresh(), $lat, $lng);
+        $assignment = $assignment->fresh() ?? $assignment;
+
+        if ($assignment->status === $before) {
+            $this->dispatch->broadcastPosition($booking->fresh() ?? $booking, isset($data['heading']) ? (float) $data['heading'] : null);
         }
-
-        if ($assignment?->booking) {
-            $this->dispatch->applyLocationProgress($assignment, $chauffeur->fresh(), (float) $data['latitude'], (float) $data['longitude']);
-            $assignment = $assignment->fresh() ?? $assignment;
-
-            if (in_array($assignment->status, DispatchService::ONGOING, true)) {
-                $this->tracking->refreshAssignmentEta($assignment, $assignment->booking, $chauffeur->fresh());
-            }
-
-            RideEvent::query()->create([
-                'booking_id' => $assignment->booking_id,
-                'ride_assignment_id' => $assignment->id,
-                'chauffeur_id' => $chauffeur->id,
-                'event_type' => 'location_update',
-                'payload' => [
-                    'accuracy' => $data['accuracy'] ?? null,
-                    'heading' => $data['heading'] ?? null,
-                    'speed' => $data['speed'] ?? null,
-                ],
-                'latitude' => $data['latitude'],
-                'longitude' => $data['longitude'],
-                'recorded_at' => $recordedAt,
-            ]);
-
-            $this->dispatch->broadcastPosition($assignment->booking);
-            $this->dispatch->broadcastRideCard($assignment->fresh() ?? $assignment, (int) $chauffeur->id);
-        }
-
-        $this->dispatch->syncChauffeur($chauffeur->fresh());
 
         return response()->json([
             'message' => 'Location saved.',
             'chauffeur' => [
                 'id' => $chauffeur->id,
-                'latitude' => (float) $chauffeur->current_latitude,
-                'longitude' => (float) $chauffeur->current_longitude,
+                'latitude' => $lat,
+                'longitude' => $lng,
                 'last_location_at' => $chauffeur->last_location_at,
             ],
-            'eta_minutes' => $assignment?->fresh()?->eta_minutes,
         ]);
     }
 }

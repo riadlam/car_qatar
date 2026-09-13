@@ -11,6 +11,15 @@ class TrackingService
 {
     public const ARRIVAL_METERS = 5;
 
+    /** Far enough to count as real movement, not GPS jitter. */
+    public const MOVE_METERS = 8;
+
+    /** Ignore tiny noise. A parked van must not stream. */
+    public const JITTER_METERS = 3;
+
+    /** Fastest a moving van may update the live map. */
+    public const LIVE_MIN_SECONDS = 1;
+
     /**
      * Rough road ETA from haversine distance at ~35 km/h average city speed.
      */
@@ -46,6 +55,50 @@ class TrackingService
         }
 
         return $this->haversineKm($lat1, $lng1, $lat2, $lng2) * 1000;
+    }
+
+    /**
+     * Accept a GPS fix only when the van actually moved, or when this fix can advance the trip.
+     */
+    public function shouldAcceptFix(
+        Chauffeur $chauffeur,
+        float $lat,
+        float $lng,
+        ?float $pickupLat,
+        ?float $pickupLng,
+        ?float $dropoffLat,
+        ?float $dropoffLng,
+        ?string $status,
+    ): bool {
+        if ($chauffeur->current_latitude === null || $chauffeur->current_longitude === null) {
+            return true;
+        }
+
+        $moved = $this->metersBetween(
+            (float) $chauffeur->current_latitude,
+            (float) $chauffeur->current_longitude,
+            $lat,
+            $lng,
+        );
+
+        if (in_array($status, ['assigned', 'en_route'], true) && $this->withinMeters($lat, $lng, $pickupLat, $pickupLng)) {
+            return true;
+        }
+
+        if ($status === 'in_progress' && $this->withinMeters($lat, $lng, $dropoffLat, $dropoffLng)) {
+            return true;
+        }
+
+        if ($moved === null || $moved < self::JITTER_METERS) {
+            return false;
+        }
+
+        if ($moved >= self::MOVE_METERS) {
+            return true;
+        }
+
+        return $chauffeur->last_location_at === null
+            || $chauffeur->last_location_at->lte(now()->subSeconds(self::LIVE_MIN_SECONDS));
     }
 
     public function withinMeters(?float $lat1, ?float $lng1, ?float $lat2, ?float $lng2, float $meters = self::ARRIVAL_METERS): bool

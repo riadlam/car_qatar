@@ -9,7 +9,7 @@ import { cancelBooking, getBooking } from '../api/bookings';
 import CancelReasonModal from '../components/journeys/CancelReasonModal';
 import { findJourney, formatMoney } from '../data/journeys';
 import { INCLUDED } from '../data/bookingVehicles';
-import { applyTrackToJourney, bookingToJourney } from '../utils/bookingMappers';
+import { applyPositionToJourney, applyTrackToJourney, bookingToJourney } from '../utils/bookingMappers';
 import { subscribePrivate } from '../echo';
 import Skeleton from '../components/ui/Skeleton';
 
@@ -146,16 +146,18 @@ export default function JourneyRide({ mode = 'details' }) {
                         if (payload.track.progress != null) setTrackingProgress(Number(payload.track.progress));
                     }
                 },
+                BookingPosition: (payload) => {
+                    const position = payload?.position;
+                    if (!position) return;
+                    setJourney((prev) => applyPositionToJourney(prev, position));
+                    if (position.progress != null) setTrackingProgress(Number(position.progress));
+                },
             },
             pull,
         );
 
-        pull();
-        const timer = window.setInterval(pull, 4000);
-
         return () => {
             cancelled = true;
-            if (timer) window.clearInterval(timer);
             leave();
         };
     }, [journey?.id, journey?.api, isAuthenticated]);

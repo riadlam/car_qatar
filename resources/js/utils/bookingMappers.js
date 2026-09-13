@@ -132,7 +132,25 @@ export function bookingToJourney(booking) {
     };
 }
 
-/** Merge a track poll payload into an existing journey object. */
+/** Move the live van from a websocket position without reloading the booking. */
+export function applyPositionToJourney(journey, position) {
+    if (!journey || !position || position.lat == null || position.lng == null) return journey;
+
+    return {
+        ...journey,
+        trip_step: position.trip_step || journey.trip_step,
+        assignment_status: position.assignment_status || journey.assignment_status,
+        track_progress: position.progress ?? journey.track_progress ?? null,
+        chauffeur: {
+            ...(journey.chauffeur || {}),
+            latitude: Number(position.lat),
+            longitude: Number(position.lng),
+            heading: position.heading ?? journey.chauffeur?.heading ?? null,
+        },
+    };
+}
+
+/** Merge a track payload into an existing journey object. */
 export function applyTrackToJourney(journey, track) {
     if (!journey || !track) return journey;
 

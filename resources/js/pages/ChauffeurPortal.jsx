@@ -278,7 +278,20 @@ export default function ChauffeurPortal() {
     const [profileError, setProfileError] = useState('');
     const [currentRide, setCurrentRide] = useState(null);
     const [ridesReady, setRidesReady] = useState(false);
-    useChauffeurLocation(currentRide?.booking_id || null);
+    const [deviceFix, setDeviceFix] = useState(null);
+    const locationTrip = useMemo(() => {
+        if (!currentRide?.booking_id) return null;
+        return {
+            bookingId: currentRide.booking_id,
+            pickup: { lat: currentRide.lat, lng: currentRide.lng },
+            dropoff: { lat: currentRide.drop_lat, lng: currentRide.drop_lng },
+            onFix: setDeviceFix,
+        };
+    }, [currentRide?.booking_id, currentRide?.lat, currentRide?.lng, currentRide?.drop_lat, currentRide?.drop_lng]);
+    useChauffeurLocation(locationTrip);
+    useEffect(() => {
+        setDeviceFix(null);
+    }, [currentRide?.booking_id]);
     const [toast, setToast] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -677,7 +690,11 @@ export default function ChauffeurPortal() {
                                     <Skeleton variant="live" />
                                 ) : (
                                 <CurrentRidePanel
-                                    ride={currentRide}
+                                    ride={
+                                        currentRide && deviceFix
+                                            ? { ...currentRide, car_lat: deviceFix.lat, car_lng: deviceFix.lng }
+                                            : currentRide
+                                    }
                                     onUpdated={(ride) => {
                                         const active = ride && ['assigned', 'en_route', 'arrived', 'in_progress'].includes(ride.status);
                                         setCurrentRide(active ? assignmentToRide(ride) : null);

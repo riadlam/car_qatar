@@ -192,7 +192,26 @@ export default function TripLiveMap({
                         lngLat = { lng: pos.lng, lat: pos.lat };
                         heading = pos.heading;
                     } else {
-                        lngLat = { lng: Number(p.carLng), lat: Number(p.carLat) };
+                        const target = { lng: Number(p.carLng), lat: Number(p.carLat) };
+                        const key = `${target.lat.toFixed(6)},${target.lng.toFixed(6)}`;
+                        if (state.glideKey !== key) {
+                            const from = state.display || target;
+                            const dLat = (target.lat - from.lat) * 111320;
+                            const dLng = (target.lng - from.lng) * 111320 * Math.cos((target.lat * Math.PI) / 180);
+                            const meters = Math.hypot(dLat, dLng);
+                            state.glideKey = key;
+                            state.glideFrom = from;
+                            state.glideTo = target;
+                            state.glideStart = ts;
+                            state.glideMs = Math.min(2200, Math.max(350, (meters / 8) * 1000));
+                        }
+                        const t = Math.min(1, (ts - state.glideStart) / state.glideMs);
+                        const ease = t * t * (3 - 2 * t);
+                        lngLat = {
+                            lng: state.glideFrom.lng + (state.glideTo.lng - state.glideFrom.lng) * ease,
+                            lat: state.glideFrom.lat + (state.glideTo.lat - state.glideFrom.lat) * ease,
+                        };
+                        state.display = lngLat;
                     }
 
                     if (state.lastLive) {

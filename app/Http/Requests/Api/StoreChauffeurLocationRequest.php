@@ -23,7 +23,7 @@ class StoreChauffeurLocationRequest extends FormRequest
             'heading' => ['nullable', 'numeric', 'between:0,360'],
             'speed' => ['nullable', 'numeric', 'min:0'],
             'recorded_at' => ['nullable', 'date'],
-            'booking_id' => ['nullable', 'integer', 'exists:bookings,id'],
+            'booking_id' => ['required', 'integer', 'exists:bookings,id'],
         ];
     }
 }

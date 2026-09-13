@@ -4,6 +4,7 @@ namespace App\Services\Dispatch;
 
 use App\Enums\BookingStatus;
 use App\Enums\UserRole;
+use App\Events\BookingPosition;
 use App\Events\BookingUpdated;
 use App\Events\OfferAvailable;
 use App\Events\OfferWithdrawn;
@@ -521,18 +522,27 @@ class DispatchService
         ));
     }
 
-    public function broadcastPosition(Booking $booking): void
+    public function broadcastPosition(Booking $booking, ?float $heading = null): void
     {
-        if (! $booking->rideAssignment()->exists()) {
+        $booking->loadMissing(['rideAssignment.chauffeur', 'pickupLocation', 'dropoffLocation', 'stops.location']);
+        $assignment = $booking->rideAssignment;
+        $chauffeur = $assignment?->chauffeur;
+        if (! $assignment || $chauffeur?->current_latitude === null || $chauffeur?->current_longitude === null) {
             return;
         }
 
-        $key = 'dispatch:position:'.$booking->id;
-        if (! cache()->add($key, 1, now()->addSeconds(4))) {
-            return;
-        }
+        $lat = (float) $chauffeur->current_latitude;
+        $lng = (float) $chauffeur->current_longitude;
+        $tracking = app(TrackingService::class);
 
-        Broadcasts::send(new BookingUpdated((int) $booking->id, 'location'));
+        Broadcasts::send(new BookingPosition((int) $booking->id, [
+            'lat' => $lat,
+            'lng' => $lng,
+            'heading' => $heading,
+            'trip_step' => $tracking->tripStep($booking, $assignment, $lat, $lng),
+            'progress' => $tracking->routeProgress($booking, $chauffeur, $assignment),
+            'assignment_status' => $assignment->status,
+        ]));
     }
 
     public function distanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float
