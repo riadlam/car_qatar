@@ -181,12 +181,15 @@ export default function CompleteProfile() {
                                 />
                             </svg>
                         </div>
-                        <h1 className="font-fragment m-0 mt-6 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                            We'll get back to you soon
+                        <span className="font-geist inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[12px] font-500 tracking-wide text-amber-900 uppercase">
+                            Waiting confirmation
+                        </span>
+                        <h1 className="font-fragment m-0 mt-4 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
+                            Waiting confirmation
                         </h1>
                         <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
-                            You&apos;re signed in. Your chauffeur application is pending review, and we&apos;ll contact
-                            you when a decision is ready.
+                            You&apos;re signed in. Your chauffeur application is waiting for confirmation. We&apos;ll
+                            contact you when a decision is ready.
                         </p>
                         <Link
                             to="/"

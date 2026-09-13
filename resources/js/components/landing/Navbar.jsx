@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
-import { isActiveChauffeur, isCustomer } from '../../utils/roles';
+import { isActiveChauffeur, isCustomer, chauffeurStatusLabel } from '../../utils/roles';
 import { fetchContactChannels } from '../../api/catalog';
 
 import BookingHeader from '../booking/BookingHeader';
@@ -312,6 +312,11 @@ export default function Navbar() {
                                 >
                                     <UserIcon />
                                     {profileLabel}
+                                    {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-500 text-amber-900">
+                                            {chauffeurStatusLabel(user)}
+                                        </span>
+                                    ) : null}
                                 </Link>
                             ) : (
                                 <Link
@@ -524,6 +529,13 @@ export default function Navbar() {
                                 >
                                     Journeys
                                 </Link>
+                            </li>
+                            ) : null}
+                            {isAuthenticated && chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                            <li>
+                                <p className="font-geist m-0 border-b border-ink-text/8 py-3.5 text-[16px] font-500 text-amber-900">
+                                    Status: {chauffeurStatusLabel(user)}
+                                </p>
                             </li>
                             ) : null}
                             {isActiveChauffeur(user) ? (

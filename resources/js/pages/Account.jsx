@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { isActiveChauffeur, isCustomer } from '../utils/roles';
+import { isActiveChauffeur, isCustomer, chauffeurStatusLabel } from '../utils/roles';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
@@ -247,6 +247,11 @@ export default function Account() {
                     <p className="font-geist mt-2 m-0 text-[16px] leading-6 text-muted">
                         Signed in as {user.email}
                     </p>
+                    {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                        <p className="font-geist mt-4 m-0 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[13px] font-500 text-amber-900">
+                            Status: {chauffeurStatusLabel(user)}
+                        </p>
+                    ) : null}
                     <div className="mt-5 flex flex-wrap gap-3">
                         {isCustomer(user) ? (
                             <Link
