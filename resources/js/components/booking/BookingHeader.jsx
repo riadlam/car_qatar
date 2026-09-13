@@ -1,8 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from '../landing/Logo';
-import { durationLabel } from '../../data/bookingServices';
+import TripEditor from './TripEditor';
+import { durationLabel, SCHOOL_TERMS, serviceLabel } from '../../data/bookingServices';
+import { useAuth } from '../../context/AuthContext';
 
 const SERVICES = [
     { label: 'City-to-City rides', href: '/#services' },
@@ -120,23 +122,42 @@ function formatTripTime(timeStr) {
  * Booking-only header: trip chips + hamburger (menu like tablet, all breakpoints).
  */
 export default function BookingHeader() {
-    const [params] = useSearchParams();
+    const [params, setParams] = useSearchParams();
     const location = useLocation();
-    const navigate = useNavigate();
+    const { isAuthenticated, user } = useAuth();
     const [open, setOpen] = useState(false);
+    const headerRef = useRef(null);
+    const logoRef = useRef(null);
+    const [logoWidth, setLogoWidth] = useState(160);
+    const [editorOpen, setEditorOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
+    const profileLabel =
+        user?.first_name?.trim() ||
+        user?.name?.split?.(' ')?.[0] ||
+        'Profile';
 
     const trip = useMemo(() => {
-        const mode = params.get('mode') || 'hourly';
-        const pickup = params.get('pickup') || 'Embassy Of Algeria';
+        const service = params.get('service') || '';
+        const mode = params.get('mode') || '';
+        const pickup = params.get('pickup') || 'Pickup';
         const dropoff = params.get('dropoff') || '';
-        const duration = params.get('duration') || '2';
-        const destination = mode === 'transfer' && dropoff ? dropoff : durationLabel(duration);
+        const duration = params.get('duration') || '';
+        const term = SCHOOL_TERMS.find((item) => item.value === params.get('term'))?.label;
+        let destination = dropoff;
+        if (!destination && (service === 'by_hour' || service === 'city_tour' || mode === 'hourly')) {
+            destination = duration ? durationLabel(duration) : 'Duration';
+        }
+        if (service === 'school_chauffeured') {
+            destination = dropoff || term || 'School';
+        }
+        if (!destination) destination = serviceLabel(service || 'one_way');
+        const date = params.get('date');
+        const time = params.get('time');
         return {
             pickup,
             destination,
-            dateLabel: formatTripDate(params.get('date')),
-            timeLabel: formatTripTime(params.get('time') || '22:15'),
+            dateLabel: date ? formatTripDate(date) : 'Date',
+            timeLabel: time ? formatTripTime(time) : term || 'Time',
         };
     }, [params]);
 
@@ -147,24 +168,112 @@ export default function BookingHeader() {
 
     const loginHref = `/login?from=${encodeURIComponent(location.pathname + location.search)}`;
 
-    const editTrip = () => navigate('/#book');
+    useLayoutEffect(() => {
+        const el = logoRef.current;
+        if (!el) return undefined;
+        const measure = () => {
+            const next = el.scrollWidth;
+            if (next > 40) setLogoWidth(next);
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    useLayoutEffect(() => {
+        const el = headerRef.current;
+        if (!el) return undefined;
+        const apply = () => {
+            document.documentElement.style.setProperty('--booking-bar-h', `${el.offsetHeight}px`);
+        };
+        apply();
+        const observer = new ResizeObserver(apply);
+        observer.observe(el);
+        return () => {
+            observer.disconnect();
+            document.documentElement.style.removeProperty('--booking-bar-h');
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!editorOpen) return undefined;
+        const onKeyDown = (event) => {
+            if (event.key !== 'Escape') return;
+            const active = document.activeElement;
+            if (active && headerRef.current?.contains(active) && active !== document.body) {
+                active.blur();
+                return;
+            }
+            setEditorOpen(false);
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [editorOpen]);
+
+    const openEditor = () => {
+        setOpen(false);
+        setEditorOpen(true);
+    };
+
+    const applyTrip = (nextParams) => {
+        const next = new URLSearchParams(nextParams);
+        ['vehicle', 'seat', 'guest'].forEach((key) => {
+            const value = params.get(key);
+            if (value) next.set(key, value);
+        });
+        next.delete('quote_id');
+        setParams(next, { replace: true });
+        setEditorOpen(false);
+    };
+
+    const fluff = { type: 'spring', bounce: 0.32, duration: 0.72 };
 
     const chipBtn =
         'font-geist inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-[#e0ddd6] bg-white px-3 py-2 text-left transition hover:border-[#c9c5bc] hover:bg-page sm:gap-2 sm:px-3.5 sm:py-2.5';
     const chipText = 'max-w-[140px] truncate text-[13px] leading-5 font-500 text-ink-text sm:max-w-[200px] sm:text-[14px] lg:max-w-[240px]';
 
     return (
-        <header className={`fixed inset-x-0 top-0 z-50 border-b border-[#e8e6e1] bg-page/95 text-ink-text backdrop-blur-xl ${
+        <header
+            ref={headerRef}
+            className={`fixed inset-x-0 top-0 z-50 border-b border-[#e8e6e1] bg-page/95 text-ink-text backdrop-blur-xl ${
             location.pathname.startsWith('/booking/checkout') ? 'hidden lg:block' : ''
-        }`}>
+        }`}
+        >
             <div className="relative mx-auto flex h-[72px] w-full max-w-[100vw] items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:h-[80px] lg:px-8">
-                <a href="/" aria-label="Go to Homepage" className="relative z-10 shrink-0">
-                    <Logo compact inverted />
-                </a>
+                <motion.a
+                    href="/"
+                    aria-label="Go to Homepage"
+                    aria-hidden={editorOpen}
+                    tabIndex={editorOpen ? -1 : 0}
+                    initial={false}
+                    animate={{
+                        width: editorOpen ? 44 : logoWidth,
+                        opacity: editorOpen ? 0 : 1,
+                        scale: editorOpen ? 0.72 : 1,
+                        filter: editorOpen ? 'blur(8px)' : 'blur(0px)',
+                        marginRight: editorOpen ? 0 : 4,
+                    }}
+                    transition={fluff}
+                    className={`relative z-10 origin-left shrink-0 overflow-hidden ${editorOpen ? 'pointer-events-none' : ''}`}
+                >
+                    <span ref={logoRef} className="block w-max">
+                        <Logo compact inverted />
+                    </span>
+                </motion.a>
 
-                <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden sm:gap-3">
-                    <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
-                        <button type="button" onClick={editTrip} className={chipBtn} title={`${trip.pickup} → ${trip.destination}`}>
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 sm:gap-3">
+                    <AnimatePresence mode="popLayout" initial={false}>
+                    {!editorOpen && (
+                    <motion.div
+                        key="trip-chips"
+                        initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.96 }}
+                        animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+                        exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.94 }}
+                        transition={fluff}
+                        className="hidden min-w-0 items-center gap-1.5 overflow-x-auto sm:flex sm:gap-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                        <button type="button" onClick={openEditor} className={chipBtn} title={`${trip.pickup} → ${trip.destination}`}>
                             <span className={chipText} title={trip.pickup}>
                                 {trip.pickup}
                             </span>
@@ -174,7 +283,7 @@ export default function BookingHeader() {
                             </span>
                         </button>
 
-                        <button type="button" onClick={editTrip} className={`${chipBtn} hidden sm:inline-flex`} title={`${trip.dateLabel}, ${trip.timeLabel}`}>
+                        <button type="button" onClick={openEditor} className={`${chipBtn} hidden sm:inline-flex`} title={`${trip.dateLabel}, ${trip.timeLabel}`}>
                             <span className="shrink-0 whitespace-nowrap text-[13px] leading-5 font-500 text-ink-text sm:text-[14px]" title={trip.dateLabel}>
                                 {trip.dateLabel}
                             </span>
@@ -183,30 +292,73 @@ export default function BookingHeader() {
                                 {trip.timeLabel}
                             </span>
                         </button>
-                    </div>
+                    </motion.div>
+                    )}
+                    {editorOpen && (
+                        <p className="font-geist m-0 text-[13px] font-500 tracking-[0.15px] text-ink-text/60">
+                            Edit this trip
+                        </p>
+                    )}
+                    </AnimatePresence>
                 </div>
 
                 <button
                     type="button"
-                    onClick={() => setOpen((v) => !v)}
+                    onClick={() => {
+                        if (editorOpen) {
+                            setEditorOpen(false);
+                            return;
+                        }
+                        setOpen((v) => !v);
+                    }}
                     className="nav-burger nav-burger--light relative z-10 flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border border-ink-text/12"
-                    aria-label="Toggle menu"
+                    aria-label={editorOpen ? 'Close trip editor' : 'Toggle menu'}
                     aria-expanded={open}
                 >
-                    <span className={`h-px w-5 bg-ink-text transition-all ${open ? 'translate-y-[7px] rotate-45' : ''}`} />
-                    <span className={`h-px w-5 bg-ink-text transition-all ${open ? 'opacity-0' : ''}`} />
-                    <span className={`h-px w-5 bg-ink-text transition-all ${open ? '-translate-y-[7px] -rotate-45' : ''}`} />
+                    <span className={`h-px w-5 bg-ink-text transition-all ${open || editorOpen ? 'translate-y-[7px] rotate-45' : ''}`} />
+                    <span className={`h-px w-5 bg-ink-text transition-all ${open || editorOpen ? 'opacity-0' : ''}`} />
+                    <span className={`h-px w-5 bg-ink-text transition-all ${open || editorOpen ? '-translate-y-[7px] -rotate-45' : ''}`} />
                 </button>
             </div>
 
-            {/* Date/time row on very small screens */}
-            <div className="flex justify-center border-t border-[#eeebe4] px-3 pb-2.5 sm:hidden">
-                <button type="button" onClick={editTrip} className={`${chipBtn} w-full max-w-md justify-center`}>
+            <AnimatePresence initial={false}>
+                {editorOpen && (
+                    <motion.div
+                        key="trip-fields"
+                        initial={{ opacity: 0, y: -8, filter: 'blur(8px)' }}
+                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: -6, filter: 'blur(6px)' }}
+                        transition={fluff}
+                        className="border-t border-[#eeebe4] px-3 py-3 sm:px-5 lg:px-8"
+                    >
+                        <TripEditor params={params} variant="bar" onApply={applyTrip} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {!editorOpen && (
+            <div className="flex flex-col gap-2 border-t border-[#eeebe4] px-3 pb-2.5 sm:hidden">
+                <button
+                    type="button"
+                    onClick={openEditor}
+                    className={`${chipBtn} w-full items-start whitespace-normal`}
+                    title={`${trip.pickup} → ${trip.destination}`}
+                >
+                    <span className="min-w-0 flex-1 text-left">
+                        <span className="block break-words text-[13px] leading-5 font-500 text-ink-text">{trip.pickup}</span>
+                        <span className="mt-1 flex items-start gap-1.5">
+                            <ArrowRightIcon />
+                            <span className="min-w-0 flex-1 break-words text-[13px] leading-5 font-500 text-ink-text">{trip.destination}</span>
+                        </span>
+                    </span>
+                </button>
+                <button type="button" onClick={openEditor} className={`${chipBtn} w-full justify-center`}>
                     <span className="text-[13px] font-500 text-ink-text">{trip.dateLabel}</span>
                     <DateTimeIcon />
                     <span className="text-[13px] font-500 text-ink-text">{trip.timeLabel}</span>
                 </button>
             </div>
+            )}
 
             <AnimatePresence>
                 {open && (
@@ -274,21 +426,32 @@ export default function BookingHeader() {
                                 </a>
                             </li>
                             <li className="mt-3 flex flex-col gap-3 pb-2">
-                                <Link
-                                    to={loginHref}
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
-                                >
-                                    <UserIcon />
-                                    Sign in / Sign up
-                                </Link>
-                                <a
-                                    href="/#book"
-                                    onClick={() => setOpen(false)}
+                                {isAuthenticated ? (
+                                    <Link
+                                        to="/account"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                    >
+                                        <UserIcon />
+                                        {profileLabel}
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        to={loginHref}
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                    >
+                                        <UserIcon />
+                                        Sign in / Sign up
+                                    </Link>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={openEditor}
                                     className="font-geist rounded-full bg-wine-700 py-3 text-center font-500 text-white"
                                 >
                                     Edit trip
-                                </a>
+                                </button>
                             </li>
                         </ul>
                     </motion.div>

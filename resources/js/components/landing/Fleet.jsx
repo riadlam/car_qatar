@@ -3,20 +3,8 @@ import { fadeUp, IMG } from './motion';
 
 const FLEET = [
     {
-        name: 'Business Class',
-        line: 'Mercedes E-Class · BMW 5 Series',
-        seats: '3 guests · 2 bags',
-        img: IMG.fleet1,
-    },
-    {
-        name: 'First Class',
-        line: 'Mercedes S-Class · Audi A8',
-        seats: '3 guests · 2 bags',
-        img: IMG.fleet2,
-    },
-    {
-        name: 'Luxury SUV',
-        line: 'Cadillac Escalade · Range Rover',
+        name: 'Business Van',
+        line: 'Mercedes-Benz V-Class or similar',
         seats: '5 guests · 5 bags',
         img: IMG.fleet3,
     },
@@ -52,13 +40,13 @@ export default function Fleet() {
                     initial="hidden"
                     whileInView="show"
                     viewport={{ once: true, margin: '-60px' }}
-                    className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
+                    className="mx-auto grid max-w-xl grid-cols-1 gap-4 sm:gap-6"
                 >
                     {FLEET.map((car) => (
                         <motion.div
                             key={car.name}
                             variants={fadeUp}
-                            className="group relative overflow-hidden rounded-2xl border border-white/5 bg-ink-soft md:last:col-span-2 lg:last:col-span-1"
+                            className="group relative overflow-hidden rounded-2xl border border-white/5 bg-ink-soft"
                         >
                             <div className="relative h-52 overflow-hidden sm:h-64">
                                 <img

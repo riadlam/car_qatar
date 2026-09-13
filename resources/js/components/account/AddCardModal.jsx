@@ -2,15 +2,7 @@ import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-
-function detectBrand(number) {
-    const n = number.replace(/\D/g, '');
-    if (/^4/.test(n)) return 'Visa';
-    if (/^5[1-5]/.test(n) || /^2[2-7]/.test(n)) return 'Mastercard';
-    if (/^3[47]/.test(n)) return 'Amex';
-    if (/^6(?:011|5)/.test(n)) return 'Discover';
-    return 'Card';
-}
+import { createPaymentMethod, firstApiError } from '../../api/checkout';
 
 function formatCardNumber(value) {
     const digits = value.replace(/\D/g, '').slice(0, 19);
@@ -36,6 +28,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
     const [cvc, setCvc] = useState('');
     const [focus, setFocus] = useState('');
     const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
 
     const reset = () => {
         setNumber('');
@@ -53,7 +46,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
 
     const digits = useMemo(() => number.replace(/\D/g, ''), [number]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -69,25 +62,35 @@ export default function AddCardModal({ open, onClose, onSave }) {
             setError('Use expiry format MM/YY.');
             return;
         }
-        const [mm, yy] = expiry.split('/').map(Number);
+        const [mm] = expiry.split('/').map(Number);
         if (mm < 1 || mm > 12) {
             setError('Enter a valid expiry month.');
             return;
         }
-        if (cvc.replace(/\D/g, '').length < 3) {
+        const cvcDigits = cvc.replace(/\D/g, '');
+        if (cvcDigits.length < 3) {
             setError('Enter a valid CVC.');
             return;
         }
 
-        onSave({
-            id: `card_${Date.now()}`,
-            brand: detectBrand(digits),
-            last4: digits.slice(-4),
-            name: name.trim(),
-            expiry,
-        });
-        reset();
-        onClose();
+        setSaving(true);
+        try {
+            const saved = await createPaymentMethod({
+                number: digits,
+                holder_name: name.trim(),
+                expiry,
+                cvc: cvcDigits,
+            });
+            setNumber('');
+            setCvc('');
+            onSave(saved);
+            reset();
+            onClose();
+        } catch (err) {
+            setError(firstApiError(err, 'Could not save this card.'));
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (!open || typeof document === 'undefined') return null;
@@ -213,8 +216,8 @@ export default function AddCardModal({ open, onClose, onSave }) {
                     </div>
 
                     <p className="font-geist m-0 text-[12px] leading-5 text-muted">
-                        Your card details are stored only on this device for demo purposes. We never
-                        send the full card number to a server yet.
+                        We validate the card and store only the brand and last four digits. The full
+                        number and CVC are not kept.
                     </p>
 
                     <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -227,9 +230,10 @@ export default function AddCardModal({ open, onClose, onSave }) {
                         </button>
                         <button
                             type="submit"
-                            className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-2.5 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                            disabled={saving}
+                            className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-2.5 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                         >
-                            Save card
+                            {saving ? 'Saving…' : 'Save card'}
                         </button>
                     </div>
                 </form>

@@ -2,10 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 
 /**
  * Horizontal scroll-snap card row (services / sustainability / articles).
+ * Optional onCardClick fills Explore Qatar schedule picker.
  */
-export default function CardCarousel({ title, cards, panel = true }) {
+export default function CardCarousel({ title, cards, panel = true, onCardClick }) {
     const scrollerRef = useRef(null);
     const [index, setIndex] = useState(0);
+    const clickable = typeof onCardClick === 'function';
 
     useEffect(() => {
         const el = scrollerRef.current;
@@ -56,62 +58,88 @@ export default function CardCarousel({ title, cards, panel = true }) {
                               : 'lg:grid-cols-4'
                     }`}
                 >
-                    {cards.map((c) => (
-                        <article
-                            key={c.title}
-                            className={`w-[min(85vw,320px)] shrink-0 snap-center overflow-hidden rounded-2xl bg-white lg:w-auto ${
-                                panel ? 'border border-[#e8e8ea] shadow-sm' : 'border border-[#e8e8ea]'
-                            }`}
-                        >
-                            <div className="relative h-[116px] w-full overflow-hidden">
-                                <img
-                                    src={c.img}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                                {c.badge ? (
-                                    <span className="font-geist absolute top-3 left-3 rounded-full bg-wine-700 px-2.5 py-0.5 text-[12px] font-500 tracking-[0.15px] text-white">
-                                        {c.badge}
-                                    </span>
-                                ) : null}
-                            </div>
-                            <div className="p-5">
-                                <h3 className="font-geist m-0 text-[18px] leading-6 font-500 tracking-[0.15px] text-ink-text">
-                                    {c.title}
-                                </h3>
-                                <p className="font-geist mt-2 m-0 text-[14px] leading-5 font-400 tracking-[0.15px] text-muted">
-                                    {c.body}
-                                </p>
-                                {c.bullets?.length ? (
-                                    <ul className="font-geist mt-3 m-0 list-none space-y-2 p-0 text-[13px] leading-5 text-ink-text/80">
-                                        {c.bullets.map((b) => (
-                                            <li key={b} className="flex gap-2">
-                                                <span className="mt-0.5 shrink-0 text-wine-700" aria-hidden="true">
-                                                    ✓
-                                                </span>
-                                                <span>{b}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : null}
-                                {c.cta ? (
-                                    <a
-                                        href={c.href || '#'}
-                                        className="font-geist mt-4 inline-block text-[14px] font-500 text-wine-700 underline-offset-2 hover:underline"
-                                    >
-                                        {c.cta}
-                                    </a>
-                                ) : null}
-                            </div>
-                        </article>
-                    ))}
+                    {cards.map((c) => {
+                        const inner = (
+                            <>
+                                <div className="relative h-[116px] w-full overflow-hidden">
+                                    <img
+                                        src={c.img}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    {c.badge ? (
+                                        <span className="font-geist absolute top-3 left-3 rounded-full bg-wine-700 px-2.5 py-0.5 text-[12px] font-500 tracking-[0.15px] text-white">
+                                            {c.badge}
+                                        </span>
+                                    ) : null}
+                                </div>
+                                <div className="p-5 text-left">
+                                    <h3 className="font-geist m-0 text-[18px] leading-6 font-500 tracking-[0.15px] text-ink-text">
+                                        {c.title}
+                                    </h3>
+                                    <p className="font-geist mt-2 m-0 text-[14px] leading-5 font-400 tracking-[0.15px] text-muted">
+                                        {c.body}
+                                    </p>
+                                    {c.bullets?.length ? (
+                                        <ul className="font-geist mt-3 m-0 list-none space-y-2 p-0 text-[13px] leading-5 text-ink-text/80">
+                                            {c.bullets.map((b) => (
+                                                <li key={b} className="flex gap-2">
+                                                    <span className="mt-0.5 shrink-0 text-wine-700" aria-hidden="true">
+                                                        ✓
+                                                    </span>
+                                                    <span>{b}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : null}
+                                    {c.cta && !clickable ? (
+                                        <a
+                                            href={c.href || '#'}
+                                            className="font-geist mt-4 inline-block text-[14px] font-500 text-wine-700 underline-offset-2 hover:underline"
+                                        >
+                                            {c.cta}
+                                        </a>
+                                    ) : null}
+                                    {clickable ? (
+                                        <span className="font-geist mt-4 inline-block text-[14px] font-500 text-wine-700">
+                                            Schedule transfer →
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </>
+                        );
+
+                        const shellClass = `w-[min(85vw,320px)] shrink-0 snap-center overflow-hidden rounded-2xl bg-white lg:w-auto ${
+                            panel ? 'border border-[#e8e8ea] shadow-sm' : 'border border-[#e8e8ea]'
+                        } ${clickable ? 'cursor-pointer text-left transition hover:border-wine-700/40 hover:shadow-md' : ''}`;
+
+                        if (clickable) {
+                            return (
+                                <button
+                                    key={c.id || c.slug || c.title}
+                                    type="button"
+                                    className={shellClass}
+                                    onClick={() => onCardClick(c)}
+                                    aria-label={`Select ${c.title} as destination`}
+                                >
+                                    {inner}
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <article key={c.id || c.slug || c.title} className={shellClass}>
+                                {inner}
+                            </article>
+                        );
+                    })}
                 </div>
 
                 <div className="mt-6 flex justify-center gap-2 lg:hidden">
                     {cards.map((c, i) => (
                         <button
-                            key={c.title}
+                            key={c.id || c.slug || c.title}
                             type="button"
                             aria-label={`Go to card ${i + 1}`}
                             onClick={() => scrollTo(i)}

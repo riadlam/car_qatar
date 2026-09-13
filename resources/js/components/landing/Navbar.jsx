@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from './Logo';
+import { useAuth } from '../../context/AuthContext';
+import { isActiveChauffeur, isCustomer } from '../../utils/roles';
+import { fetchContactChannels } from '../../api/catalog';
 
 import BookingHeader from '../booking/BookingHeader';
 
@@ -26,11 +29,11 @@ const EXPLORE_QATAR = [
     { label: 'Restaurants & Business Lunch', href: '/restaurants' },
 ];
 
-const CONTACT_US = [
-    { label: 'Call us', href: '#' },
-    { label: 'WhatsApp', href: '#' },
-    { label: 'Leave a message', href: '#' },
-    { label: 'Email', href: '#' },
+const CONTACT_US_FALLBACK = [
+    { key: 'call_us', label: 'Call us', href: 'tel:+97440000000' },
+    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000' },
+    { key: 'leave_message', label: 'Leave a message', href: '/help' },
+    { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com' },
 ];
 
 const LANGS = [{ label: 'English (US)', href: '#' }];
@@ -120,21 +123,30 @@ function NavDropdown({ label, items, light, align = 'start' }) {
                             align === 'end' ? 'right-0' : 'left-0'
                         } ${light ? 'nav-dd--light' : 'nav-dd--dark'}`}
                     >
-                        {items.map((item) => (
-                            <li key={item.label}>
-                                <a
-                                    href={item.href}
-                                    onClick={() => setOpen(false)}
-                                    className={`font-geist block rounded-md px-3 py-2.5 text-[15px] leading-5 whitespace-nowrap transition ${
-                                        light
-                                            ? 'text-ink-text hover:bg-black/5'
-                                            : 'text-white hover:bg-white/10'
-                                    }`}
-                                >
-                                    {item.label}
-                                </a>
-                            </li>
-                        ))}
+                        {items.map((item) => {
+                            const external =
+                                /^https?:/i.test(item.href) ||
+                                item.href.startsWith('mailto:') ||
+                                item.href.startsWith('tel:');
+                            return (
+                                <li key={item.key || item.label}>
+                                    <a
+                                        href={item.href}
+                                        onClick={() => setOpen(false)}
+                                        {...(external && /^https?:/i.test(item.href)
+                                            ? { target: '_blank', rel: 'noreferrer' }
+                                            : {})}
+                                        className={`font-geist block rounded-md px-3 py-2.5 text-[15px] leading-5 whitespace-nowrap transition ${
+                                            light
+                                                ? 'text-ink-text hover:bg-black/5'
+                                                : 'text-white hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {item.label}
+                                    </a>
+                                </li>
+                            );
+                        })}
                     </motion.ul>
                 )}
             </AnimatePresence>
@@ -144,16 +156,43 @@ function NavDropdown({ label, items, light, align = 'start' }) {
 
 export default function Navbar() {
     const location = useLocation();
+    const { isAuthenticated, user } = useAuth();
     const [scrolled, setScrolled] = useState(false);
     const [pastHero, setPastHero] = useState(false);
     const [open, setOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
+    const [contactUs, setContactUs] = useState(CONTACT_US_FALLBACK);
     const isBooking = location.pathname.startsWith('/booking');
     const isChauffeurPortal = location.pathname.startsWith('/chauffeur');
     const lightTop =
         LIGHT_TOP_PATHS.includes(location.pathname) ||
         location.pathname.startsWith('/journeys') ||
         location.pathname.startsWith('/chauffeur');
+    const profileLabel =
+        user?.first_name?.trim() ||
+        user?.name?.split?.(' ')?.[0] ||
+        'Profile';
+
+    useEffect(() => {
+        let cancelled = false;
+        fetchContactChannels()
+            .then((channels) => {
+                if (cancelled || !Array.isArray(channels) || !channels.length) return;
+                setContactUs(
+                    channels.map((c) => ({
+                        key: c.key,
+                        label: c.label,
+                        href: c.href,
+                    })),
+                );
+            })
+            .catch(() => {
+                if (!cancelled) setContactUs(CONTACT_US_FALLBACK);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
@@ -246,7 +285,7 @@ export default function Navbar() {
                                 Business solutions
                             </a>
                         </li>
-                        <NavDropdown label="Contact us" items={CONTACT_US} light={light} />
+                        <NavDropdown label="Contact us" items={contactUs} light={light} />
                         <li>
                             <a
                                 href="/about-us"
@@ -261,18 +300,33 @@ export default function Navbar() {
                         </li>
                         <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
                         <li className="ml-1">
-                            <Link
-                                to={loginHref}
-                                data-cy="sign-in-button"
-                                className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
-                                    light
-                                        ? 'nav-signin--light border-ink-text/12'
-                                        : 'nav-signin--dark border-white/25'
-                                }`}
-                            >
-                                <UserIcon />
-                                Sign in / Sign up
-                            </Link>
+                            {isAuthenticated ? (
+                                <Link
+                                    to="/account"
+                                    data-cy="profile-button"
+                                    className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
+                                        light
+                                            ? 'nav-signin--light border-ink-text/12'
+                                            : 'nav-signin--dark border-white/25'
+                                    }`}
+                                >
+                                    <UserIcon />
+                                    {profileLabel}
+                                </Link>
+                            ) : (
+                                <Link
+                                    to={loginHref}
+                                    data-cy="sign-in-button"
+                                    className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
+                                        light
+                                            ? 'nav-signin--light border-ink-text/12'
+                                            : 'nav-signin--dark border-white/25'
+                                    }`}
+                                >
+                                    <UserIcon />
+                                    Sign in / Sign up
+                                </Link>
+                            )}
                         </li>
                         <AnimatePresence initial={false}>
                             {pastHero && (
@@ -309,14 +363,14 @@ export default function Navbar() {
                         )}
                     </AnimatePresence>
                     <Link
-                        to={loginHref}
-                        aria-label="Sign in or sign up"
+                        to={isAuthenticated ? '/account' : loginHref}
+                        aria-label={isAuthenticated ? 'Open profile' : 'Sign in or sign up'}
                         className={`nav-user font-geist flex h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[13px] font-500 whitespace-nowrap ${
                             light ? 'nav-user--light border-ink-text/12' : 'nav-user--dark border-white/25'
                         }`}
                     >
                         <UserIcon />
-                        <span>Sign in / Sign up</span>
+                        <span>{isAuthenticated ? profileLabel : 'Sign in / Sign up'}</span>
                     </Link>
                     <button
                         type="button"
@@ -414,7 +468,7 @@ export default function Navbar() {
                                 </a>
                             </li>
                             {[
-                                { key: 'contact', label: 'Contact us', items: CONTACT_US },
+                                { key: 'contact', label: 'Contact us', items: contactUs },
                             ].map((group) => (
                                 <li key={group.key} className="border-b border-ink-text/8">
                                     <button
@@ -461,6 +515,7 @@ export default function Navbar() {
                                     About us
                                 </a>
                             </li>
+                            {isCustomer(user) ? (
                             <li>
                                 <Link
                                     to="/journeys"
@@ -470,6 +525,8 @@ export default function Navbar() {
                                     Journeys
                                 </Link>
                             </li>
+                            ) : null}
+                            {isActiveChauffeur(user) ? (
                             <li>
                                 <Link
                                     to="/chauffeur"
@@ -479,24 +536,27 @@ export default function Navbar() {
                                     Chauffeur portal
                                 </Link>
                             </li>
-                            <li>
-                                <Link
-                                    to="/account"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
-                                >
-                                    Account
-                                </Link>
-                            </li>
+                            ) : null}
                             <li className="mt-3 flex flex-col gap-3 pb-2">
-                                <Link
-                                    to={loginHref}
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
-                                >
-                                    <UserIcon />
-                                    Sign in / Sign up
-                                </Link>
+                                {isAuthenticated ? (
+                                    <Link
+                                        to="/account"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                    >
+                                        <UserIcon />
+                                        {profileLabel}
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        to={loginHref}
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                    >
+                                        <UserIcon />
+                                        Sign in / Sign up
+                                    </Link>
+                                )}
                                 <a
                                     href="/#book"
                                     onClick={() => setOpen(false)}

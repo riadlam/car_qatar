@@ -103,21 +103,9 @@ export const JOURNEY = [
 
 export const FLEET = [
     {
-        name: 'Business Class',
-        line: 'Mercedes E-Class · BMW 5 Series',
-        specs: ['3 guests', '2 bags', 'Ideal for solo & couples'],
-        img: IMG.fleet1,
-    },
-    {
-        name: 'First Class',
-        line: 'Mercedes S-Class · Audi A8',
-        specs: ['3 guests', '2 bags', 'Maximum comfort'],
-        img: IMG.fleet2,
-    },
-    {
-        name: 'Luxury SUV',
-        line: 'Cadillac Escalade · Range Rover',
-        specs: ['5 guests', '5 bags', 'Families & groups'],
+        name: 'Business Van',
+        line: 'Mercedes-Benz V-Class or similar',
+        specs: ['5 guests', '5 bags', 'Groups & luggage'],
         img: IMG.fleet3,
     },
 ];

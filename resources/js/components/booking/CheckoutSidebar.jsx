@@ -1,7 +1,4 @@
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import BookingMap from './BookingMap';
-import { IconOffer } from './icons';
 
 /**
  * Checkout right rail — map, class summary, price rows, offer, Book now.
@@ -17,18 +14,6 @@ export default function CheckoutSidebar({
     onBook,
     booking,
 }) {
-    const [offerOpen, setOfferOpen] = useState(false);
-    const [offerCode, setOfferCode] = useState('');
-    const [appliedOffer, setAppliedOffer] = useState('');
-
-    const applyOffer = (e) => {
-        e.preventDefault();
-        const code = offerCode.trim();
-        if (!code) return;
-        setAppliedOffer(code.toUpperCase());
-        setOfferOpen(false);
-    };
-
     const currency = vehicle.currency === 'US$' ? '$' : vehicle.currency;
 
     return (
@@ -57,13 +42,15 @@ export default function CheckoutSidebar({
                             {Number(vehicle.base).toFixed(2)}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="font-geist text-[14px] text-muted">Estimated tax</span>
-                        <span className="font-geist text-[14px] text-ink-text">
-                            {currency}
-                            {Number(vehicle.tax).toFixed(2)}
-                        </span>
-                    </div>
+                    {Number(vehicle.tax) > 0 ? (
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="font-geist text-[14px] text-muted">Estimated tax</span>
+                            <span className="font-geist text-[14px] text-ink-text">
+                                {currency}
+                                {Number(vehicle.tax).toFixed(2)}
+                            </span>
+                        </div>
+                    ) : null}
                     <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#e8e6e1] pt-3">
                         <span className="font-geist text-[16px] font-500 text-ink-text">Total price</span>
                         <span className="font-geist text-[18px] font-500 text-ink-text">
@@ -71,22 +58,21 @@ export default function CheckoutSidebar({
                             {Number(vehicle.total).toFixed(2)}
                         </span>
                     </div>
-                    {appliedOffer ? (
-                        <p className="font-geist m-0 text-[13px] text-wine-700">Offer applied: {appliedOffer}</p>
-                    ) : null}
                 </div>
 
                 <div className="mt-auto pt-5">
                     <hr className="mb-4 border-0 border-t border-[#e8e6e1]" />
                     <div className="mb-3 flex items-center justify-between gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setOfferOpen(true)}
-                            className="font-geist inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/40 bg-white/70 px-4 py-2.5 text-[14px] font-500 text-ink-text shadow-sm backdrop-blur transition hover:bg-white"
-                        >
-                            <IconOffer />
-                            {appliedOffer ? `Offer: ${appliedOffer}` : 'Apply offer'}
-                        </button>
+                        <p className="font-geist m-0 inline-flex items-center gap-2 text-[14px] font-500 text-ink-text">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-wine-700">
+                                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            <span>
+                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : 'Pickup time'}
+                                {vehicle.route_duration_minutes ? ` · ${vehicle.route_duration_minutes} min` : ''}
+                            </span>
+                        </p>
                         <p className="font-geist m-0 text-[13px] text-muted">Terms &amp; conditions apply</p>
                     </div>
                     <button
@@ -104,45 +90,6 @@ export default function CheckoutSidebar({
                     </button>
                 </div>
             </div>
-
-            {offerOpen &&
-                createPortal(
-                    <div
-                        className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/50 p-4 sm:items-center"
-                        role="dialog"
-                        aria-modal="true"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) setOfferOpen(false);
-                        }}
-                    >
-                        <form onSubmit={applyOffer} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-                            <h2 className="font-fragment m-0 text-[22px] font-400 text-ink-text">Apply offer</h2>
-                            <input
-                                value={offerCode}
-                                onChange={(e) => setOfferCode(e.target.value)}
-                                className="font-geist mt-4 w-full rounded-lg border border-[#d8d8dc] px-4 py-3 text-[16px] outline-none focus:border-wine-700"
-                                placeholder="Offer code"
-                                autoFocus
-                            />
-                            <div className="mt-5 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setOfferOpen(false)}
-                                    className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3 text-[15px] font-500"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3 text-[15px] font-500 text-white hover:bg-wine-600"
-                                >
-                                    Apply
-                                </button>
-                            </div>
-                        </form>
-                    </div>,
-                    document.body,
-                )}
         </aside>
     );
 }

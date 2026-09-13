@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { EXAMPLE_GUESTS, loadSavedGuests, saveGuests } from '../../data/bookingGuests';
 import RouteMap from './RouteMap';
 import EditTripModal from './EditTripModal';
 import AddGuestModal, { guestDisplayName } from './AddGuestModal';
 import { IconChevronDown, IconPassengers, IconPerson } from './icons';
 import { durationHours, durationLabel } from '../../data/bookingServices';
+import { useSavedGuests } from '../../hooks/useSavedGuests';
+import Skeleton from '../ui/Skeleton';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function formatLongDate(dateStr) {
     const d = dateStr ? new Date(`${dateStr}T12:00:00`) : new Date();
@@ -100,9 +103,12 @@ export default function CheckoutMobile({
     onSelectCard,
     onApplyOffer,
     appliedOffer,
+    billingLine = '',
+    onEditBilling,
+    bookError = '',
 }) {
     const [editOpen, setEditOpen] = useState(false);
-    const [notesOpen, setNotesOpen] = useState(false);
+    const [notesOpen, setNotesOpen] = useState(true);
     const [langOpen, setLangOpen] = useState(false);
     const [cardsOpen, setCardsOpen] = useState(false);
     const [offerOpen, setOfferOpen] = useState(false);
@@ -110,20 +116,17 @@ export default function CheckoutMobile({
     const [passengerOpen, setPassengerOpen] = useState(false);
     const [guestListOpen, setGuestListOpen] = useState(Boolean(guestId));
     const [addGuestOpen, setAddGuestOpen] = useState(false);
-    const [savedGuests, setSavedGuests] = useState([]);
-
-    useEffect(() => {
-        setSavedGuests(loadSavedGuests());
-    }, []);
+    const { isAuthenticated, setReturnTo } = useAuth();
+    const navigate = useNavigate();
+    const { guests, loading: guestsLoading, addGuest } = useSavedGuests();
 
     useEffect(() => {
         if (guestId) setGuestListOpen(true);
     }, [guestId]);
 
-    const guests = useMemo(() => [...EXAMPLE_GUESTS, ...savedGuests], [savedGuests]);
     const forGuest = Boolean(guestId);
     const selectedGuest = useMemo(
-        () => guests.find((g) => g.id === guestId) || null,
+        () => guests.find((g) => String(g.id) === String(guestId)) || null,
         [guests, guestId],
     );
 
@@ -147,13 +150,18 @@ export default function CheckoutMobile({
         setGuestListOpen(true);
     };
 
-    const onAddGuest = (guest) => {
-        const next = [...savedGuests, guest];
-        setSavedGuests(next);
-        saveGuests(next);
+    const onAddGuest = async (payload) => {
+        if (!isAuthenticated) {
+            setReturnTo(`/booking/checkout${window.location.search}`);
+            navigate(
+                `/login?from=${encodeURIComponent(`/booking/checkout${window.location.search}`)}`,
+            );
+            throw new Error('Sign in to save guests.');
+        }
+        const guest = await addGuest(payload);
         onPassengerChange?.(guest.id);
         setGuestListOpen(true);
-        setAddGuestOpen(false);
+        return guest;
     };
 
     return (
@@ -182,6 +190,8 @@ export default function CheckoutMobile({
                     dropoffLabel={dropLabel}
                     lat={trip.lat}
                     lng={trip.lng}
+                    dropLat={trip.dropLat}
+                    dropLng={trip.dropLng}
                     className="pointer-events-auto absolute inset-0 z-0 h-full w-full"
                 />
 
@@ -239,7 +249,7 @@ export default function CheckoutMobile({
 
                 <button
                     type="button"
-                    onClick={() => (cards.length ? setCardsOpen(true) : onAddCard())}
+                    onClick={() => (cards.length ? setCardsOpen(true) : onAddCard?.())}
                     className="mt-5 flex w-full cursor-pointer items-center gap-3 rounded-xl border border-[#e8e6e1] bg-page/60 px-3 py-3 text-left"
                 >
                     {selectedCard ? (
@@ -256,6 +266,30 @@ export default function CheckoutMobile({
                     )}
                     <IconChevronDown />
                 </button>
+                <p className="font-geist mt-2 m-0 text-[12px] leading-5 text-muted">
+                    Saved for later. Nothing is charged when you book.
+                </p>
+
+                {onEditBilling ? (
+                    <button
+                        type="button"
+                        onClick={onEditBilling}
+                        className="font-geist mt-3 flex w-full cursor-pointer flex-col items-start gap-1 rounded-xl border border-[#e8e6e1] bg-white px-3 py-3 text-left"
+                    >
+                        <span className="text-[15px] font-500 text-ink-text">
+                            {billingLine ? 'Edit billing information' : 'Add billing information'}
+                        </span>
+                        {billingLine ? (
+                            <span className="text-[13px] leading-5 text-muted">{billingLine}</span>
+                        ) : (
+                            <span className="text-[13px] leading-5 text-muted">Required before you book</span>
+                        )}
+                    </button>
+                ) : null}
+
+                <p className="font-geist mt-3 m-0 text-[13px] text-muted">
+                    Reference: Assigned when you book
+                </p>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <button
@@ -264,7 +298,7 @@ export default function CheckoutMobile({
                         className="font-geist inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-500 text-ink-text"
                     >
                         <NotesIcon />
-                        Pickup notes
+                        Additional details
                         <span className={`transition ${notesOpen ? 'rotate-180' : ''}`}>
                             <IconChevronDown />
                         </span>
@@ -347,11 +381,17 @@ export default function CheckoutMobile({
                     <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        rows={2}
+                        rows={3}
+                        maxLength={2000}
                         className="font-geist mt-3 w-full rounded-xl border border-[#d8d8dc] px-3 py-2.5 text-[14px] outline-none focus:border-wine-700"
                         placeholder="Special instructions for your journey"
                     />
                 )}
+                {bookError ? (
+                    <p className="font-geist mt-3 m-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700">
+                        {bookError}
+                    </p>
+                ) : null}
             </div>
 
             {/* Sticky footer */}
@@ -486,8 +526,19 @@ export default function CheckoutMobile({
                                                 aria-label="Saved guests"
                                                 className="max-h-[220px] overflow-y-auto"
                                             >
-                                                {guests.map((guest) => {
-                                                    const selected = guest.id === guestId;
+                                                {guestsLoading ? (
+                                                    <div className="px-3 py-3">
+                                                        <Skeleton variant="inline" />
+                                                    </div>
+                                                ) : guests.length === 0 ? (
+                                                    <p className="font-geist m-0 px-3 py-4 text-[14px] text-muted">
+                                                        {isAuthenticated
+                                                            ? 'No saved guests yet. Add one below.'
+                                                            : 'Sign in to load and save guests.'}
+                                                    </p>
+                                                ) : (
+                                                    guests.map((guest) => {
+                                                    const selected = String(guest.id) === String(guestId);
                                                     return (
                                                         <button
                                                             key={guest.id}
@@ -527,7 +578,8 @@ export default function CheckoutMobile({
                                                             </span>
                                                         </button>
                                                     );
-                                                })}
+                                                    })
+                                                )}
                                             </div>
                                             <div className="border-t border-[#e8e6e1] p-2">
                                                 <button

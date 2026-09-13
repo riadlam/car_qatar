@@ -1,18 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
+import BillingModal, { billingSummary } from '../components/checkout/BillingModal';
 import CheckoutSidebar from '../components/booking/CheckoutSidebar';
 import CheckoutMobile from '../components/booking/CheckoutMobile';
-import { IconChevronDown } from '../components/booking/icons';
-import { VEHICLES, formatMoney } from '../data/bookingVehicles';
-import { findGuestById } from '../data/bookingGuests';
-import { addJourney } from '../data/journeys';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
-import { durationLabel } from '../data/bookingServices';
+import { createQuotes, getQuote } from '../api/quotes';
+import { createBooking, listBookings } from '../api/bookings';
+import Skeleton from '../components/ui/Skeleton';
+import { getBillingProfile, getPaymentMethods } from '../api/checkout';
+import { tripParamsToQuotePayload } from '../utils/bookingMappers';
+import {
+    fallbackVehicles,
+    mapVehicleClassToCard,
+} from '../utils/catalogMappers';
+import { useSavedGuests } from '../hooks/useSavedGuests';
+import { findGuestById } from '../data/bookingGuests';
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -32,6 +38,14 @@ const COUNTRIES = [
     'Spain',
     'Italy',
 ];
+
+function quoteIsStale(quote) {
+    if (!quote) return true;
+    if (quote.status && quote.status !== 'priced') return true;
+    if (!quote.expires_at) return false;
+    const expires = new Date(quote.expires_at);
+    return Number.isNaN(expires.getTime()) || expires.getTime() <= Date.now();
+}
 
 function formatTimeParts(timeStr) {
     if (!timeStr) return { time: '10:15', period: 'pm' };
@@ -53,6 +67,46 @@ function LockIcon() {
     );
 }
 
+const OPEN_BOOKING_MESSAGE = 'Finish or cancel your current booking before booking another.';
+
+function OpenBookingDialog({ open, message, onClose }) {
+    const titleId = useId();
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/40 p-4 sm:items-center" role="presentation">
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            >
+                <h2 id={titleId} className="font-fragment m-0 text-[24px] font-400 text-ink-text">
+                    One trip at a time
+                </h2>
+                <p className="font-geist mt-2 m-0 text-[15px] leading-6 text-muted">
+                    {message || OPEN_BOOKING_MESSAGE}
+                </p>
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2 text-[14px] font-500 text-ink-text"
+                    >
+                        Close
+                    </button>
+                    <Link
+                        to="/journeys"
+                        className="font-geist rounded-full bg-wine-700 px-4 py-2 text-[14px] font-500 text-white no-underline"
+                    >
+                        View journeys
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function InfoIcon() {
     return (
         <svg width="1.5em" height="1.5em" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-0.5 shrink-0 text-muted">
@@ -66,52 +120,145 @@ function InfoIcon() {
 export default function Checkout() {
     const [params, setParams] = useSearchParams();
     const navigate = useNavigate();
-    const { isAuthenticated, loading, user, updateUser, setReturnTo } = useAuth();
+    const { isAuthenticated, loading, user, setReturnTo } = useAuth();
+    const { guests, findById } = useSavedGuests();
 
     const vehicleId = params.get('vehicle') || 'van';
-    const vehicle = useMemo(
-        () => VEHICLES.find((v) => v.id === vehicleId) || VEHICLES[0],
-        [vehicleId],
-    );
+    const quoteIdParam = params.get('quote_id');
+    const [quote, setQuote] = useState(null);
+    const [quoteLoading, setQuoteLoading] = useState(Boolean(quoteIdParam));
+
+    const vehicle = useMemo(() => {
+        const fallback =
+            fallbackVehicles().find((v) => v.id === vehicleId) || fallbackVehicles()[0];
+        const fromQuote = quote?.vehicle_class
+            ? mapVehicleClassToCard(quote.vehicle_class)
+            : null;
+        const base = fromQuote || fallback;
+        if (!quote) return base;
+        const currency = quote.currency === 'USD' ? 'US$' : quote.currency || base.currency;
+        return {
+            ...base,
+            total: Number(quote.total ?? base.total),
+            base: Number(quote.subtotal ?? base.base),
+            tax: Number(quote.tax_amount ?? base.tax),
+            currency,
+            quote_id: quote.id,
+        };
+    }, [vehicleId, quote]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            setQuoteLoading(true);
+            try {
+                if (quoteIdParam) {
+                    const existing = await getQuote(quoteIdParam);
+                    if (!quoteIsStale(existing)) {
+                        if (!cancelled) setQuote(existing);
+                        return;
+                    }
+                }
+                const payload = tripParamsToQuotePayload(params, {
+                    vehicle_class: vehicleId,
+                    seat_addon: params.get('seat') || undefined,
+                });
+                const data = await createQuotes(payload);
+                const q =
+                    data.quote ||
+                    (data.quotes || []).find((row) => row.vehicle_class?.slug === vehicleId) ||
+                    data.quotes?.[0];
+                if (!cancelled && q) {
+                    setQuote(q);
+                    if (q.id) {
+                        const next = new URLSearchParams(params);
+                        next.set('quote_id', String(q.id));
+                        setParams(next, { replace: true });
+                    }
+                }
+            } catch {
+                if (!cancelled) setQuote(null);
+            } finally {
+                if (!cancelled) setQuoteLoading(false);
+            }
+        };
+        load();
+        return () => {
+            cancelled = true;
+        };
+        // Re-load when trip params that affect price change
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        quoteIdParam,
+        vehicleId,
+        params.get('pickup'),
+        params.get('dropoff'),
+        params.get('date'),
+        params.get('time'),
+        params.get('service'),
+        params.get('mode'),
+        params.get('duration'),
+        params.get('seat'),
+        params.get('lat'),
+        params.get('lng'),
+        params.get('drop_lat'),
+        params.get('drop_lng'),
+        params.get('gulf'),
+        params.get('legs'),
+        params.get('passengers'),
+        params.get('students'),
+        params.get('term'),
+    ]);
 
     const trip = useMemo(
         () => ({
-            pickup: params.get('pickup') || 'Embassy Of Algeria',
+            pickup: params.get('pickup') || 'Pickup',
             dropoff: params.get('dropoff') || '',
             duration: params.get('duration') || '2',
             date: params.get('date') || new Date().toISOString().slice(0, 10),
-            time: params.get('time') || '22:15',
-            mode: params.get('mode') || 'hourly',
-            lat: Number(params.get('lat')) || 28.564641,
-            lng: Number(params.get('lng')) || 77.159464,
+            time: params.get('time') || '17:15',
+            mode: params.get('mode') || 'transfer',
+            lat: Number(params.get('lat')) || 25.2854,
+            lng: Number(params.get('lng')) || 51.531,
+            dropLat: params.get('drop_lat') != null && params.get('drop_lat') !== '' ? Number(params.get('drop_lat')) : undefined,
+            dropLng: params.get('drop_lng') != null && params.get('drop_lng') !== '' ? Number(params.get('drop_lng')) : undefined,
         }),
         [params],
     );
 
     const { time: pickupTime, period: pickupPeriod } = formatTimeParts(trip.time);
 
-    const cards = user?.payment_methods || [];
+    const [cards, setCards] = useState([]);
     const [selectedCardId, setSelectedCardId] = useState(null);
     const [addCardOpen, setAddCardOpen] = useState(false);
-    const [billingOpen, setBillingOpen] = useState(false);
-    const [countryOpen, setCountryOpen] = useState(false);
+    const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [booking, setBooking] = useState(false);
-    const [done, setDone] = useState(false);
     const [notes, setNotes] = useState('');
     const [preferredLanguage, setPreferredLanguage] = useState('');
-    const [reference, setReference] = useState('');
     const [appliedOffer, setAppliedOffer] = useState('');
-    const [billing, setBilling] = useState({
-        company: '',
-        street: '',
-        zip: '',
-        city: '',
-        country: '',
-    });
+    const [bookError, setBookError] = useState('');
+    const [bookingBlocked, setBookingBlocked] = useState(false);
+    const [tripDialogOpen, setTripDialogOpen] = useState(false);
+    const [billing, setBilling] = useState(null);
+    const [languageTouched, setLanguageTouched] = useState(false);
+
+    useEffect(() => {
+        if (languageTouched || !user) return;
+        const saved = user.preferred_language;
+        if (saved == null || saved === '') {
+            setPreferredLanguage('');
+            return;
+        }
+        const known = PREFERRED_LANGUAGES.some((l) => l.id === saved);
+        setPreferredLanguage(known ? saved : '');
+    }, [user, languageTouched]);
 
     const selectedCard = cards.find((c) => c.id === selectedCardId) || null;
     const guestId = params.get('guest') || '';
-    const selectedGuest = useMemo(() => findGuestById(guestId), [guestId]);
+    const selectedGuest = useMemo(
+        () => findById(guestId) || findGuestById(guestId, guests),
+        [findById, guestId, guests],
+    );
     const passengerLabel = selectedGuest ? guestDisplayName(selectedGuest) : 'For myself';
 
     const onPassengerChange = (nextGuestId) => {
@@ -119,6 +266,11 @@ export default function Checkout() {
         if (nextGuestId) q.set('guest', nextGuestId);
         else q.delete('guest');
         setParams(q, { replace: true });
+    };
+
+    const onPreferredLanguageChange = (value) => {
+        setLanguageTouched(true);
+        setPreferredLanguage(value);
     };
 
     useEffect(() => {
@@ -131,10 +283,26 @@ export default function Checkout() {
     }, [loading, isAuthenticated, navigate, setReturnTo]);
 
     useEffect(() => {
-        if (cards.length && !selectedCardId) {
-            setSelectedCardId(cards[0].id);
-        }
-    }, [cards, selectedCardId]);
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        Promise.all([getPaymentMethods(), getBillingProfile()])
+            .then(([methods, profile]) => {
+                if (cancelled) return;
+                setCards(methods);
+                setBilling(profile);
+                const preferred = methods.find((card) => card.is_default) || methods[0];
+                if (preferred) setSelectedCardId(preferred.id);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setCards([]);
+                    setBilling(null);
+                }
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
 
     const backToBooking = () => {
         const q = new URLSearchParams(params);
@@ -144,8 +312,7 @@ export default function Checkout() {
     };
 
     const onSaveCard = (card) => {
-        const next = [...cards, card];
-        updateUser({ payment_methods: next });
+        setCards((current) => [...current, card]);
         setSelectedCardId(card.id);
     };
 
@@ -164,111 +331,94 @@ export default function Checkout() {
         }
         if (next.date) q.set('date', next.date);
         if (next.time) q.set('time', next.time);
+        q.delete('quote_id');
         setParams(q, { replace: true });
     };
 
-    const onBook = () => {
-        if (!selectedCardId) return;
+    const canBook = Boolean(billing);
+    const billingLine = billingSummary(billing);
+
+    useEffect(() => {
+        if (!isAuthenticated) return undefined;
+        let cancelled = false;
+        listBookings()
+            .then((res) => {
+                if (cancelled || !res?.blocked) return;
+                setBookingBlocked(true);
+                setTripDialogOpen(true);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
+
+    const onBook = async () => {
+        if (!billing) return;
+        if (bookingBlocked) {
+            setTripDialogOpen(true);
+            return;
+        }
         setBooking(true);
-        window.setTimeout(() => {
-            const bookingNumber = `AM-${Date.now().toString().slice(-8)}`;
-            const dateObj = trip.date ? new Date(`${trip.date}T12:00:00`) : new Date();
-            const dateLabel = Number.isNaN(dateObj.getTime())
-                ? trip.date
-                : dateObj.toLocaleDateString('en-GB', {
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                  });
-            const entry = {
-                id: `j_${Date.now()}`,
-                booking_number: bookingNumber,
-                status: 'upcoming',
-                phase: 'confirmed',
-                status_label: 'Confirmed',
-                mode: trip.mode === 'hourly' ? 'hourly' : 'transfer',
-                mode_label: trip.mode === 'hourly' ? 'Hourly hire' : 'City transfer',
-                pickup: trip.pickup,
-                dropoff: trip.mode === 'hourly' ? `Hourly · ${durationLabel(trip.duration)}` : trip.dropoff,
-                date: trip.date,
-                time: trip.time,
-                date_label: dateLabel,
-                time_label: `${pickupTime} ${pickupPeriod}`,
-                arrive_label: trip.mode === 'hourly' ? `Until end of hire` : undefined,
-                duration_label: trip.mode === 'hourly' ? durationLabel(trip.duration) : undefined,
-                vehicle_id: vehicle.id,
-                vehicle: vehicle.name,
-                vehicle_similar: vehicle.similar,
-                vehicle_image: vehicle.main?.sm || vehicle.main?.lg,
-                price: vehicle.total,
-                currency: vehicle.currency,
-                payment_label: selectedCard
-                    ? `${selectedCard.brand} •••• ${selectedCard.last4}`
-                    : 'Card on file',
-                passenger_name: selectedGuest
-                    ? guestDisplayName(selectedGuest)
-                    : 'For myself',
-                for_guest: Boolean(selectedGuest),
-                preferred_language: preferredLanguage
-                    ? PREFERRED_LANGUAGES.find((l) => l.id === preferredLanguage)?.name ||
-                      preferredLanguage
-                    : '',
-                preferred_language_code: preferredLanguage || '',
-                notes: notes || '',
-                seat: params.get('seat') || '',
-                actions: ['details', 'edit', 'cancel'],
-                created_at: new Date().toISOString(),
-            };
-            addJourney(entry);
+        setBookError('');
+        try {
+            let current = quote;
+            if (quoteIsStale(current)) {
+                const payload = tripParamsToQuotePayload(params, {
+                    vehicle_class: vehicleId,
+                    seat_addon: params.get('seat') || undefined,
+                });
+                const data = await createQuotes(payload);
+                current =
+                    data.quote ||
+                    (data.quotes || []).find((row) => row.vehicle_class?.slug === vehicleId) ||
+                    data.quotes?.[0];
+                if (current) setQuote(current);
+            }
+            const quoteId = current?.id;
+            if (!quoteId) {
+                throw new Error('Unable to create a price quote for this trip.');
+            }
+
+            const guestPayload = selectedGuest
+                ? {
+                      title: selectedGuest.title,
+                      first_name: selectedGuest.first_name,
+                      last_name: selectedGuest.last_name,
+                      email: selectedGuest.email,
+                      phone: selectedGuest.phone,
+                  }
+                : undefined;
+
+            const booked = await createBooking({
+                quote_id: Number(quoteId),
+                for_myself: !selectedGuest,
+                guest: guestPayload,
+                customer_notes: notes || undefined,
+                preferred_language: preferredLanguage || undefined,
+            });
+            navigate(`/journeys/ride/${booked.id}`);
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setBookingBlocked(true);
+                setTripDialogOpen(true);
+                setBookError('');
+                return;
+            }
+            const msg =
+                err?.response?.data?.message ||
+                Object.values(err?.response?.data?.errors || {}).flat()[0] ||
+                err?.message ||
+                'Booking failed. Please try again.';
+            setBookError(msg);
+        } finally {
             setBooking(false);
-            setDone(true);
-        }, 900);
+        }
     };
 
-    if (loading || !isAuthenticated) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">Loading…</div>
-        );
+    if (loading || !isAuthenticated || quoteLoading) {
+        return <Skeleton variant="page" />;
     }
-
-    const successModal =
-        done &&
-        createPortal(
-            <div
-                className="fixed inset-0 z-[220] flex items-end justify-center bg-ink/50 p-4 sm:items-center"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="booked-title"
-            >
-                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-                    <h2 id="booked-title" className="font-fragment m-0 text-[24px] font-400 text-ink-text">
-                        Reservation confirmed
-                    </h2>
-                    <p className="font-geist mt-3 text-[15px] leading-6 text-muted">
-                        Your {vehicle.name} ride for {formatMoney(vehicle.total, vehicle.currency)} is booked. A hold
-                        has been placed on your card; you&apos;ll be charged after the journey.
-                    </p>
-                    <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/journeys')}
-                            className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3 text-[15px] font-500"
-                        >
-                            View journeys
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/account')}
-                            className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3 text-[15px] font-500 text-white hover:bg-wine-600"
-                        >
-                            View account
-                        </button>
-                    </div>
-                </div>
-            </div>,
-            document.body,
-        );
 
     return (
         <>
@@ -284,9 +434,9 @@ export default function Checkout() {
                 notes={notes}
                 setNotes={setNotes}
                 preferredLanguage={preferredLanguage}
-                setPreferredLanguage={setPreferredLanguage}
+                setPreferredLanguage={onPreferredLanguageChange}
                 preferredLanguages={PREFERRED_LANGUAGES}
-                canBook={Boolean(selectedCardId)}
+                canBook={canBook}
                 booking={booking}
                 onBook={onBook}
                 onBack={backToBooking}
@@ -295,13 +445,16 @@ export default function Checkout() {
                 onSelectCard={setSelectedCardId}
                 onApplyOffer={setAppliedOffer}
                 appliedOffer={appliedOffer}
+                billingLine={billingLine}
+                onEditBilling={() => setBillingModalOpen(true)}
+                bookError={bookError}
             />
 
             {/* Desktop layout */}
             <div className="hidden lg:block">
                 <SiteLayout className="relative min-w-0 overflow-x-clip bg-page" showFooter={false}>
                     <div className="mx-auto grid w-full max-w-[1440px] lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_460px]">
-                        <div className="min-w-0 px-4 pb-10 pt-[96px] sm:px-6 lg:px-10 lg:pb-16 xl:px-14">
+                        <div className="min-w-0 px-4 pb-10 pt-[96px] sm:px-6 lg:px-10 lg:pt-[calc(var(--booking-bar-h,80px)+16px)] lg:pb-16 xl:px-14">
                             <div className="mb-6 flex items-center gap-3">
                                 <button
                                     type="button"
@@ -322,6 +475,9 @@ export default function Checkout() {
                                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 text-ink-text">
                                     Payment preferences
                                 </h2>
+                                <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
+                                    You can save a card now. Nothing is charged when you book.
+                                </p>
 
                                 <div className="mt-5">
                                     {cards.length === 0 ? (
@@ -376,137 +532,42 @@ export default function Checkout() {
                                 <hr className="my-6 border-0 border-t border-[#e8e6e1]" />
 
                                 <div>
-                                    <label className="flex cursor-pointer items-start gap-3">
-                                        <input
-                                            type="checkbox"
-                                            checked={billingOpen}
-                                            onChange={(e) => setBillingOpen(e.target.checked)}
-                                            className="mt-1 h-4 w-4 accent-[#5b0520]"
-                                        />
-                                        <span className="font-geist text-[15px] leading-6 text-ink-text">
-                                            Add/Edit billing information
-                                        </span>
-                                    </label>
-
-                                    {billingOpen && (
-                                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                                            <div className="sm:col-span-2">
-                                                <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-company">
-                                                    Company name (optional)
-                                                </label>
-                                                <input
-                                                    id="co-company"
-                                                    maxLength={50}
-                                                    value={billing.company}
-                                                    onChange={(e) => setBilling({ ...billing, company: e.target.value })}
-                                                    className={fieldClass}
-                                                    placeholder="e.g. AL MAJD Transport"
-                                                />
-                                            </div>
-                                            <div className="sm:col-span-2">
-                                                <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-street">
-                                                    Street address
-                                                </label>
-                                                <input
-                                                    id="co-street"
-                                                    maxLength={50}
-                                                    value={billing.street}
-                                                    onChange={(e) => setBilling({ ...billing, street: e.target.value })}
-                                                    className={fieldClass}
-                                                    placeholder="e.g. 123 Main Street, Apt 4B"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-zip">
-                                                    Zip
-                                                </label>
-                                                <input
-                                                    id="co-zip"
-                                                    maxLength={10}
-                                                    value={billing.zip}
-                                                    onChange={(e) => setBilling({ ...billing, zip: e.target.value })}
-                                                    className={fieldClass}
-                                                    placeholder="e.g. 90210"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-city">
-                                                    City
-                                                </label>
-                                                <input
-                                                    id="co-city"
-                                                    maxLength={20}
-                                                    value={billing.city}
-                                                    onChange={(e) => setBilling({ ...billing, city: e.target.value })}
-                                                    className={fieldClass}
-                                                    placeholder="e.g. Berlin"
-                                                />
-                                            </div>
-                                            <div className="relative sm:col-span-2 sm:max-w-xs">
-                                                <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-country">
-                                                    Country
-                                                </label>
-                                                <button
-                                                    id="co-country"
-                                                    type="button"
-                                                    role="combobox"
-                                                    aria-expanded={countryOpen}
-                                                    onClick={() => setCountryOpen((v) => !v)}
-                                                    className={`${fieldClass} flex cursor-pointer items-center justify-between text-left`}
-                                                >
-                                                    <span className={billing.country ? 'text-ink-text' : 'text-muted'}>
-                                                        {billing.country || 'Select country'}
-                                                    </span>
-                                                    <span className={`transition ${countryOpen ? 'rotate-180' : ''}`}>
-                                                        <IconChevronDown />
-                                                    </span>
-                                                </button>
-                                                {countryOpen && (
-                                                    <ul
-                                                        role="listbox"
-                                                        className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-[#e0ddd6] bg-white py-1 shadow-lg"
-                                                    >
-                                                        {COUNTRIES.map((c) => (
-                                                            <li key={c}>
-                                                                <button
-                                                                    type="button"
-                                                                    className={`font-geist w-full cursor-pointer px-4 py-2.5 text-left text-[15px] hover:bg-wine-50 ${
-                                                                        billing.country === c
-                                                                            ? 'bg-wine-50 text-wine-800'
-                                                                            : 'text-ink-text'
-                                                                    }`}
-                                                                    onClick={() => {
-                                                                        setBilling({ ...billing, country: c });
-                                                                        setCountryOpen(false);
-                                                                    }}
-                                                                >
-                                                                    {c}
-                                                                </button>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                            </div>
-                                        </div>
+                                    <h3 className="font-geist m-0 text-[15px] font-500 text-ink-text">
+                                        Billing information
+                                    </h3>
+                                    {billing ? (
+                                        <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
+                                            {billingLine}
+                                        </p>
+                                    ) : (
+                                        <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
+                                            Add a billing address before you book.
+                                        </p>
                                     )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setBillingModalOpen(true)}
+                                        className="font-geist mt-3 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2.5 text-[16px] font-500 text-ink-text transition hover:bg-page"
+                                    >
+                                        {billing ? 'Edit billing information' : 'Add billing information'}
+                                    </button>
                                 </div>
 
                                 <hr className="my-6 border-0 border-t border-[#e8e6e1]" />
 
                                 <div>
                                     <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-ref">
-                                        Reference code/cost center
+                                        Reference code
                                     </label>
                                     <input
                                         id="co-ref"
-                                        value={reference}
-                                        onChange={(e) => setReference(e.target.value)}
-                                        className={fieldClass}
-                                        placeholder="e.g. AB123456"
+                                        value="Assigned when you book"
+                                        readOnly
+                                        className={`${fieldClass} cursor-default bg-page text-muted`}
                                         aria-describedby="co-ref-help"
                                     />
                                     <p id="co-ref-help" className="font-geist mt-2 m-0 text-[13px] text-muted">
-                                        This reference will appear on your invoice
+                                        A unique reference is created on the server and appears on your journey.
                                     </p>
                                 </div>
 
@@ -520,8 +581,7 @@ export default function Checkout() {
                                     <div className="flex gap-2.5">
                                         <InfoIcon />
                                         <span className="font-geist text-[14px] leading-5 text-muted">
-                                            The amount will be held on your selected payment method after booking. You
-                                            will only be charged once your journey is complete.
+                                            Online payment is not available yet. Nothing is charged when you book.
                                         </span>
                                     </div>
                                 </div>
@@ -558,7 +618,7 @@ export default function Checkout() {
                                                 className="sr-only"
                                                 value=""
                                                 checked={preferredLanguage === ''}
-                                                onChange={() => setPreferredLanguage('')}
+                                                onChange={() => onPreferredLanguageChange('')}
                                             />
                                             <span
                                                 className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
@@ -596,7 +656,7 @@ export default function Checkout() {
                                                         className="sr-only"
                                                         value={lang.id}
                                                         checked={on}
-                                                        onChange={() => setPreferredLanguage(lang.id)}
+                                                        onChange={() => onPreferredLanguageChange(lang.id)}
                                                     />
                                                     <span
                                                         className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
@@ -628,6 +688,7 @@ export default function Checkout() {
                                         value={notes}
                                         onChange={(e) => setNotes(e.target.value)}
                                         className={`${fieldClass} min-h-[88px] resize-y`}
+                                        maxLength={2000}
                                         placeholder="Special instructions for your journey"
                                         aria-describedby="co-notes-help"
                                     />
@@ -638,7 +699,12 @@ export default function Checkout() {
                             </section>
                         </div>
 
-                        <div className="w-full border-t border-[#e8e6e1] lg:border-t-0 lg:border-l lg:border-[#e8e6e1] lg:pt-[80px]">
+                        <div className="w-full border-t border-[#e8e6e1] lg:border-t-0 lg:border-l lg:border-[#e8e6e1] lg:pt-[var(--booking-bar-h,80px)]">
+                            {bookError ? (
+                                <p className="font-geist mx-4 mt-4 m-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700 lg:mx-6">
+                                    {bookError}
+                                </p>
+                            ) : null}
                             <CheckoutSidebar
                                 vehicle={vehicle}
                                 pickupLabel={trip.pickup}
@@ -646,7 +712,7 @@ export default function Checkout() {
                                 pickupPeriod={pickupPeriod}
                                 mapLat={trip.lat}
                                 mapLng={trip.lng}
-                                canBook={Boolean(selectedCardId)}
+                                canBook={canBook}
                                 onBook={onBook}
                                 booking={booking}
                             />
@@ -655,8 +721,19 @@ export default function Checkout() {
                 </SiteLayout>
             </div>
 
+            <OpenBookingDialog
+                open={tripDialogOpen}
+                message={OPEN_BOOKING_MESSAGE}
+                onClose={() => setTripDialogOpen(false)}
+            />
             <AddCardModal open={addCardOpen} onClose={() => setAddCardOpen(false)} onSave={onSaveCard} />
-            {successModal}
+            <BillingModal
+                open={billingModalOpen}
+                countries={COUNTRIES}
+                profile={billing}
+                onClose={() => setBillingModalOpen(false)}
+                onSaved={setBilling}
+            />
         </>
     );
 }

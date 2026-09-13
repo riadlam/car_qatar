@@ -43,10 +43,10 @@
 
 @theme {
     /* AL MAJD brand palette — built around #5b0520 */
-    --color-wine-50: #fbf2f5;
-    --color-wine-100: #f6dfe7;
-    --color-wine-200: #eab8c8;
-    --color-wine-300: #d98aa5;
+    --color-wine-50: #f6f5f4;
+    --color-wine-100: #ebe7e5;
+    --color-wine-200: #d9cfcf;
+    --color-wine-300: #c4a8b0;
     --color-wine-400: #b8446b;
     --color-wine-500: #8f1f45;
     --color-wine-600: #741133;
@@ -55,10 +55,10 @@
     --color-wine-900: #2c0210;
     --color-wine-950: #1a0109;
 
-    /* Soft title/section tint — stand-in for Blacklane’s #aecff3 */
-    --color-hero-title: #f0c5d2;
-    --color-tint: #f0c5d2;
-    --color-page: #fbf8f2;
+    /* Soft title / section surfaces — calm stone, not candy pink */
+    --color-hero-title: #e8e0d6;
+    --color-tint: #ebe8e3;
+    --color-page: #f5f4f1;
     --color-ink-text: #0f1319;
     --color-muted: #6e6e73;
 
@@ -364,7 +364,7 @@
         margin-top: -8px;
         border-radius: 9999px;
         background: #5b0520;
-        border: 3px solid #fbf8f2;
+        border: 3px solid #f5f4f1;
         box-shadow: 0 4px 12px rgba(91, 5, 32, 0.35);
         cursor: grab;
         transition: transform 0.15s ease;
@@ -383,7 +383,7 @@
         height: 22px;
         border-radius: 9999px;
         background: #5b0520;
-        border: 3px solid #fbf8f2;
+        border: 3px solid #f5f4f1;
         box-shadow: 0 4px 12px rgba(91, 5, 32, 0.35);
         cursor: grab;
     }
@@ -654,12 +654,12 @@ body.menu-open {
     --react-international-phone-border-color: #d8d8dc;
     --react-international-phone-border-color-hover: #aeaeae;
     --react-international-phone-border-color-focus: #5b0520;
-    --react-international-phone-country-selector-background-color-hover: #fbf2f5;
-    --react-international-phone-country-selector-background-color-focus: #fbf2f5;
+    --react-international-phone-country-selector-background-color-hover: #f6f5f4;
+    --react-international-phone-country-selector-background-color-focus: #f6f5f4;
     --react-international-phone-country-selector-border-color: #d8d8dc;
     --react-international-phone-country-selector-arrow-color: #6e6e73;
-    --react-international-phone-dropdown-item-background-color-hover: #fbf2f5;
-    --react-international-phone-selected-dropdown-item-background-color: #f6dfe7;
+    --react-international-phone-dropdown-item-background-color-hover: #f6f5f4;
+    --react-international-phone-selected-dropdown-item-background-color: #ebe7e5;
     --react-international-phone-dropdown-shadow: 0 12px 32px rgba(15, 19, 25, 0.14);
     --react-international-phone-dropdown-border-color: #e8e8ea;
 }
@@ -695,56 +695,49 @@ body.menu-open {
     background: var(--color-page);
 }
 
-/* Checkout mobile route map (Leaflet) — keep map under UI chrome */
-.almajd-route-map.leaflet-container {
+/* Mapbox GL maps — AL MAJD brand overlays */
+.almajd-mb-map {
     background: #e8e6e1;
     font: inherit;
-    z-index: 0 !important;
 }
 
-.almajd-route-map .leaflet-pane,
-.almajd-route-map .leaflet-control,
-.almajd-route-map .leaflet-top,
-.almajd-route-map .leaflet-bottom {
-    z-index: auto;
+.almajd-mb-map .mapboxgl-ctrl-logo,
+.almajd-mb-map .mapboxgl-ctrl-attrib,
+.almajd-mb-map .mapboxgl-ctrl-attrib-button {
+    display: none !important;
 }
 
-.almajd-route-map .leaflet-map-pane {
-    z-index: 1 !important;
+.almajd-mb-map .mapboxgl-ctrl-bottom-right {
+    right: 8px;
+    bottom: 8px;
 }
 
-.almajd-route-map .leaflet-tile-pane {
-    z-index: 1 !important;
-}
-
-.almajd-route-map .leaflet-overlay-pane {
-    z-index: 2 !important;
-}
-
-.almajd-route-map .leaflet-marker-pane {
-    z-index: 3 !important;
-}
-
-.almajd-route-map .leaflet-tooltip-pane,
-.almajd-route-map .leaflet-popup-pane,
-.almajd-route-map .leaflet-shadow-pane {
-    z-index: 4 !important;
-}
-
-.almajd-map-marker {
-    background: transparent !important;
+.almajd-mb-map .mapboxgl-ctrl-group {
     border: 0 !important;
+    box-shadow: 0 2px 10px rgba(15, 19, 25, 0.12) !important;
+    overflow: hidden;
+    border-radius: 10px !important;
 }
 
-.almajd-pin-wrap {
+.almajd-mb-map .mapboxgl-ctrl-group button {
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.almajd-mb-marker {
+    cursor: default;
+}
+
+.almajd-mb-pin-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
     width: 120px;
+    pointer-events: none;
 }
 
-.almajd-pin-label {
+.almajd-mb-pin-label {
     max-width: 110px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -761,7 +754,7 @@ body.menu-open {
     box-shadow: 0 1px 4px rgba(15, 19, 25, 0.12);
 }
 
-.almajd-pin-b {
+.almajd-mb-pin-b {
     display: flex;
     height: 26px;
     width: 26px;
@@ -773,19 +766,19 @@ body.menu-open {
     box-shadow: 0 2px 8px rgba(15, 19, 25, 0.15);
 }
 
-.almajd-pin-b-dot {
+.almajd-mb-pin-b-dot {
     height: 10px;
     width: 10px;
     border-radius: 999px;
     background: #5b0520;
 }
 
-.almajd-car-marker {
-    background: transparent !important;
-    border: 0 !important;
+.almajd-mb-simple-pin {
+    pointer-events: none;
+    filter: drop-shadow(0 2px 6px rgba(15, 19, 25, 0.2));
 }
 
-.almajd-car-wrap {
+.almajd-mb-car-wrap {
     position: relative;
     display: flex;
     height: 52px;
@@ -794,9 +787,10 @@ body.menu-open {
     justify-content: center;
     filter: drop-shadow(0 6px 14px rgba(91, 5, 32, 0.28));
     will-change: transform;
+    pointer-events: none;
 }
 
-.almajd-car-glow {
+.almajd-mb-car-glow {
     position: absolute;
     inset: 10px;
     border-radius: 999px;
@@ -805,13 +799,12 @@ body.menu-open {
     pointer-events: none;
 }
 
-.almajd-car-rot {
+.almajd-mb-car-rot {
     position: relative;
     z-index: 1;
     display: flex;
     transform-origin: 50% 55%;
     will-change: transform;
-    transition: none;
 }
 
 @keyframes almajd-car-glow {
@@ -824,81 +817,6 @@ body.menu-open {
         transform: scale(1.18);
         opacity: 0.9;
     }
-}
-
-/* MapLibre trip map */
-.almajd-ml-map .maplibregl-ctrl-bottom-right {
-    right: 8px;
-    bottom: 8px;
-}
-
-.almajd-ml-map .maplibregl-ctrl-group {
-    border: 0 !important;
-    box-shadow: 0 2px 10px rgba(15, 19, 25, 0.12) !important;
-    overflow: hidden;
-    border-radius: 10px !important;
-}
-
-.almajd-ml-map .maplibregl-ctrl button {
-    width: 32px !important;
-    height: 32px !important;
-}
-
-.almajd-ml-pin {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    pointer-events: none;
-}
-
-.almajd-ml-pin-label {
-    max-width: 110px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.96);
-    padding: 2px 6px;
-    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #0f1319;
-    box-shadow: 0 1px 4px rgba(15, 19, 25, 0.12);
-}
-
-.almajd-ml-pin-a {
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    border: 3px solid #5b0520;
-    background: #f0c5d2;
-    box-shadow: 0 2px 8px rgba(15, 19, 25, 0.18);
-}
-
-.almajd-ml-pin-b {
-    display: flex;
-    width: 16px;
-    height: 16px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    border: 3px solid #5b0520;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(15, 19, 25, 0.15);
-}
-
-.almajd-ml-pin-b > span {
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: #5b0520;
-}
-
-.almajd-ml-car {
-    pointer-events: none;
 }
 
 /* Explore Qatar appointment scheduler — home-widget underline fields, light theme */
@@ -944,7 +862,7 @@ body.menu-open {
 }
 
 .almajd-calendar .react-datepicker__header {
-    background: #fbf8f2;
+    background: #f5f4f1;
     border-bottom: 1px solid #e8e8ea;
     padding-top: 12px;
 }

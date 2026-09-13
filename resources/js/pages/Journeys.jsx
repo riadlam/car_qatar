@@ -3,7 +3,10 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import JourneyCard from '../components/journeys/JourneyCard';
 import { useAuth } from '../context/AuthContext';
-import { getAllJourneys } from '../data/journeys';
+import { listAllBookings } from '../api/bookings';
+import { bookingToJourney } from '../utils/bookingMappers';
+import { subscribePrivate } from '../echo';
+import Skeleton from '../components/ui/Skeleton';
 
 const TABS = [
     {
@@ -80,7 +83,7 @@ function EmptyPinFallback() {
     );
 }
 
-function EmptyState({ title, body }) {
+function EmptyState({ title, body, showBook = true }) {
     return (
         <div className="flex w-full flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
             <div className="flex flex-col items-center gap-5">
@@ -91,12 +94,14 @@ function EmptyState({ title, body }) {
                         {title}
                     </p>
                     <p className="font-geist mt-2 m-0 text-[15px] leading-6 text-muted sm:text-[16px]">{body}</p>
-                    <Link
-                        to="/booking"
-                        className="font-geist mt-5 inline-flex cursor-pointer rounded-full bg-wine-700 px-5 py-2.5 text-[14px] font-500 text-white transition hover:bg-wine-600"
-                    >
-                        Book a journey
-                    </Link>
+                    {showBook ? (
+                        <Link
+                            to="/booking"
+                            className="font-geist mt-5 inline-flex cursor-pointer rounded-full bg-wine-700 px-5 py-2.5 text-[14px] font-500 text-white transition hover:bg-wine-600"
+                        >
+                            Book a journey
+                        </Link>
+                    ) : null}
                 </div>
             </div>
         </div>
@@ -142,6 +147,9 @@ export default function Journeys() {
     const baseId = useId();
     const [query, setQuery] = useState('');
     const [journeys, setJourneys] = useState([]);
+    const [listLoading, setListLoading] = useState(true);
+    const [listError, setListError] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const activeTab = useMemo(() => {
         if (tabParam === 'past') return TABS[1];
@@ -176,19 +184,68 @@ export default function Journeys() {
     }, [loading, isAuthenticated, navigate, setReturnTo, tabParam]);
 
     useEffect(() => {
-        setJourneys(getAllJourneys());
-    }, []);
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        setListLoading(true);
+        setListError('');
+        listAllBookings()
+            .then((rows) => {
+                if (cancelled) return;
+                setJourneys(rows.map(bookingToJourney));
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setJourneys([]);
+                    setListError('Could not load your journeys.');
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setListLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, refreshKey]);
+
+    const liveIds = journeys
+        .filter((journey) => journey.api)
+        .map((journey) => journey.id)
+        .join(',');
+
+    useEffect(() => {
+        if (!isAuthenticated || !liveIds) return undefined;
+
+        const refresh = () => {
+            listAllBookings()
+                .then((rows) => setJourneys(rows.map(bookingToJourney)))
+                .catch(() => {});
+        };
+
+        const leaves = liveIds.split(',').map((id) =>
+            subscribePrivate(
+                `booking.${id}`,
+                {
+                    BookingUpdated: (payload) => {
+                        if (!payload?.booking) return;
+                        const next = bookingToJourney(payload.booking);
+                        setJourneys((list) =>
+                            list.map((item) => (String(item.id) === String(next.id) ? next : item)),
+                        );
+                    },
+                },
+                refresh,
+            ),
+        );
+
+        return () => leaves.forEach((leave) => leave());
+    }, [isAuthenticated, liveIds]);
 
     if (tabParam && !['past', 'cancelled', 'canceled'].includes(tabParam)) {
         return <Navigate to="/journeys" replace />;
     }
 
     if (loading || !isAuthenticated) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">
-                Loading...
-            </div>
-        );
+        return <Skeleton variant="page" />;
     }
 
     const count = filtered.length;
@@ -278,13 +335,17 @@ export default function Journeys() {
                             aria-labelledby={`${baseId}-tab-${activeTab.id}`}
                             className="w-full pt-5 sm:pt-6"
                         >
-                            {count === 0 ? (
+                            {listLoading && journeys.length === 0 ? (
+                                <Skeleton variant="list" />
+                            ) : listError && journeys.length === 0 ? (
+                                <EmptyState title="Could not load journeys" body={listError} showBook={false} />
+                            ) : count === 0 ? (
                                 <EmptyState title={activeTab.emptyTitle} body={activeTab.emptyBody} />
                             ) : (
                                 <ul className="m-0 flex w-full list-none flex-col gap-4 p-0 sm:gap-5">
                                     {filtered.map((j) => (
                                         <li key={j.id} className="w-full">
-                                            <JourneyCard journey={j} />
+                                            <JourneyCard journey={j} onCancelled={() => setRefreshKey((n) => n + 1)} />
                                         </li>
                                     ))}
                                 </ul>

@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import Logo from '../components/landing/Logo';
 
 /**
- * Step 1 — email + Google (Google disabled for now).
- * Continue → /complete-profile, then return to previous page.
+ * Sign in with email + password, or start create-account (email → complete-profile).
  */
 export default function Login() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { setReturnTo, setPendingEmail, isAuthenticated, consumeReturnTo } = useAuth();
+    const { setReturnTo, setPendingEmail, login, isAuthenticated, user, consumeReturnTo } = useAuth();
+    const { showToast } = useToast();
+    const [mode, setMode] = useState('signin');
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const from = searchParams.get('from');
@@ -20,17 +25,56 @@ export default function Login() {
 
     useEffect(() => {
         if (isAuthenticated) {
+            if (user?.account_type === 'chauffeur' && user?.chauffeur_status === 'pending') {
+                navigate('/complete-profile', { replace: true });
+                return;
+            }
             navigate(consumeReturnTo(), { replace: true });
         }
-    }, [isAuthenticated, consumeReturnTo, navigate]);
+    }, [isAuthenticated, user, consumeReturnTo, navigate]);
 
-    const onContinue = (e) => {
+    const onSignIn = async (e) => {
         e.preventDefault();
+        setError('');
+        setSubmitting(true);
+        try {
+            const nextUser = await login({ email: email.trim(), password });
+            if (nextUser?.chauffeur_status === 'pending') {
+                navigate('/complete-profile', { replace: true });
+                return;
+            }
+            const first = nextUser?.first_name || nextUser?.name?.split?.(' ')?.[0];
+            showToast(
+                first
+                    ? `Congratulations, ${first}! You’re signed in.`
+                    : 'Congratulations! You’re signed in.',
+            );
+            navigate(consumeReturnTo(), { replace: true });
+        } catch (err) {
+            const msg =
+                err?.response?.data?.message ||
+                err?.response?.data?.errors?.email?.[0] ||
+                'Unable to sign in. Check your email and password.';
+            setError(msg);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const onCreateAccount = (e) => {
+        e.preventDefault();
+        setError('');
         const trimmed = email.trim();
-        if (!trimmed) return;
+        if (!trimmed) {
+            setError('Please enter your email.');
+            return;
+        }
         setPendingEmail(trimmed);
         navigate('/complete-profile');
     };
+
+    const fieldClass =
+        'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
 
     return (
         <main className="flex min-h-screen flex-col bg-white text-ink-text">
@@ -49,35 +93,120 @@ export default function Login() {
             <div className="flex flex-1 items-start justify-center px-6 pt-10 pb-16 sm:items-center sm:pt-0">
                 <div className="w-full max-w-[420px]">
                     <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                        Sign in or create an account
+                        {mode === 'signin' ? 'Sign in' : 'Create an account'}
                     </h1>
                     <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
-                        Enter your email to continue. We&apos;ll ask for a few details next.
+                        {mode === 'signin'
+                            ? 'Enter your email and password to continue.'
+                            : 'Enter your email. We will ask for a few details next.'}
                     </p>
 
-                    <form onSubmit={onContinue} className="mt-8 space-y-4">
-                        <label className="block">
-                            <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Email
-                            </span>
-                            <input
-                                type="email"
-                                required
-                                autoComplete="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="you@example.com"
-                                className="font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700"
-                            />
-                        </label>
-
+                    <div
+                        role="tablist"
+                        aria-label="Auth mode"
+                        className="mt-8 grid grid-cols-2 gap-1 rounded-full border border-[#e0ddd6] bg-[#f7f6f3] p-1"
+                    >
                         <button
-                            type="submit"
-                            className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === 'signin'}
+                            onClick={() => {
+                                setMode('signin');
+                                setError('');
+                            }}
+                            className={`font-geist min-h-10 cursor-pointer rounded-full text-[14px] font-500 transition ${
+                                mode === 'signin'
+                                    ? 'bg-white text-ink-text shadow-sm'
+                                    : 'text-muted'
+                            }`}
                         >
-                            Continue
+                            Sign in
                         </button>
-                    </form>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === 'signup'}
+                            onClick={() => {
+                                setMode('signup');
+                                setError('');
+                            }}
+                            className={`font-geist min-h-10 cursor-pointer rounded-full text-[14px] font-500 transition ${
+                                mode === 'signup'
+                                    ? 'bg-white text-ink-text shadow-sm'
+                                    : 'text-muted'
+                            }`}
+                        >
+                            Create account
+                        </button>
+                    </div>
+
+                    {error ? (
+                        <p className="font-geist mt-4 m-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700">
+                            {error}
+                        </p>
+                    ) : null}
+
+                    {mode === 'signin' ? (
+                        <form onSubmit={onSignIn} className="mt-6 space-y-4">
+                            <label className="block">
+                                <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
+                                    Email
+                                </span>
+                                <input
+                                    type="email"
+                                    required
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    className={fieldClass}
+                                />
+                            </label>
+                            <label className="block">
+                                <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
+                                    Password
+                                </span>
+                                <input
+                                    type="password"
+                                    required
+                                    autoComplete="current-password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className={fieldClass}
+                                />
+                            </label>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
+                            >
+                                {submitting ? 'Signing in…' : 'Sign in'}
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={onCreateAccount} className="mt-6 space-y-4">
+                            <label className="block">
+                                <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
+                                    Email
+                                </span>
+                                <input
+                                    type="email"
+                                    required
+                                    autoComplete="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    className={fieldClass}
+                                />
+                            </label>
+                            <button
+                                type="submit"
+                                className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                            >
+                                Continue
+                            </button>
+                        </form>
+                    )}
 
                     <div className="my-8 flex items-center gap-4">
                         <div className="h-px flex-1 bg-[#e8e8ea]" />

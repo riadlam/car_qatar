@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { formatMoney } from '../../data/journeys';
 import { VEHICLE_CATALOG } from '../../data/bookingVehicles';
 import { IconPassengers, IconLuggage } from '../booking/icons';
@@ -68,19 +68,18 @@ function ContactSheet({ open, onClose, chauffeur, bookingNumber }) {
  */
 export default function JourneyRideSidebar({
     journey: j,
-    mode = 'details',
     showCar = false,
     onContact,
+    onCancel,
+    stepLabel = '',
     trackingProgress = 0.35,
 }) {
-    const navigate = useNavigate();
     const vehicle = VEHICLE_CATALOG.find((v) => v.id === j.vehicle_id) || null;
-    const isTrack = mode === 'track';
-    const canTrack =
-        j.status === 'upcoming' &&
-        Boolean(j.chauffeur) &&
-        (j.phase === 'upcoming_soon' || j.phase === 'chauffeur_assigned' || j.actions?.includes('track'));
-    const etaMins = Math.max(2, Math.round((1 - trackingProgress) * 22));
+    const canCancel = (j.actions || []).includes('cancel') && j.status === 'upcoming';
+    const etaMins =
+        j.eta_minutes != null && Number.isFinite(Number(j.eta_minutes))
+            ? Math.max(1, Math.round(Number(j.eta_minutes)))
+            : Math.max(2, Math.round((1 - trackingProgress) * 22));
 
     return (
         <aside className="booking-sidebar flex flex-col bg-page lg:sticky lg:top-[80px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto lg:border-0">
@@ -92,16 +91,16 @@ export default function JourneyRideSidebar({
                         className="absolute inset-0 h-full w-full object-cover object-center"
                     />
                 ) : (
-                    <div className="absolute inset-0 bg-[linear-gradient(165deg,#fbf8f2_0%,#f0e8ea_100%)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(165deg,#f5f4f1_0%,#ebe8e3_100%)]" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent" />
             </div>
 
             <div className="flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-5">
-                {(isTrack || showCar) && (
+                {showCar ? (
                     <div className="mb-4 rounded-xl border border-wine-700/20 bg-wine-50 px-3 py-3">
                         <p className="font-geist m-0 text-[12px] font-600 tracking-wide text-wine-700 uppercase">
-                            {j.mode === 'airport' ? 'En route to airport' : 'Chauffeur on the way'}
+                            {stepLabel || 'Chauffeur on the way'}
                         </p>
                         <p className="font-geist mt-1 m-0 text-[14px] font-500 text-ink-text">
                             {j.chauffeur ? `${j.chauffeur.name} · ~${etaMins} min` : `Arriving in ~${etaMins} min`}
@@ -113,7 +112,7 @@ export default function JourneyRideSidebar({
                             />
                         </div>
                     </div>
-                )}
+                ) : null}
 
                 <div className="flex items-start justify-between gap-3 border-b border-[#e8e6e1] pb-4">
                     <div className="min-w-0">
@@ -166,51 +165,30 @@ export default function JourneyRideSidebar({
                 ) : null}
 
                 <div className="mt-auto flex flex-col gap-2 pt-5">
-                    {isTrack || showCar ? (
-                        <>
-                            <button
-                                type="button"
-                                onClick={onContact}
-                                disabled={!j.chauffeur}
-                                className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-not-allowed disabled:bg-[#aeaeae]"
-                            >
-                                Contact chauffeur
-                            </button>
-                            <Link
-                                to={isTrack ? `/journeys/ride/${j.id}` : `/journeys/ride/${j.id}/track`}
-                                className="font-geist flex min-h-11 w-full items-center justify-center rounded-full border border-[#d8d8dc] text-[15px] font-500 text-ink-text"
-                            >
-                                {isTrack ? 'View trip details' : 'Open live tracking'}
-                            </Link>
-                        </>
-                    ) : (
-                        <>
-                            {canTrack ? (
-                                <button
-                                    type="button"
-                                    onClick={() => navigate(`/journeys/ride/${j.id}/track`)}
-                                    className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
-                                >
-                                    Live tracking
-                                </button>
-                            ) : null}
-                            {j.chauffeur && j.status === 'upcoming' ? (
-                                <button
-                                    type="button"
-                                    onClick={onContact}
-                                    className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full border border-wine-700 px-4 py-3 text-[16px] font-500 text-wine-700 transition hover:bg-wine-50"
-                                >
-                                    Contact chauffeur
-                                </button>
-                            ) : null}
-                            <Link
-                                to="/journeys"
-                                className="font-geist flex min-h-11 w-full items-center justify-center rounded-full border border-[#d8d8dc] text-[15px] font-500 text-ink-text"
-                            >
-                                Back to journeys
-                            </Link>
-                        </>
-                    )}
+                    {j.chauffeur && j.status === 'upcoming' ? (
+                        <button
+                            type="button"
+                            onClick={onContact}
+                            className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                        >
+                            Contact chauffeur
+                        </button>
+                    ) : null}
+                    {canCancel ? (
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] px-4 py-3 text-[16px] font-500 text-ink-text transition hover:border-wine-700"
+                        >
+                            Cancel
+                        </button>
+                    ) : null}
+                    <Link
+                        to="/journeys"
+                        className="font-geist flex min-h-11 w-full items-center justify-center rounded-full border border-[#d8d8dc] text-[15px] font-500 text-ink-text"
+                    >
+                        Back to journeys
+                    </Link>
                 </div>
             </div>
         </aside>

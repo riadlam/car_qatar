@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { isActiveChauffeur, isCustomer, isPendingChauffeur } from './utils/roles';
+import { ToastProvider } from './context/ToastContext';
 import Home from './pages/Home';
 import Chauffeurs from './pages/Chauffeurs';
 import Business from './pages/Business';
@@ -24,17 +26,14 @@ import Booking from './pages/Booking';
 import Checkout from './pages/Checkout';
 import BusinessSolutions from './pages/BusinessSolutions';
 import AboutUs from './pages/AboutUs';
+import Skeleton from './components/ui/Skeleton';
 
 function GuestRoute({ children }) {
     const { isAuthenticated, loading, consumeReturnTo } = useAuth();
     const redirectRef = useRef(null);
 
     if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">
-                Loading...
-            </div>
-        );
+        return <Skeleton variant="page" />;
     }
 
     if (isAuthenticated) {
@@ -47,11 +46,38 @@ function GuestRoute({ children }) {
     return children;
 }
 
+function journeysRedirect(user) {
+    if (isActiveChauffeur(user)) return '/chauffeur';
+    if (isPendingChauffeur(user)) return '/complete-profile';
+    return '/account';
+}
+
+function RoleRoute({ allow, redirectTo, children }) {
+    const { isAuthenticated, loading, user, setReturnTo } = useAuth();
+
+    if (loading) {
+        return <Skeleton variant="page" />;
+    }
+
+    if (!isAuthenticated) {
+        const from = `${window.location.pathname}${window.location.search}`;
+        setReturnTo(from);
+        return <Navigate to={`/login?from=${encodeURIComponent(from)}`} replace />;
+    }
+
+    if (!allow(user)) {
+        return <Navigate to={redirectTo(user)} replace />;
+    }
+
+    return children;
+}
+
 export default function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
-                <Routes>
+            <ToastProvider>
+                <BrowserRouter>
+                    <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/partners" element={<Chauffeurs />} />
                     <Route path="/chauffeurs" element={<Navigate to="/partners" replace />} />
@@ -79,18 +105,63 @@ export default function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/complete-profile" element={<CompleteProfile />} />
                     <Route path="/account" element={<Account />} />
-                    <Route path="/journeys" element={<Journeys />} />
-                    <Route path="/journeys/ride/:id/track" element={<JourneyRide mode="track" />} />
-                    <Route path="/journeys/ride/:id" element={<JourneyRide mode="details" />} />
-                    <Route path="/journeys/:tab" element={<Journeys />} />
-                    <Route path="/chauffeur" element={<ChauffeurPortal />} />
-                    <Route path="/chauffeur/:tab" element={<ChauffeurPortal />} />
+                    <Route
+                        path="/journeys"
+                        element={
+                            <RoleRoute allow={isCustomer} redirectTo={journeysRedirect}>
+                                <Journeys />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/journeys/ride/:id/track"
+                        element={<Navigate to=".." relative="path" replace />}
+                    />
+                    <Route
+                        path="/journeys/ride/:id"
+                        element={
+                            <RoleRoute allow={isCustomer} redirectTo={journeysRedirect}>
+                                <JourneyRide mode="details" />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/journeys/:tab"
+                        element={
+                            <RoleRoute allow={isCustomer} redirectTo={journeysRedirect}>
+                                <Journeys />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/chauffeur"
+                        element={
+                            <RoleRoute
+                                allow={isActiveChauffeur}
+                                redirectTo={(user) => (isPendingChauffeur(user) ? '/complete-profile' : '/account')}
+                            >
+                                <ChauffeurPortal />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/chauffeur/:tab"
+                        element={
+                            <RoleRoute
+                                allow={isActiveChauffeur}
+                                redirectTo={(user) => (isPendingChauffeur(user) ? '/complete-profile' : '/account')}
+                            >
+                                <ChauffeurPortal />
+                            </RoleRoute>
+                        }
+                    />
                     <Route path="/booking" element={<Booking />} />
                     <Route path="/booking/checkout" element={<Checkout />} />
                     <Route path="/booking/checkout/" element={<Checkout />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-            </BrowserRouter>
+                    </Routes>
+                </BrowserRouter>
+            </ToastProvider>
         </AuthProvider>
     );
 }

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'mapbox' => [
+        'public_token' => env('VITE_MAPBOX_ACCESS_TOKEN', env('MAPBOX_PUBLIC_TOKEN')),
+        'secret_token' => env('MAPBOX_SECRET_TOKEN'),
+    ],
+
 ];

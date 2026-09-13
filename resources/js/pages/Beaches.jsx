@@ -7,6 +7,7 @@ import SeoSplit from '../components/corporations/SeoSplit';
 import ScrollTop from '../components/corporations/ScrollTop';
 import DestinationScheduler from '../components/explore/DestinationScheduler';
 import { BEACH_IMG, BEACH_DESTINATIONS, BOOK_HREF } from '../components/beaches/assets';
+import { useExploreCategory } from '../hooks/useExploreCategory';
 
 const BEACH_CARDS = [
     {
@@ -51,10 +52,12 @@ const BEACH_CARDS = [
     },
 ];
 
-function HeroScheduler({ stacked = false }) {
+function HeroScheduler({ stacked = false, explore }) {
     return (
         <DestinationScheduler
-            destinations={BEACH_DESTINATIONS}
+            destinations={explore.destinations}
+            selectedDestination={explore.selectedDestination}
+            onDestinationChange={explore.setSelectedDestination}
             destinationLabel="Beach / resort"
             destinationPlaceholder="Search beaches & resorts in Qatar…"
             pickupPlaceholder="Address, airport, hotel, ..."
@@ -82,7 +85,7 @@ function useIsPhone() {
     return isPhone;
 }
 
-function Hero() {
+function Hero({ explore }) {
     const isPhone = useIsPhone();
 
     if (isPhone) {
@@ -116,7 +119,7 @@ function Hero() {
                         </div>
 
                         <div className="w-full">
-                            <HeroScheduler stacked />
+                            <HeroScheduler stacked explore={explore} />
                         </div>
                     </div>
                 </div>
@@ -158,7 +161,7 @@ function Hero() {
                 </div>
 
                 <div className="relative z-10 mx-auto -mt-20 w-full max-w-[1170px] px-6 lg:-mt-24 lg:px-8">
-                    <HeroScheduler />
+                    <HeroScheduler explore={explore} />
                 </div>
             </div>
         </section>
@@ -186,11 +189,17 @@ function Breadcrumb() {
 }
 
 export default function Beaches() {
+    const explore = useExploreCategory('beach', BEACH_CARDS, BEACH_DESTINATIONS);
+
     return (
         <SiteLayout>
-            <Hero />
+            <Hero explore={explore} />
             <Breadcrumb />
-            <CardCarousel title="Shores and resorts we drive to daily" cards={BEACH_CARDS} />
+            <CardCarousel
+                title="Shores and resorts we drive to daily"
+                cards={explore.cards}
+                onCardClick={explore.onCardClick}
+            />
             <CalloutBanner
                 title="Skip the parking — keep the sea view"
                 body="Curb-side drop-off at beaches and resorts, then a calm ride back when you’re ready."

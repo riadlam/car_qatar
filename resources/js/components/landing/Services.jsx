@@ -94,7 +94,7 @@ export default function Services() {
                 );
 
                 gsap.to(section, {
-                    backgroundColor: '#fbf8f2',
+                    backgroundColor: '#f5f4f1',
                     ease: 'power2.out',
                     scrollTrigger: {
                         trigger: cards,

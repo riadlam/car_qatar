@@ -1,6 +1,8 @@
 import { useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { forwardGeocodeClient } from '../../maps/useMapboxSearch';
 import Select, { components as selectComponents } from 'react-select';
+import MapboxLocationField from '../booking/MapboxLocationField';
 
 /** Same chevron as home BookingWidget */
 const Chevron = (
@@ -139,6 +141,7 @@ function OptionWithArea(props) {
 /**
  * Explore Qatar appointment scheduler.
  * Home-style fields + searchable destination dropdown (not native select).
+ * Supports controlled destination for card → picker fill.
  */
 export default function DestinationScheduler({
     destinations = [],
@@ -149,11 +152,28 @@ export default function DestinationScheduler({
     title,
     subtitle,
     stacked = false,
+    selectedDestination = undefined,
+    onDestinationChange,
 }) {
     const navigate = useNavigate();
     const uid = useId();
-    const [destination, setDestination] = useState(null);
+    const [internalDestination, setInternalDestination] = useState(null);
+    const [pickup, setPickup] = useState('');
+    const [pickupCoords, setPickupCoords] = useState(null);
     const [touched, setTouched] = useState(false);
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const isControlled = selectedDestination !== undefined;
+    const destination = isControlled ? selectedDestination : internalDestination;
+
+    const setDestination = (opt) => {
+        if (isControlled) {
+            onDestinationChange?.(opt);
+        } else {
+            setInternalDestination(opt);
+        }
+    };
 
     const options = useMemo(
         () =>
@@ -161,28 +181,89 @@ export default function DestinationScheduler({
                 value: d.id,
                 label: d.label,
                 area: d.area,
+                lat: d.lat ?? null,
+                lng: d.lng ?? null,
             })),
         [destinations],
     );
 
-    const onSubmit = (e) => {
+    // Keep controlled value in sync with options (e.g. after API load)
+    const selectValue = useMemo(() => {
+        if (!destination) return null;
+        const match = options.find((o) => o.value === destination.value || o.label === destination.label);
+        return match
+            ? { ...match, ...destination, lat: destination.lat ?? match.lat, lng: destination.lng ?? match.lng }
+            : destination;
+    }, [destination, options]);
+
+    const onSubmit = async (e) => {
         e.preventDefault();
         setTouched(true);
-        if (!destination) return;
 
         const fd = new FormData(e.currentTarget);
-        const pickup = String(fd.get('pickup-location') || '').trim();
-        const dropoff = destination.label;
-        const time = String(fd.get('pickup-time') || '17:15');
+        const time = String(fd.get('pickup-time') || '');
         const date = String(fd.get('pickup-date') || '');
+        const pickupLabel = pickup.trim();
+        const today = new Date();
+        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+        if (pickupCoords?.lat == null || pickupCoords?.lng == null) {
+            setError('Choose a pickup location from the suggestions.');
+            return;
+        }
+        if (!selectValue) {
+            setError('Please choose a destination.');
+            return;
+        }
+        if (!date) {
+            setError('Choose a date.');
+            return;
+        }
+        if (date < todayKey) {
+            setError('Choose a date that is today or later.');
+            return;
+        }
+        if (!time) {
+            setError('Choose a pickup time.');
+            return;
+        }
+
+        let dropLat = selectValue.lat;
+        let dropLng = selectValue.lng;
+        if (dropLat == null || dropLng == null) {
+            setSubmitting(true);
+            setError('');
+            try {
+                const place = await forwardGeocodeClient(
+                    [selectValue.label, selectValue.area].filter(Boolean).join(', ') + ', Qatar',
+                    'qatar',
+                );
+                dropLat = place?.lat;
+                dropLng = place?.lng;
+            } catch {
+                dropLat = null;
+                dropLng = null;
+            }
+            setSubmitting(false);
+        }
+        if (dropLat == null || dropLng == null) {
+            setError('This destination has no map location yet.');
+            return;
+        }
+
+        setError('');
+        const dropoff = selectValue.label;
         const q = new URLSearchParams();
-        if (pickup) q.set('pickup', pickup);
-        if (dropoff) q.set('dropoff', dropoff);
-        if (time) q.set('time', time);
-        if (date) q.set('date', date);
+        q.set('pickup', pickupLabel);
+        q.set('dropoff', dropoff);
+        q.set('time', time);
+        q.set('date', date);
+        q.set('lat', String(pickupCoords.lat));
+        q.set('lng', String(pickupCoords.lng));
+        q.set('drop_lat', String(dropLat));
+        q.set('drop_lng', String(dropLng));
         q.set('mode', 'transfer');
-        q.set('service', service);
+        q.set('service', service === 'tourist_trip' ? 'one_way' : service || 'one_way');
         navigate(`/booking?${q.toString()}`);
     };
 
@@ -222,24 +303,28 @@ export default function DestinationScheduler({
                             : 'flex-col gap-4 sm:flex-row sm:gap-4 lg:w-[496px] lg:max-w-[42%] lg:gap-3'
                     }`}
                 >
-                    <Field id={`${uid}-pickup`} label="Pickup location">
-                        <input
-                            id={`${uid}-pickup`}
-                            name="pickup-location"
-                            className={inputCls}
-                            placeholder={pickupPlaceholder}
-                            autoComplete="off"
-                            role="combobox"
-                            aria-expanded="false"
-                        />
-                    </Field>
+                    <MapboxLocationField
+                        id={`${uid}-pickup`}
+                        name="pickup-location"
+                        label="Pickup location"
+                        value={pickup}
+                        coords={pickupCoords}
+                        onChange={(v) => {
+                            setPickup(v);
+                            setPickupCoords(null);
+                        }}
+                        onPick={(loc) => setPickupCoords({ lat: loc.lat, lng: loc.lng })}
+                        searchScope="qatar"
+                        variant="light"
+                        required
+                    />
 
                     <Field id={`${uid}-destination`} label={destinationLabel} endAdornment={Chevron}>
                         <Select
                             inputId={`${uid}-destination`}
                             instanceId={`${uid}-dest-select`}
                             options={options}
-                            value={destination}
+                            value={selectValue}
                             onChange={(opt) => {
                                 setDestination(opt);
                                 setTouched(true);
@@ -316,15 +401,18 @@ export default function DestinationScheduler({
                     <button
                         type="submit"
                         data-cy="search-button"
-                        className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] leading-6 font-500 tracking-[0.15px] whitespace-nowrap text-white transition hover:bg-wine-600 lg:min-h-10 lg:min-w-[9.5rem] lg:py-2"
+                        disabled={submitting}
+                        className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] leading-6 font-500 tracking-[0.15px] whitespace-nowrap text-white transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-70 lg:min-h-10 lg:min-w-[9.5rem] lg:py-2"
                     >
-                        View options
+                        {submitting ? 'Finding destination…' : 'View options'}
                     </button>
                 </div>
             </form>
 
-            {touched && !destination ? (
-                <p className="font-geist mt-3 m-0 text-[13px] text-wine-500">Please choose a destination.</p>
+            {error || (touched && !selectValue) ? (
+                <p className="font-geist mt-3 m-0 text-[13px] text-wine-500" role="alert">
+                    {error || 'Please choose a destination.'}
+                </p>
             ) : null}
         </div>
     );

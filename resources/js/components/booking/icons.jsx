@@ -196,7 +196,7 @@ export function IncludedIcon({ type }) {
 export function MapPinSvg() {
     return (
         <svg width="23" height="32" viewBox="0 0 23 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <circle cx="11.2908" cy="11.2898" r="11.2898" fill="#f0c5d2" />
+            <circle cx="11.2908" cy="11.2898" r="11.2898" fill="#e5dfd8" />
             <line x1="11.5" y1="20.3877" x2="11.5" y2="29.6183" stroke="#5b0520" strokeWidth="3" strokeLinecap="round" />
             <circle cx="11.291" cy="11.29" r="9.40817" fill="#5b0520" />
             <circle cx="11.29" cy="11.29" r="4.70409" fill="#FBF8F2" />

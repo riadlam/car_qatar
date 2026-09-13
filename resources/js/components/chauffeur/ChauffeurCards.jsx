@@ -1,9 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-    CHAUFFEUR_TODAY,
-    formatPayout,
-    sumPayouts,
-} from '../../data/chauffeurPortal';
+import { formatPayout, sumPayouts } from '../../data/chauffeurPortal';
 
 function StatusDot({ tone = 'wine' }) {
     const color =
@@ -43,7 +39,7 @@ function daysBetween(aIso, bIso) {
     return Math.round((b - a) / 86400000);
 }
 
-function inPeriod(rideDate, period, today = CHAUFFEUR_TODAY) {
+function inPeriod(rideDate, period, today = new Date().toISOString().slice(0, 10)) {
     if (period === 'all' || !rideDate) return true;
     const diff = daysBetween(rideDate, today);
     // diff > 0 ⇒ ride is in the past; diff < 0 ⇒ upcoming
@@ -93,6 +89,10 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                             {offer.date_label}
                             <span className="mx-1.5 text-muted">·</span>
                             <span className="text-wine-700">{offer.time_label}</span>
+                        </p>
+                        <p className="font-geist mt-1 m-0 text-[13px] text-muted">
+                            Booking {offer.booking_id}
+                            {offer.booking_number ? ` · ${offer.booking_number}` : ''}
                         </p>
                     </div>
                     <div className="text-right">
@@ -214,6 +214,11 @@ export function ChauffeurRideCard({ ride }) {
                             .filter(Boolean)
                             .join(' · ')}
                     </p>
+                    {isCanceled && ride.cancel_reason ? (
+                        <p className="font-geist mt-2 m-0 text-[13px] text-muted">
+                            {ride.cancelled_by === 'customer' ? 'Passenger' : 'You'}: {ride.cancel_reason}
+                        </p>
+                    ) : null}
                 </div>
 
                 {ride.rating ? (
@@ -261,6 +266,11 @@ function HistoryRow({ ride }) {
                 <p className="font-geist mt-0.5 m-0 truncate text-[12px] text-muted">
                     {[ride.passenger_name, ride.booking_number].filter(Boolean).join(' · ')}
                 </p>
+                {isCanceled && ride.cancel_reason ? (
+                    <p className="font-geist mt-1 m-0 text-[12px] text-muted">
+                        {ride.cancelled_by === 'customer' ? 'Passenger' : 'You'}: {ride.cancel_reason}
+                    </p>
+                ) : null}
             </div>
 
             <div className="text-right">
@@ -285,7 +295,7 @@ function HistoryRow({ ride }) {
  * Profile ride history — payouts + period / status / service filters.
  */
 export function RideHistorySection({ rides, currency = 'US$' }) {
-    const [period, setPeriod] = useState('month');
+    const [period, setPeriod] = useState('all');
     const [status, setStatus] = useState('all');
     const [mode, setMode] = useState('all');
     const [query, setQuery] = useState('');
@@ -304,7 +314,7 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
             .filter((r) => (mode === 'all' ? true : r.mode === mode))
             .filter((r) => {
                 if (!q) return true;
-                return [r.pickup, r.dropoff, r.booking_number, r.passenger_name, r.mode_label]
+                return [r.booking_id, r.booking_number, r.pickup, r.dropoff, r.passenger_name, r.mode_label]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase()

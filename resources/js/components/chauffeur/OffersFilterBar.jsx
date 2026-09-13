@@ -3,44 +3,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { formatPayout } from '../../data/chauffeurPortal';
 
 const EASE = [0.22, 1, 0.36, 1];
+export const PAYOUT_CEILING = 10000;
 
-const CLASS_OPTIONS = [
-    { id: 'all', label: 'All' },
-    { id: 'business', label: 'Business' },
-    { id: 'first', label: 'First' },
-];
-
-const SERVICE_OPTIONS = [
-    { id: 'all', label: 'Any' },
-    { id: 'airport', label: 'Airport' },
-    { id: 'city', label: 'City' },
-    { id: 'hourly', label: 'Hourly' },
-];
-
-const WHEN_OPTIONS = [
-    { id: 'all', label: 'Any time' },
-    { id: 'today', label: 'Today' },
-    { id: 'tomorrow', label: 'Tomorrow' },
-];
-
-const RADIUS_PRESETS = [10, 25, 50, 100];
-
-function Chip({ selected, onClick, children }) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-pressed={selected}
-            className={`font-geist relative cursor-pointer rounded-full px-3.5 py-2 text-[13px] font-500 transition-colors duration-200 ${
-                selected
-                    ? 'bg-wine-700 text-white shadow-[0_6px_16px_rgba(91,5,32,0.22)]'
-                    : 'bg-page text-ink-text ring-1 ring-[#e4e1db] hover:ring-wine-700/35'
-            }`}
-        >
-            {children}
-        </button>
-    );
-}
+export const DEFAULT_FILTERS = {
+    minPayout: 0,
+    maxPayout: PAYOUT_CEILING,
+};
 
 function RangeField({ id, label, valueLabel, min, max, step, value, onChange }) {
     const pct = ((value - min) / (max - min)) * 100;
@@ -73,30 +41,21 @@ function RangeField({ id, label, valueLabel, min, max, step, value, onChange }) 
     );
 }
 
-const DEFAULT_FILTERS = {
-    classFilter: 'all',
-    service: 'all',
-    when: 'all',
-    minPayout: 0,
-    maxPayout: 300,
-    radiusKm: 50,
-};
-
-export { DEFAULT_FILTERS };
+export function payoutQuery(filters) {
+    const params = {};
+    if (filters.minPayout > 0) params.min_payout = filters.minPayout;
+    if (filters.maxPayout < PAYOUT_CEILING) params.max_payout = filters.maxPayout;
+    return params;
+}
 
 /**
- * Mobile offers filter — bottom sheet with class, service, when, payout, radius.
+ * Mobile offers filter — min and max payout only. The API applies the range.
  */
-export default function OffersFilterBar({ open, onClose, filters, onChange, onReset, resultCount }) {
+export default function OffersFilterBar({ open, onClose, filters, onChange, onReset, resultCount, currency = '' }) {
     const set = (patch) => onChange({ ...filters, ...patch });
-    const activeCount = [
-        filters.classFilter !== 'all',
-        filters.service !== 'all',
-        filters.when !== 'all',
-        filters.minPayout > 0,
-        filters.maxPayout < 300,
-        filters.radiusKm < 100,
-    ].filter(Boolean).length;
+    const activeCount = [filters.minPayout > 0, filters.maxPayout < PAYOUT_CEILING].filter(Boolean).length;
+    const maxLabel =
+        filters.maxPayout >= PAYOUT_CEILING ? 'No max' : formatPayout(filters.maxPayout, currency);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -174,64 +133,13 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
 
                         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
                             <div className="space-y-6">
-                                <div>
-                                    <p className="font-geist m-0 mb-2.5 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                        Vehicle class
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {CLASS_OPTIONS.map((o) => (
-                                            <Chip
-                                                key={o.id}
-                                                selected={filters.classFilter === o.id}
-                                                onClick={() => set({ classFilter: o.id })}
-                                            >
-                                                {o.label}
-                                            </Chip>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="font-geist m-0 mb-2.5 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                        Service
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {SERVICE_OPTIONS.map((o) => (
-                                            <Chip
-                                                key={o.id}
-                                                selected={filters.service === o.id}
-                                                onClick={() => set({ service: o.id })}
-                                            >
-                                                {o.label}
-                                            </Chip>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="font-geist m-0 mb-2.5 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                        When
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {WHEN_OPTIONS.map((o) => (
-                                            <Chip
-                                                key={o.id}
-                                                selected={filters.when === o.id}
-                                                onClick={() => set({ when: o.id })}
-                                            >
-                                                {o.label}
-                                            </Chip>
-                                        ))}
-                                    </div>
-                                </div>
-
                                 <RangeField
                                     id="filter-min-payout"
                                     label="Min payout"
-                                    valueLabel={formatPayout(filters.minPayout, 'US$')}
+                                    valueLabel={formatPayout(filters.minPayout, currency)}
                                     min={0}
-                                    max={300}
-                                    step={5}
+                                    max={PAYOUT_CEILING}
+                                    step={10}
                                     value={filters.minPayout}
                                     onChange={(minPayout) =>
                                         set({
@@ -244,10 +152,10 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
                                 <RangeField
                                     id="filter-max-payout"
                                     label="Max payout"
-                                    valueLabel={formatPayout(filters.maxPayout, 'US$')}
+                                    valueLabel={maxLabel}
                                     min={0}
-                                    max={300}
-                                    step={5}
+                                    max={PAYOUT_CEILING}
+                                    step={10}
                                     value={filters.maxPayout}
                                     onChange={(maxPayout) =>
                                         set({
@@ -256,46 +164,6 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
                                         })
                                     }
                                 />
-
-                                <div>
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <p className="font-geist m-0 text-[13px] font-500 text-ink-text">Radius</p>
-                                        <span className="font-geist text-[13px] font-600 tabular-nums text-wine-700">
-                                            {filters.radiusKm >= 100 ? '100+ km' : `${filters.radiusKm} km`}
-                                        </span>
-                                    </div>
-                                    <div className="mt-2.5 flex flex-wrap gap-2">
-                                        {RADIUS_PRESETS.map((km) => (
-                                            <Chip
-                                                key={km}
-                                                selected={filters.radiusKm === km}
-                                                onClick={() => set({ radiusKm: km })}
-                                            >
-                                                {km >= 100 ? '100+ km' : `${km} km`}
-                                            </Chip>
-                                        ))}
-                                    </div>
-                                    <div className="relative mt-3 h-8">
-                                        <div className="pointer-events-none absolute top-1/2 right-0 left-0 h-1.5 -translate-y-1/2 rounded-full bg-[#ebe8e2]" />
-                                        <div
-                                            className="pointer-events-none absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full bg-wine-700/80"
-                                            style={{
-                                                width: `${((filters.radiusKm - 5) / (100 - 5)) * 100}%`,
-                                            }}
-                                        />
-                                        <input
-                                            id="filter-radius"
-                                            type="range"
-                                            min={5}
-                                            max={100}
-                                            step={5}
-                                            value={filters.radiusKm}
-                                            onChange={(e) => set({ radiusKm: Number(e.target.value) })}
-                                            className="chauffeur-range absolute inset-0 w-full cursor-pointer appearance-none bg-transparent"
-                                            aria-label="Search radius in kilometers"
-                                        />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

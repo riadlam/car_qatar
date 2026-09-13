@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingPathFromJourney, formatMoney } from '../../data/journeys';
+import { cancelBooking } from '../../api/bookings';
+import CancelReasonModal from './CancelReasonModal';
 import ReceiptModal from './ReceiptModal';
 
 function StatusDot({ phase }) {
@@ -57,8 +59,10 @@ function StarRow({ rating }) {
 /**
  * Modern ride card — booking-grade info at a glance (Blacklane / Uber Black style).
  */
-export default function JourneyCard({ journey: j }) {
+export default function JourneyCard({ journey: j, onCancelled }) {
     const [receiptOpen, setReceiptOpen] = useState(false);
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [cancelBusy, setCancelBusy] = useState(false);
     const isCanceled = j.status === 'cancelled' || j.status === 'canceled';
     const isPast = j.status === 'past';
     const isUpcoming = j.status === 'upcoming';
@@ -187,9 +191,10 @@ export default function JourneyCard({ journey: j }) {
                         <p className="font-geist mt-3 m-0 text-[13px] text-muted">{j.chauffeur_eta}</p>
                     ) : null}
 
-                    {isCanceled && j.cancel_date_label ? (
+                    {isCanceled && (j.cancel_date_label || j.cancel_reason) ? (
                         <p className="font-geist mt-3 m-0 rounded-lg bg-[#f5f4f1] px-3 py-2 text-[13px] text-muted">
-                            {j.cancel_date_label}
+                            {j.cancelled_by === 'chauffeur' ? 'Canceled by chauffeur' : 'Canceled by you'}
+                            {j.cancel_date_label ? ` · ${j.cancel_date_label}` : ''}
                             {j.cancel_reason ? ` — ${j.cancel_reason}` : ''}
                         </p>
                     ) : null}
@@ -231,6 +236,7 @@ export default function JourneyCard({ journey: j }) {
                                     <button
                                         key={action}
                                         type="button"
+                                        onClick={() => setCancelOpen(true)}
                                         className="font-geist cursor-pointer rounded-full px-3.5 py-2 text-[13px] font-500 text-muted transition hover:text-ink-text"
                                     >
                                         Cancel
@@ -238,10 +244,7 @@ export default function JourneyCard({ journey: j }) {
                                 );
                             }
                             if (action === 'contact') {
-                                const contactTo =
-                                    j.actions?.includes('track') || j.phase === 'upcoming_soon'
-                                        ? `/journeys/ride/${j.id}/track?contact=1`
-                                        : `/journeys/ride/${j.id}?contact=1`;
+                                const contactTo = `/journeys/ride/${j.id}?contact=1`;
                                 return (
                                     <Link
                                         key={action}
@@ -252,17 +255,7 @@ export default function JourneyCard({ journey: j }) {
                                     </Link>
                                 );
                             }
-                            if (action === 'track') {
-                                return (
-                                    <Link
-                                        key={action}
-                                        to={`/journeys/ride/${j.id}/track`}
-                                        className="font-geist cursor-pointer rounded-full bg-wine-700 px-3.5 py-2 text-[13px] font-500 text-white transition hover:bg-wine-600"
-                                    >
-                                        Live tracking
-                                    </Link>
-                                );
-                            }
+                            if (action === 'track') return null;
                             if (action === 'receipt') {
                                 return (
                                     <button
@@ -300,7 +293,7 @@ export default function JourneyCard({ journey: j }) {
                             className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
                         />
                     ) : (
-                        <div className="absolute inset-0 bg-[linear-gradient(165deg,#fbf8f2_0%,#f0e8ea_100%)]" />
+                        <div className="absolute inset-0 bg-[linear-gradient(165deg,#f5f4f1_0%,#ebe8e3_100%)]" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-ink/10 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
@@ -313,6 +306,24 @@ export default function JourneyCard({ journey: j }) {
             </div>
 
             <ReceiptModal open={receiptOpen} journey={j} onClose={() => setReceiptOpen(false)} />
+            <CancelReasonModal
+                open={cancelOpen}
+                title="Cancel this booking"
+                busy={cancelBusy}
+                onClose={() => {
+                    if (!cancelBusy) setCancelOpen(false);
+                }}
+                onConfirm={async (payload) => {
+                    setCancelBusy(true);
+                    try {
+                        await cancelBooking(j.id, payload);
+                        setCancelOpen(false);
+                        onCancelled?.();
+                    } finally {
+                        setCancelBusy(false);
+                    }
+                }}
+            />
         </article>
     );
 }

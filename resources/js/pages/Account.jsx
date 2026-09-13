@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { Link, useNavigate } from 'react-router-dom';
+import { isActiveChauffeur, isCustomer } from '../utils/roles';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
+import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
+import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 
@@ -20,7 +23,7 @@ const fieldClass =
 
 function Section({ title, children, action }) {
     return (
-        <section className="border-b border-[#eef1f3] py-8 last:border-b-0">
+        <section className="border-b border-[#ececec] py-8 last:border-b-0">
             <div className="mb-5 flex items-center justify-between gap-4">
                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 tracking-[0.25px] text-ink-text sm:text-[24px]">
                     {title}
@@ -56,7 +59,7 @@ function Row({ label, value, onEdit }) {
     );
 }
 
-function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save' }) {
+function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save', saving = false, error }) {
     if (!open) return null;
     return (
         <div
@@ -83,12 +86,17 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save' 
                     </button>
                 </div>
                 <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                         e.preventDefault();
-                        onSave();
+                        await onSave();
                     }}
                     className="space-y-4"
                 >
+                    {error ? (
+                        <p className="font-geist m-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700">
+                            {error}
+                        </p>
+                    ) : null}
                     {children}
                     <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                         <button
@@ -100,9 +108,10 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save' 
                         </button>
                         <button
                             type="submit"
-                            className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 py-2 text-[15px] font-500 text-white hover:bg-wine-600"
+                            disabled={saving}
+                            className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 py-2 text-[15px] font-500 text-white hover:bg-wine-600 disabled:opacity-60"
                         >
-                            {saveLabel}
+                            {saving ? 'Saving…' : saveLabel}
                         </button>
                     </div>
                 </form>
@@ -113,7 +122,7 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save' 
 
 function displayName(user) {
     if (user?.account_type === 'company') {
-        return user.company || user.name || '—';
+        return user.company || user.company_name || user.name || '—';
     }
     const parts = [user?.title, user?.first_name || user?.name, user?.last_name]
         .filter(Boolean)
@@ -124,12 +133,25 @@ function displayName(user) {
 
 export default function Account() {
     const navigate = useNavigate();
-    const { user, loading, isAuthenticated, updateUser, deleteAccount, setReturnTo } = useAuth();
+    const {
+        user,
+        loading,
+        isAuthenticated,
+        updateUser,
+        updateEmail,
+        updatePassword,
+        deleteAccount,
+        refreshUser,
+        setReturnTo,
+    } = useAuth();
 
     const [edit, setEdit] = useState(null);
     const [draft, setDraft] = useState({});
     const [cardOpen, setCardOpen] = useState(false);
+    const [cards, setCards] = useState([]);
+    const [cardError, setCardError] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
@@ -138,15 +160,39 @@ export default function Account() {
         }
     }, [loading, isAuthenticated, navigate, setReturnTo]);
 
+    useEffect(() => {
+        if (loading || !isAuthenticated) return undefined;
+        let cancelled = false;
+        refreshUser().catch(() => {
+            if (!cancelled) {
+                /* keep cached session if refresh fails transiently */
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [loading, isAuthenticated, refreshUser]);
+
+    useEffect(() => {
+        if (!isAuthenticated) return undefined;
+        let cancelled = false;
+        getPaymentMethods()
+            .then((methods) => {
+                if (!cancelled) setCards(methods);
+            })
+            .catch(() => {
+                if (!cancelled) setCards([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
+
     if (loading || !user) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">
-                Loading...
-            </div>
-        );
+        return <Skeleton variant="page" />;
     }
 
-    const cards = user.payment_methods || [];
+    const companyName = user.company || user.company_name || '';
     const langLabel = LANGUAGES.find((l) => l.value === (user.language || 'en'))?.label || 'English';
     const bookingLabel =
         user.booking_notifications === 'email'
@@ -167,39 +213,69 @@ export default function Account() {
         setEdit(null);
         setDraft({});
         setPasswordMsg('');
+        setSaving(false);
+    };
+
+    const apiErrorMessage = (err, fallback = 'Something went wrong. Please try again.') => {
+        const errors = err?.response?.data?.errors;
+        if (errors && typeof errors === 'object') {
+            const first = Object.values(errors).flat()[0];
+            if (first) return first;
+        }
+        return err?.response?.data?.message || fallback;
+    };
+
+    const saveProfile = async (patch) => {
+        setSaving(true);
+        setPasswordMsg('');
+        try {
+            await updateUser(patch);
+            closeEdit();
+        } catch (err) {
+            setPasswordMsg(apiErrorMessage(err));
+            setSaving(false);
+        }
     };
 
     return (
-        <SiteLayout>
-            <div id="top" className="bg-page pt-[96px] pb-16 lg:pt-[120px] lg:pb-24">
-                <div className="mx-auto max-w-[760px] px-6 lg:px-0">
+        <SiteLayout className="relative min-w-0 overflow-x-clip bg-white">
+            <div id="top" className="bg-white pt-[96px] pb-16 lg:pt-[120px] lg:pb-24">
+                <div className="mx-auto max-w-[720px] px-6 lg:px-0">
                     <h1 className="font-fragment m-0 text-[32px] leading-10 font-400 tracking-[0.25px] text-ink-text sm:text-[40px] sm:leading-[48px]">
                         Account
                     </h1>
                     <p className="font-geist mt-2 m-0 text-[16px] leading-6 text-muted">
-                        Manage your account settings
+                        Signed in as {user.email}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-3">
-                        <Link
-                            to="/journeys"
-                            className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-wine-700 hover:text-wine-700"
-                        >
-                            My journeys
-                        </Link>
-                        <Link
-                            to="/chauffeur"
-                            className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-wine-700 hover:text-wine-700"
-                        >
-                            Chauffeur portal
-                        </Link>
+                        {isCustomer(user) ? (
+                            <Link
+                                to="/journeys"
+                                className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
+                            >
+                                My journeys
+                            </Link>
+                        ) : null}
+                        {isActiveChauffeur(user) ? (
+                            <Link
+                                to="/chauffeur"
+                                className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
+                            >
+                                Chauffeur portal
+                            </Link>
+                        ) : null}
                     </div>
 
-                    <div className="mt-8 rounded-2xl border border-[#e8e8ea] bg-white px-5 sm:px-8">
+                    <div className="mt-10 border-t border-[#ececec]">
                         <Section title="Personal information">
                             <Row
                                 label="Account type"
                                 value={
-                                    user.account_type === 'company' ? 'Company' : 'Individual'
+                                    user.account_type === 'company'
+                                        ? 'Company'
+                                        : user.account_type === 'chauffeur'
+                                          ? 'Chauffeur'
+                                          : 'Individual'
                                 }
                             />
                             <Row
@@ -207,7 +283,7 @@ export default function Account() {
                                 value={displayName(user)}
                                 onEdit={() =>
                                     user.account_type === 'company'
-                                        ? openEdit('company', { company: user.company || '' })
+                                        ? openEdit('company', { company: companyName })
                                         : openEdit('name', {
                                               title: user.title || 'Mr.',
                                               first_name: user.first_name || '',
@@ -223,9 +299,9 @@ export default function Account() {
                             {user.account_type === 'company' ? (
                                 <Row
                                     label="Company"
-                                    value={user.company || '—'}
+                                    value={companyName || '—'}
                                     onEdit={() =>
-                                        openEdit('company', { company: user.company || '' })
+                                        openEdit('company', { company: companyName })
                                     }
                                 />
                             ) : null}
@@ -258,7 +334,12 @@ export default function Account() {
                             <Row
                                 label="Email address"
                                 value={user.email}
-                                onEdit={() => openEdit('email', { email: user.email || '' })}
+                                onEdit={() =>
+                                    openEdit('email', {
+                                        email: user.email || '',
+                                        current_password: '',
+                                    })
+                                }
                             />
                         </Section>
 
@@ -289,10 +370,13 @@ export default function Account() {
                             }
                         >
                             <p className="font-geist mb-4 m-0 text-[14px] text-muted">
-                                Personal credit or debit cards
+                                Online payment is not available yet. Saved cards are not charged.
                             </p>
+                            {cardError ? (
+                                <p className="font-geist mb-3 m-0 text-[14px] text-rose-700">{cardError}</p>
+                            ) : null}
                             {cards.length === 0 ? (
-                                <p className="font-geist m-0 rounded-xl border border-dashed border-[#d8d8dc] bg-page/60 px-4 py-8 text-center text-[15px] text-muted">
+                                <p className="font-geist m-0 border border-dashed border-[#e5e5e5] px-4 py-8 text-center text-[15px] text-muted">
                                     You haven&apos;t added any payment methods yet
                                 </p>
                             ) : (
@@ -312,13 +396,19 @@ export default function Account() {
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    updateUser({
-                                                        payment_methods: cards.filter(
-                                                            (c) => c.id !== card.id,
-                                                        ),
-                                                    })
-                                                }
+                                                onClick={async () => {
+                                                    setCardError('');
+                                                    try {
+                                                        await deletePaymentMethod(card.id);
+                                                        setCards((current) =>
+                                                            current.filter((item) => item.id !== card.id),
+                                                        );
+                                                    } catch (err) {
+                                                        setCardError(
+                                                            firstApiError(err, 'Could not remove this card.'),
+                                                        );
+                                                    }
+                                                }}
                                                 className="font-geist cursor-pointer text-[14px] font-500 text-wine-700 hover:underline"
                                             >
                                                 Remove
@@ -367,7 +457,7 @@ export default function Account() {
                         <section className="py-8">
                             <button
                                 type="button"
-                                onClick={() => openEdit('delete', {})}
+                                onClick={() => openEdit('delete', { current_password: '' })}
                                 className="font-geist cursor-pointer text-[16px] font-500 text-rose-700 underline-offset-2 hover:underline"
                             >
                                 Delete account
@@ -382,15 +472,15 @@ export default function Account() {
                 open={edit === 'name'}
                 title="Edit name"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({
+                saving={saving}
+                error={passwordMsg}
+                onSave={() =>
+                    saveProfile({
                         title: draft.title,
                         first_name: draft.first_name.trim(),
                         last_name: draft.last_name.trim(),
-                        name: [draft.first_name, draft.last_name].filter(Boolean).join(' '),
-                    });
-                    closeEdit();
-                }}
+                    })
+                }
             >
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">Title</span>
@@ -429,10 +519,9 @@ export default function Account() {
                 open={edit === 'phone'}
                 title="Edit mobile number"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ phone: draft.phone });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() => saveProfile({ phone: draft.phone })}
             >
                 <PhoneInput
                     defaultCountry="dz"
@@ -448,10 +537,9 @@ export default function Account() {
                 open={edit === 'company'}
                 title="Edit company"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ company: draft.company.trim() });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() => saveProfile({ company: draft.company.trim() })}
             >
                 <input
                     className={fieldClass}
@@ -466,10 +554,11 @@ export default function Account() {
                 open={edit === 'preferred_language'}
                 title="Preferred language"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ preferred_language: draft.preferred_language || '' });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() =>
+                    saveProfile({ preferred_language: draft.preferred_language || null })
+                }
             >
                 <div role="radiogroup" aria-label="Preferred language" className="flex flex-wrap gap-2">
                     <label
@@ -520,10 +609,9 @@ export default function Account() {
                 open={edit === 'address'}
                 title="Edit street address"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ street_address: draft.street_address.trim() });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() => saveProfile({ street_address: draft.street_address.trim() })}
             >
                 <textarea
                     rows={3}
@@ -539,9 +627,21 @@ export default function Account() {
                 open={edit === 'email'}
                 title="Edit email address"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ email: draft.email.trim() });
-                    closeEdit();
+                saving={saving}
+                error={passwordMsg}
+                onSave={async () => {
+                    setSaving(true);
+                    setPasswordMsg('');
+                    try {
+                        await updateEmail({
+                            email: draft.email.trim(),
+                            current_password: draft.current_password || '',
+                        });
+                        closeEdit();
+                    } catch (err) {
+                        setPasswordMsg(apiErrorMessage(err));
+                        setSaving(false);
+                    }
                 }}
             >
                 <input
@@ -551,6 +651,18 @@ export default function Account() {
                     value={draft.email}
                     onChange={(e) => setDraft({ ...draft, email: e.target.value })}
                 />
+                <label className="block">
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        Current password
+                    </span>
+                    <input
+                        type="password"
+                        required
+                        className={fieldClass}
+                        value={draft.current_password || ''}
+                        onChange={(e) => setDraft({ ...draft, current_password: e.target.value })}
+                    />
+                </label>
             </EditModal>
 
             {/* Password */}
@@ -559,7 +671,9 @@ export default function Account() {
                 title="Change password"
                 onClose={closeEdit}
                 saveLabel="Update password"
-                onSave={() => {
+                saving={saving}
+                error={passwordMsg}
+                onSave={async () => {
                     if ((draft.next || '').length < 8) {
                         setPasswordMsg('Password must be at least 8 characters.');
                         return;
@@ -568,21 +682,28 @@ export default function Account() {
                         setPasswordMsg('New passwords do not match.');
                         return;
                     }
-                    updateUser({ has_password: true, password_updated_at: Date.now() });
-                    closeEdit();
+                    setSaving(true);
+                    setPasswordMsg('');
+                    try {
+                        await updatePassword({
+                            current_password: draft.current,
+                            password: draft.next,
+                            password_confirmation: draft.confirm,
+                        });
+                        closeEdit();
+                    } catch (err) {
+                        setPasswordMsg(apiErrorMessage(err));
+                        setSaving(false);
+                    }
                 }}
             >
-                {passwordMsg ? (
-                    <p className="font-geist m-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[14px] text-rose-700">
-                        {passwordMsg}
-                    </p>
-                ) : null}
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">
                         Current password
                     </span>
                     <input
                         type="password"
+                        required
                         className={fieldClass}
                         value={draft.current}
                         onChange={(e) => setDraft({ ...draft, current: e.target.value })}
@@ -619,10 +740,9 @@ export default function Account() {
                 open={edit === 'marketing'}
                 title="Marketing emails"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ marketing_emails: draft.marketing_emails });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() => saveProfile({ marketing_emails: draft.marketing_emails })}
             >
                 <label className="font-geist flex cursor-pointer items-center gap-3 text-[15px]">
                     <input
@@ -642,10 +762,11 @@ export default function Account() {
                 open={edit === 'booking'}
                 title="Booking notifications"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ booking_notifications: draft.booking_notifications });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() =>
+                    saveProfile({ booking_notifications: draft.booking_notifications })
+                }
             >
                 <select
                     className={fieldClass}
@@ -666,10 +787,9 @@ export default function Account() {
                 open={edit === 'language'}
                 title="Communication language"
                 onClose={closeEdit}
-                onSave={() => {
-                    updateUser({ language: draft.language });
-                    closeEdit();
-                }}
+                saving={saving}
+                error={passwordMsg}
+                onSave={() => saveProfile({ language: draft.language })}
             >
                 <select
                     className={fieldClass}
@@ -690,25 +810,41 @@ export default function Account() {
                 title="Delete account"
                 onClose={closeEdit}
                 saveLabel="Delete account"
+                saving={saving}
+                error={passwordMsg}
                 onSave={async () => {
-                    await deleteAccount();
-                    navigate('/', { replace: true });
+                    setSaving(true);
+                    setPasswordMsg('');
+                    try {
+                        await deleteAccount({ current_password: draft.current_password || '' });
+                        navigate('/', { replace: true });
+                    } catch (err) {
+                        setPasswordMsg(apiErrorMessage(err));
+                        setSaving(false);
+                    }
                 }}
             >
                 <p className="font-geist m-0 text-[15px] leading-6 text-muted">
-                    This permanently removes your local account data from this device. This action
-                    cannot be undone.
+                    This permanently deletes your account. This action cannot be undone.
                 </p>
+                <label className="block">
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        Current password
+                    </span>
+                    <input
+                        type="password"
+                        required
+                        className={fieldClass}
+                        value={draft.current_password || ''}
+                        onChange={(e) => setDraft({ ...draft, current_password: e.target.value })}
+                    />
+                </label>
             </EditModal>
 
             <AddCardModal
                 open={cardOpen}
                 onClose={() => setCardOpen(false)}
-                onSave={(card) =>
-                    updateUser({
-                        payment_methods: [...cards, card],
-                    })
-                }
+                onSave={(card) => setCards((current) => [...current, card])}
             />
         </SiteLayout>
     );

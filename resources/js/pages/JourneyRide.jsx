@@ -1,17 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import TripLiveMap from '../components/journeys/TripLiveMap';
 import { IncludedIcon } from '../components/booking/icons';
 import JourneyRideSidebar, { ContactSheet } from '../components/journeys/JourneyRideSidebar';
 import { useAuth } from '../context/AuthContext';
+import { cancelBooking, getBooking } from '../api/bookings';
+import CancelReasonModal from '../components/journeys/CancelReasonModal';
 import { findJourney, formatMoney } from '../data/journeys';
 import { INCLUDED } from '../data/bookingVehicles';
+import { applyTrackToJourney, bookingToJourney } from '../utils/bookingMappers';
+import { subscribePrivate } from '../echo';
+import Skeleton from '../components/ui/Skeleton';
 
 const TIMELINE = [
-    { id: 'confirmed', label: 'Confirmed' },
-    { id: 'chauffeur_assigned', label: 'Chauffeur assigned' },
-    { id: 'upcoming_soon', label: 'On the way' },
+    { id: 'waiting', label: 'Route' },
+    { id: 'to_pickup', label: 'To pickup' },
+    { id: 'to_dropoff', label: 'To drop-off' },
     { id: 'completed', label: 'Completed' },
 ];
 
@@ -20,22 +25,27 @@ const CANCEL_TIMELINE = [
     { id: 'cancelled', label: 'Canceled' },
 ];
 
-function phaseIndex(phase, status) {
-    if (status === 'cancelled' || status === 'canceled') return 1; // last cancel step
-    if (status === 'past' || phase === 'completed') return 3;
-    if (phase === 'upcoming_soon') return 2;
-    if (phase === 'chauffeur_assigned') return 1;
+function mapStep(journey) {
+    if (!journey) return 'waiting';
+    if (journey.status === 'past' || journey.phase === 'completed') return 'completed';
+    if (journey.trip_step === 'to_pickup' || journey.trip_step === 'to_dropoff') return journey.trip_step;
+    const status = journey.assignment_status;
+    if (status === 'arrived' || status === 'in_progress') return 'to_dropoff';
+    if (status === 'assigned' || status === 'en_route' || journey.phase === 'chauffeur_assigned') return 'to_pickup';
+    return 'waiting';
+}
+
+function phaseIndex(journey) {
+    if (journey?.status === 'cancelled' || journey?.status === 'canceled') return 1;
+    const step = mapStep(journey);
+    if (step === 'completed') return 3;
+    if (step === 'to_dropoff') return 2;
+    if (step === 'to_pickup') return 1;
     return 0;
 }
 
-/** Car on map when chauffeur is actively en route (to you / to airport). */
-function isCarOnTheWay(journey, mode) {
-    if (!journey || journey.status !== 'upcoming') return false;
-    if (mode === 'track') return true;
-    return (
-        journey.phase === 'upcoming_soon' ||
-        journey.chauffeur_eta?.toLowerCase().includes('on the way')
-    );
+function isDemoId(id) {
+    return String(id || '').startsWith('demo_');
 }
 
 /**
@@ -49,25 +59,106 @@ export default function JourneyRide({ mode = 'details' }) {
     const { loading, isAuthenticated, setReturnTo } = useAuth();
     const [trackingProgress, setTrackingProgress] = useState(0.22);
     const [contactOpen, setContactOpen] = useState(false);
+    const [journey, setJourney] = useState(() => findJourney(id) || null);
+    const [journeyLoading, setJourneyLoading] = useState(() => !isDemoId(id) && !findJourney(id));
+    const [journeyError, setJourneyError] = useState(false);
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [cancelBusy, setCancelBusy] = useState(false);
 
-    const journey = useMemo(() => findJourney(id), [id]);
+    const step = mapStep(journey);
+    const showCar = step === 'to_pickup' || step === 'to_dropoff';
+    const hasLiveGps =
+        journey?.chauffeur?.latitude != null &&
+        journey?.chauffeur?.longitude != null &&
+        Number.isFinite(Number(journey.chauffeur.latitude)) &&
+        Number.isFinite(Number(journey.chauffeur.longitude));
 
-    const showCar = isCarOnTheWay(journey, mode);
-
-    const onCarProgress = useMemo(
-        () => (p) => {
-            setTrackingProgress(p);
-        },
-        [],
-    );
+    const onCarProgress = useCallback((p) => {
+        setTrackingProgress(p);
+    }, []);
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
-            const from = `/journeys/ride/${id}${mode === 'track' ? '/track' : ''}`;
+            const from = `/journeys/ride/${id}`;
             setReturnTo(from);
             navigate(`/login?from=${encodeURIComponent(from)}`, { replace: true });
         }
-    }, [loading, isAuthenticated, navigate, setReturnTo, id, mode]);
+    }, [loading, isAuthenticated, navigate, setReturnTo, id]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const demo = findJourney(id);
+        if (demo?.demo || isDemoId(id)) {
+            setJourney(demo || null);
+            setJourneyLoading(false);
+            setJourneyError(!demo);
+            return undefined;
+        }
+
+        if (!isAuthenticated) return undefined;
+
+        setJourneyLoading(true);
+        setJourneyError(false);
+        getBooking(id)
+            .then((booking) => {
+                if (!cancelled) setJourney(bookingToJourney(booking));
+            })
+            .catch(() => {
+                if (cancelled) return;
+                if (demo) {
+                    setJourney(demo);
+                } else {
+                    setJourney(null);
+                    setJourneyError(true);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setJourneyLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [id, isAuthenticated]);
+
+    useEffect(() => {
+        if (!journey?.api || !isAuthenticated) return undefined;
+
+        let cancelled = false;
+
+        const pull = () => {
+            getBooking(journey.id)
+                .then((booking) => {
+                    if (!cancelled && booking) setJourney(bookingToJourney(booking));
+                })
+                .catch(() => {});
+        };
+
+        const leave = subscribePrivate(
+            `booking.${journey.id}`,
+            {
+                BookingUpdated: (payload) => {
+                    if (payload?.booking) {
+                        setJourney(bookingToJourney(payload.booking));
+                    }
+                    if (payload?.track) {
+                        setJourney((prev) => applyTrackToJourney(prev, payload.track));
+                        if (payload.track.progress != null) setTrackingProgress(Number(payload.track.progress));
+                    }
+                },
+            },
+            pull,
+        );
+
+        pull();
+        const timer = window.setInterval(pull, 4000);
+
+        return () => {
+            cancelled = true;
+            if (timer) window.clearInterval(timer);
+            leave();
+        };
+    }, [journey?.id, journey?.api, isAuthenticated]);
 
     useEffect(() => {
         if (params.get('contact') === '1' && journey?.chauffeur) {
@@ -78,29 +169,24 @@ export default function JourneyRide({ mode = 'details' }) {
         }
     }, [params, setParams, journey]);
 
-    // Smooth progress comes from RouteMap RAF stream (no polling interval)
-
-    if (loading || !isAuthenticated) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-page text-ink-text">
-                Loading...
-            </div>
-        );
+    if (loading || !isAuthenticated || journeyLoading) {
+        return <Skeleton variant="live" className="min-h-screen bg-page p-4 pt-24 sm:p-6 lg:p-10" />;
     }
 
-    if (!journey) {
+    if (!journey || journeyError) {
         return <Navigate to="/journeys" replace />;
     }
 
-    if (mode === 'track' && (!journey.chauffeur || journey.status !== 'upcoming')) {
-        return <Navigate to={`/journeys/ride/${journey.id}`} replace />;
-    }
-
-    const isTrack = mode === 'track';
     const isCanceled = journey.status === 'cancelled' || journey.status === 'canceled';
     const steps = isCanceled ? CANCEL_TIMELINE : TIMELINE;
-    const activeStep = phaseIndex(journey.phase, journey.status);
-    const etaMins = Math.max(2, Math.round((1 - trackingProgress) * 22));
+    const activeStep = phaseIndex(journey);
+    const stepLabel = step === 'to_pickup' ? 'Chauffeur to pickup' : step === 'to_dropoff' ? 'To drop-off' : 'Route';
+    const mapTargetLat = step === 'to_pickup' ? journey.lat : step === 'to_dropoff' ? (journey.drop_lat ?? journey.lat) : null;
+    const mapTargetLng = step === 'to_pickup' ? journey.lng : step === 'to_dropoff' ? (journey.drop_lng ?? journey.lng) : null;
+    const etaMins =
+        journey.eta_minutes != null && Number.isFinite(Number(journey.eta_minutes))
+            ? Math.max(1, Math.round(Number(journey.eta_minutes)))
+            : Math.max(2, Math.round((1 - trackingProgress) * 22));
     const backTab =
         journey.status === 'past'
             ? '/journeys/past'
@@ -129,8 +215,13 @@ export default function JourneyRide({ mode = 'details' }) {
                             <p className="font-geist m-0 text-[13px] font-500 tracking-[0.06em] text-muted uppercase">
                                 {journey.booking_number}
                             </p>
+                            {journey.customer_reference ? (
+                                <p className="font-geist m-0 mt-1 text-[14px] text-ink-text">
+                                    Ref {journey.customer_reference}
+                                </p>
+                            ) : null}
                             <h1 className="font-fragment m-0 mt-1 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                                {isTrack || showCar ? 'Live tracking' : 'Trip details'}
+                                Trip details
                             </h1>
                             <p className="font-geist mt-1 m-0 text-[15px] text-muted">
                                 {journey.mode_label}
@@ -197,7 +288,8 @@ export default function JourneyRide({ mode = 'details' }) {
                                 {journey.status_label}
                             </p>
                             <p className="font-geist mt-1 m-0 text-[13px] text-muted">
-                                {journey.cancel_date_label}
+                                {journey.cancelled_by === 'chauffeur' ? 'Canceled by chauffeur' : 'Canceled by you'}
+                                {journey.cancel_date_label ? ` · ${journey.cancel_date_label}` : ''}
                                 {journey.cancel_reason ? ` — ${journey.cancel_reason}` : ''}
                             </p>
                         </div>
@@ -211,9 +303,19 @@ export default function JourneyRide({ mode = 'details' }) {
                                 dropoffLabel={journey.dropoff}
                                 lat={journey.lat}
                                 lng={journey.lng}
+                                dropLat={journey.drop_lat}
+                                dropLng={journey.drop_lng}
                                 showCar={showCar}
                                 onCarProgress={onCarProgress}
-                                carLoopMs={48000}
+                                carLat={hasLiveGps ? journey.chauffeur.latitude : null}
+                                carLng={hasLiveGps ? journey.chauffeur.longitude : null}
+                                liveProgress={
+                                    hasLiveGps && journey.track_progress != null
+                                        ? journey.track_progress
+                                        : null
+                                }
+                                targetLat={mapTargetLat}
+                                targetLng={mapTargetLng}
                                 className="absolute inset-0 h-full w-full"
                             />
                         </div>
@@ -222,13 +324,12 @@ export default function JourneyRide({ mode = 'details' }) {
                             <div className="absolute inset-x-3 top-3 z-[5] flex max-w-md items-center justify-between gap-3 rounded-xl border border-white/70 bg-white/95 px-3 py-2.5 shadow-md backdrop-blur sm:inset-x-4">
                                 <div className="min-w-0">
                                     <p className="font-geist m-0 text-[11px] font-600 tracking-wide text-wine-700 uppercase">
-                                        On the way
+                                        {stepLabel}
                                     </p>
                                     <p className="font-geist m-0 mt-0.5 truncate text-[14px] font-500 text-ink-text">
                                         {journey.chauffeur
                                             ? `${journey.chauffeur.name} · ${etaMins} min`
                                             : `Chauffeur · ${etaMins} min`}
-                                        {journey.mode === 'airport' ? ' · to airport' : ''}
                                     </p>
                                 </div>
                                 <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -253,10 +354,11 @@ export default function JourneyRide({ mode = 'details' }) {
                 <div className="col-start-1 row-start-2 mt-6 w-full border-t border-[#e8e6e1] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:border-t-0 lg:border-l lg:border-[#e8e6e1] lg:pt-[80px]">
                     <JourneyRideSidebar
                         journey={journey}
-                        mode={mode}
                         showCar={showCar}
+                        stepLabel={stepLabel}
                         trackingProgress={trackingProgress}
                         onContact={() => setContactOpen(true)}
+                        onCancel={() => setCancelOpen(true)}
                     />
                 </div>
 
@@ -361,49 +463,24 @@ export default function JourneyRide({ mode = 'details' }) {
                         ))}
                     </ul>
 
-                    {isTrack || showCar ? (
+                    {journey.status === 'upcoming' ? (
                         <div className="mt-8 flex flex-wrap gap-2 lg:hidden">
-                            <button
-                                type="button"
-                                onClick={() => setContactOpen(true)}
-                                className="font-geist cursor-pointer rounded-full bg-wine-700 px-4 py-2.5 text-[14px] font-500 text-white"
-                            >
-                                Contact chauffeur
-                            </button>
-                            {!isTrack ? (
-                                <Link
-                                    to={`/journeys/ride/${journey.id}/track`}
-                                    className="font-geist rounded-full border border-[#d8d8dc] px-4 py-2.5 text-[14px] font-500 text-ink-text"
-                                >
-                                    Open live tracking
-                                </Link>
-                            ) : (
-                                <Link
-                                    to={`/journeys/ride/${journey.id}`}
-                                    className="font-geist rounded-full border border-[#d8d8dc] px-4 py-2.5 text-[14px] font-500 text-ink-text"
-                                >
-                                    View details
-                                </Link>
-                            )}
-                        </div>
-                    ) : journey.status === 'upcoming' ? (
-                        <div className="mt-8 flex flex-wrap gap-2 lg:hidden">
-                            {(journey.actions || []).includes('track') ||
-                            journey.phase === 'chauffeur_assigned' ? (
-                                <Link
-                                    to={`/journeys/ride/${journey.id}/track`}
-                                    className="font-geist rounded-full bg-wine-700 px-4 py-2.5 text-[14px] font-500 text-white"
-                                >
-                                    Live tracking
-                                </Link>
-                            ) : null}
                             {journey.chauffeur ? (
                                 <button
                                     type="button"
                                     onClick={() => setContactOpen(true)}
-                                    className="font-geist cursor-pointer rounded-full border border-wine-700 px-4 py-2.5 text-[14px] font-500 text-wine-700"
+                                    className="font-geist cursor-pointer rounded-full bg-wine-700 px-4 py-2.5 text-[14px] font-500 text-white"
                                 >
                                     Contact chauffeur
+                                </button>
+                            ) : null}
+                            {(journey.actions || []).includes('cancel') ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setCancelOpen(true)}
+                                    className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2.5 text-[14px] font-500 text-ink-text"
+                                >
+                                    Cancel
                                 </button>
                             ) : null}
                         </div>
@@ -416,6 +493,24 @@ export default function JourneyRide({ mode = 'details' }) {
                 onClose={() => setContactOpen(false)}
                 chauffeur={journey.chauffeur}
                 bookingNumber={journey.booking_number}
+            />
+            <CancelReasonModal
+                open={cancelOpen}
+                title="Cancel this trip"
+                busy={cancelBusy}
+                onClose={() => {
+                    if (!cancelBusy) setCancelOpen(false);
+                }}
+                onConfirm={async (payload) => {
+                    setCancelBusy(true);
+                    try {
+                        const booked = await cancelBooking(journey.id, payload);
+                        setJourney(bookingToJourney(booked));
+                        setCancelOpen(false);
+                    } finally {
+                        setCancelBusy(false);
+                    }
+                }}
             />
         </SiteLayout>
     );

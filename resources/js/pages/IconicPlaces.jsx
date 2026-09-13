@@ -7,6 +7,7 @@ import SeoSplit from '../components/corporations/SeoSplit';
 import ScrollTop from '../components/corporations/ScrollTop';
 import DestinationScheduler from '../components/explore/DestinationScheduler';
 import { IP_IMG, ICONIC_DESTINATIONS, BOOK_HREF } from '../components/iconicPlaces/assets';
+import { useExploreCategory } from '../hooks/useExploreCategory';
 
 const PLACE_CARDS = [
     {
@@ -51,14 +52,16 @@ const PLACE_CARDS = [
     },
 ];
 
-function HeroScheduler({ stacked = false }) {
+function HeroScheduler({ stacked = false, explore }) {
     return (
         <DestinationScheduler
-            destinations={ICONIC_DESTINATIONS}
+            destinations={explore.destinations}
+            selectedDestination={explore.selectedDestination}
+            onDestinationChange={explore.setSelectedDestination}
             destinationLabel="Iconic place"
             destinationPlaceholder="Search iconic places…"
             pickupPlaceholder="Address, airport, hotel, ..."
-            service="tourist_trip"
+            service="one_way"
             title="Schedule your visit"
             subtitle="Select a landmark, set your pickup, and view chauffeur options."
             stacked={stacked}
@@ -82,7 +85,7 @@ function useIsPhone() {
     return isPhone;
 }
 
-function Hero() {
+function Hero({ explore }) {
     const isPhone = useIsPhone();
 
     if (isPhone) {
@@ -116,7 +119,7 @@ function Hero() {
                         </div>
 
                         <div className="w-full">
-                            <HeroScheduler stacked />
+                            <HeroScheduler stacked explore={explore} />
                         </div>
                     </div>
                 </div>
@@ -158,7 +161,7 @@ function Hero() {
                 </div>
 
                 <div className="relative z-10 mx-auto -mt-20 w-full max-w-[1170px] px-6 lg:-mt-24 lg:px-8">
-                    <HeroScheduler />
+                    <HeroScheduler explore={explore} />
                 </div>
             </div>
         </section>
@@ -186,11 +189,17 @@ function Breadcrumb() {
 }
 
 export default function IconicPlaces() {
+    const explore = useExploreCategory('iconic', PLACE_CARDS, ICONIC_DESTINATIONS);
+
     return (
         <SiteLayout>
-            <Hero />
+            <Hero explore={explore} />
             <Breadcrumb />
-            <CardCarousel title="Landmarks worth the ride" cards={PLACE_CARDS} />
+            <CardCarousel
+                title="Landmarks worth the ride"
+                cards={explore.cards}
+                onCardClick={explore.onCardClick}
+            />
             <CalloutBanner
                 title="See Qatar without the parking hunt"
                 body="Your chauffeur knows the drop-off points — you keep the afternoon for the visit."

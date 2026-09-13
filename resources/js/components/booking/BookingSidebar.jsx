@@ -1,39 +1,44 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../data/bookingVehicles';
-import { EXAMPLE_GUESTS, loadSavedGuests, saveGuests } from '../../data/bookingGuests';
+import { useSavedGuests } from '../../hooks/useSavedGuests';
+import Skeleton from '../ui/Skeleton';
 import AddGuestModal, { guestDisplayName } from './AddGuestModal';
 import BookingMap from './BookingMap';
-import { IconChevronDown, IconOffer, IconPassengers, IconPerson } from './icons';
+import RouteMap from './RouteMap';
+import { IconChevronDown, IconPassengers, IconPerson } from './icons';
 
 export default function BookingSidebar({
     vehicle,
     pickupLabel,
     pickupTime,
     pickupPeriod,
+    dropoffLabel = '',
     mapLat,
     mapLng,
+    routePoints = [],
     seatAddon = 'none',
+    quoteId = null,
+    priceFailed = false,
 }) {
     const { isAuthenticated, setReturnTo } = useAuth();
+    const { guests, loading: guestsLoading, addGuest } = useSavedGuests();
     const navigate = useNavigate();
     const [params] = useSearchParams();
     const [forGuest, setForGuest] = useState(false);
     const [guestOpen, setGuestOpen] = useState(false);
-    const [savedGuests, setSavedGuests] = useState([]);
     const [selectedGuestId, setSelectedGuestId] = useState(null);
     const [addGuestOpen, setAddGuestOpen] = useState(false);
-    const [offerOpen, setOfferOpen] = useState(false);
-    const [offerCode, setOfferCode] = useState('');
-    const [appliedOffer, setAppliedOffer] = useState('');
 
     useEffect(() => {
-        setSavedGuests(loadSavedGuests());
-    }, []);
-
-    const guests = useMemo(() => [...EXAMPLE_GUESTS, ...savedGuests], [savedGuests]);
+        if (!selectedGuestId) return;
+        if (!guests.some((g) => g.id === selectedGuestId)) {
+            setSelectedGuestId(null);
+        }
+    }, [guests, selectedGuestId]);
 
     const selectedGuest = useMemo(
         () => guests.find((g) => g.id === selectedGuestId) || null,
@@ -43,6 +48,8 @@ export default function BookingSidebar({
     const selectVehicle = () => {
         const q = new URLSearchParams(params);
         q.set('vehicle', vehicle.id);
+        if (quoteId) q.set('quote_id', String(quoteId));
+        else q.delete('quote_id');
         if (seatAddon && seatAddon !== 'none') {
             q.set('seat', seatAddon);
         } else {
@@ -66,41 +73,54 @@ export default function BookingSidebar({
         navigate(checkoutPath);
     };
 
-    const applyOffer = (e) => {
-        e.preventDefault();
-        const code = offerCode.trim();
-        if (!code) return;
-        setAppliedOffer(code.toUpperCase());
-        setOfferOpen(false);
-    };
-
-    const onAddGuest = (guest) => {
-        const next = [...savedGuests, guest];
-        setSavedGuests(next);
-        saveGuests(next);
+    const onAddGuest = async (payload) => {
+        if (!isAuthenticated) {
+            const q = new URLSearchParams(params);
+            q.set('vehicle', vehicle.id);
+            if (quoteId) q.set('quote_id', String(quoteId));
+            const returnPath = `/booking?${q.toString()}`;
+            setReturnTo(returnPath);
+            navigate(`/login?from=${encodeURIComponent(returnPath)}`);
+            throw new Error('Sign in to save guests.');
+        }
+        const guest = await addGuest(payload);
         setSelectedGuestId(guest.id);
         setForGuest(true);
         setGuestOpen(true);
+        return guest;
     };
 
     return (
-        <aside className="booking-sidebar flex flex-col bg-page lg:sticky lg:top-[80px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto lg:border-0">
-            <BookingMap
-                pickupLabel={pickupLabel}
-                pickupTime={pickupTime}
-                pickupPeriod={pickupPeriod}
-                lat={mapLat}
-                lng={mapLng}
-            />
+        <aside className="booking-sidebar flex flex-col bg-page lg:sticky lg:top-[var(--booking-bar-h,80px)] lg:max-h-[calc(100vh-var(--booking-bar-h,80px))] lg:overflow-y-auto lg:border-0">
+            {routePoints.length >= 2 ? (
+                <RouteMap
+                    pickupLabel={routePoints[0].label || pickupLabel}
+                    dropoffLabel={routePoints[routePoints.length - 1].label || dropoffLabel}
+                    lat={routePoints[0].lat}
+                    lng={routePoints[0].lng}
+                    dropLat={routePoints[routePoints.length - 1].lat}
+                    dropLng={routePoints[routePoints.length - 1].lng}
+                    waypoints={routePoints.slice(1, -1)}
+                    className="h-[220px] w-full lg:h-[280px]"
+                />
+            ) : (
+                <BookingMap
+                    pickupLabel={pickupLabel}
+                    pickupTime={pickupTime}
+                    pickupPeriod={pickupPeriod}
+                    lat={mapLat}
+                    lng={mapLng}
+                />
+            )}
 
-            <div className="flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-5">
+            <div className="flex flex-1 flex-col px-4 pb-28 pt-4 sm:px-5 lg:pb-6">
                 <div className="flex items-start justify-between gap-3 border-b border-[#e8e6e1] pb-4">
                     <div className="min-w-0">
                         <div className="font-geist text-[18px] leading-6 font-500 text-ink-text">{vehicle.name}</div>
                         <div className="font-geist mt-0.5 text-[14px] leading-5 text-muted">{vehicle.similar}</div>
                     </div>
                     <div className="font-geist shrink-0 text-[18px] leading-6 font-500 text-ink-text">
-                        {formatMoney(vehicle.total, vehicle.currency)}
+                        {vehicle.total == null ? '…' : formatMoney(vehicle.total, vehicle.currency)}
                     </div>
                 </div>
 
@@ -171,7 +191,18 @@ export default function BookingSidebar({
                                     aria-label="Saved guests"
                                     className="max-h-[220px] overflow-y-auto"
                                 >
-                                    {guests.map((guest) => {
+                                    {guestsLoading ? (
+                                        <div className="px-3 py-3">
+                                            <Skeleton variant="inline" />
+                                        </div>
+                                    ) : guests.length === 0 ? (
+                                        <p className="font-geist m-0 px-3 py-4 text-[14px] text-muted">
+                                            {isAuthenticated
+                                                ? 'No saved guests yet. Add one below.'
+                                                : 'Sign in to load and save guests.'}
+                                        </p>
+                                    ) : (
+                                        guests.map((guest) => {
                                         const selected = guest.id === selectedGuestId;
                                         return (
                                             <button
@@ -209,7 +240,8 @@ export default function BookingSidebar({
                                                 </span>
                                             </button>
                                         );
-                                    })}
+                                        })
+                                    )}
                                 </div>
 
                                 <div className="border-t border-[#e8e6e1] p-2">
@@ -232,14 +264,16 @@ export default function BookingSidebar({
                 <div className="mt-auto pt-5">
                     <hr className="mb-4 border-0 border-t border-[#e8e6e1]" />
                     <div className="mb-3 flex items-center justify-between gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setOfferOpen(true)}
-                            className="font-geist inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/40 bg-white/70 px-4 py-2.5 text-[14px] font-500 text-ink-text shadow-sm backdrop-blur transition hover:bg-white"
-                        >
-                            <IconOffer />
-                            {appliedOffer ? `Offer: ${appliedOffer}` : 'Apply offer'}
-                        </button>
+                        <p className="font-geist m-0 inline-flex items-center gap-2 text-[14px] font-500 text-ink-text">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-wine-700">
+                                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            <span>
+                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : 'Pickup time'}
+                                {vehicle.route_duration_minutes ? ` · ${vehicle.route_duration_minutes} min` : ''}
+                            </span>
+                        </p>
                         <p className="font-geist m-0 text-[14px] text-muted">All fees included</p>
                     </div>
                     <button
@@ -247,66 +281,41 @@ export default function BookingSidebar({
                         name="reserve-vehicle"
                         data-cy="reserve-vehicle"
                         onClick={selectVehicle}
-                        className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                        disabled={!quoteId}
+                        className="font-geist hidden min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
                     >
-                        Select {vehicle.name}
+                        {quoteId ? 'Continue to checkout' : priceFailed ? 'Price unavailable' : 'Loading price…'}
                     </button>
                 </div>
             </div>
+
+            {typeof document !== 'undefined' &&
+                createPortal(
+                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+                        <motion.button
+                            type="button"
+                            onClick={selectVehicle}
+                            disabled={!quoteId}
+                            animate={quoteId ? { y: [0, -7, 0] } : { y: 0 }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="font-geist pointer-events-auto flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-full bg-wine-700 px-5 py-3 text-[16px] font-500 text-white shadow-[0_12px_32px_rgba(91,5,32,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <span>{quoteId ? 'Continue to checkout' : priceFailed ? 'Price unavailable' : 'Loading price…'}</span>
+                            {quoteId && vehicle.total != null ? (
+                                <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[14px]">
+                                    {formatMoney(vehicle.total, vehicle.currency)}
+                                </span>
+                            ) : null}
+                        </motion.button>
+                    </div>,
+                    document.body,
+                )}
 
             <AddGuestModal
                 open={addGuestOpen}
                 onClose={() => setAddGuestOpen(false)}
                 onSave={onAddGuest}
             />
-
-            {offerOpen &&
-                createPortal(
-                    <div
-                        className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/50 p-4 sm:items-center"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="offer-title"
-                        onClick={(e) => {
-                            if (e.target === e.currentTarget) setOfferOpen(false);
-                        }}
-                    >
-                        <form
-                            onSubmit={applyOffer}
-                            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-                        >
-                            <h2 id="offer-title" className="font-fragment m-0 text-[22px] font-400 text-ink-text">
-                                Apply offer
-                            </h2>
-                            <p className="font-geist mt-2 text-[14px] text-muted">
-                                Enter a promotional code to update your fare.
-                            </p>
-                            <input
-                                value={offerCode}
-                                onChange={(e) => setOfferCode(e.target.value)}
-                                className="font-geist mt-4 w-full rounded-lg border border-[#d8d8dc] px-4 py-3 text-[16px] outline-none focus:border-wine-700"
-                                placeholder="Offer code"
-                                autoFocus
-                            />
-                            <div className="mt-5 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setOfferOpen(false)}
-                                    className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3 text-[15px] font-500"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3 text-[15px] font-500 text-white hover:bg-wine-600"
-                                >
-                                    Apply
-                                </button>
-                            </div>
-                        </form>
-                    </div>,
-                    document.body,
-                )}
         </aside>
     );
 }

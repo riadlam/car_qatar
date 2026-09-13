@@ -19,17 +19,20 @@ const emptyForm = {
 
 /**
  * Add new guest modal — portaled to body so sidebar overflow cannot clip it.
+ * onSave may be async; returns the created guest (or void).
  */
 export default function AddGuestModal({ open, onClose, onSave }) {
     const [form, setForm] = useState(emptyForm);
     const [titleOpen, setTitleOpen] = useState(false);
     const [error, setError] = useState('');
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (open) {
             setForm(emptyForm);
             setTitleOpen(false);
             setError('');
+            setSaving(false);
         }
     }, [open]);
 
@@ -38,18 +41,18 @@ export default function AddGuestModal({ open, onClose, onSave }) {
         const prev = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         const onKey = (e) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape' && !saving) onClose();
         };
         window.addEventListener('keydown', onKey);
         return () => {
             document.body.style.overflow = prev;
             window.removeEventListener('keydown', onKey);
         };
-    }, [open, onClose]);
+    }, [open, onClose, saving]);
 
     if (!open || typeof document === 'undefined') return null;
 
-    const submit = (e) => {
+    const submit = async (e) => {
         e.preventDefault();
         const first = form.first_name.trim();
         const last = form.last_name.trim();
@@ -66,15 +69,27 @@ export default function AddGuestModal({ open, onClose, onSave }) {
             setError('Please enter a valid guest mobile number.');
             return;
         }
-        onSave({
-            id: `guest_${Date.now()}`,
-            title: form.title,
-            first_name: first,
-            last_name: last,
-            email,
-            phone: form.phone,
-        });
-        onClose();
+        setSaving(true);
+        setError('');
+        try {
+            await onSave({
+                title: form.title,
+                first_name: first,
+                last_name: last,
+                email,
+                phone: form.phone,
+            });
+            onClose();
+        } catch (err) {
+            setError(
+                err?.response?.data?.message ||
+                    Object.values(err?.response?.data?.errors || {}).flat()[0] ||
+                    err?.message ||
+                    'Unable to save guest. Please try again.',
+            );
+        } finally {
+            setSaving(false);
+        }
     };
 
     return createPortal(
@@ -246,15 +261,17 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3.5 text-[15px] font-500 text-ink-text hover:bg-page"
+                        disabled={saving}
+                        className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3.5 text-[15px] font-500 text-ink-text hover:bg-page disabled:opacity-60"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3.5 text-[15px] font-500 text-white hover:bg-wine-600"
+                        disabled={saving}
+                        className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3.5 text-[15px] font-500 text-white hover:bg-wine-600 disabled:opacity-60"
                     >
-                        Add guest
+                        {saving ? 'Saving…' : 'Add guest'}
                     </button>
                 </div>
             </form>

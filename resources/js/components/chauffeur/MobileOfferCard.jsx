@@ -3,9 +3,9 @@ import { formatPayout } from '../../data/chauffeurPortal';
 import SlideToAccept from './SlideToAccept';
 
 function classPill(vehicleClass = '') {
+    if (/van|suv/i.test(vehicleClass)) return 'Van';
     if (/first/i.test(vehicleClass)) return 'First';
     if (/business/i.test(vehicleClass)) return 'Business';
-    if (/van|suv/i.test(vehicleClass)) return 'Van';
     return vehicleClass.replace(/\s*Class$/i, '') || 'Ride';
 }
 
@@ -72,10 +72,14 @@ export default function MobileOfferCard({ offer, onAccept }) {
     const note = offer.notes || '';
     const shortNote = note.length > 88 ? `${note.slice(0, 86)}…` : note;
 
-    const handleAccept = () => {
+    const handleAccept = async () => {
         if (accepting) return;
         setAccepting(true);
-        window.setTimeout(() => onAccept?.(offer), 320);
+        try {
+            await onAccept?.(offer);
+        } catch {
+            setAccepting(false);
+        }
     };
 
     return (
@@ -96,6 +100,10 @@ export default function MobileOfferCard({ offer, onAccept }) {
                     {offer.date_short || offer.date_label}
                     <span className="mx-1.5 text-muted">·</span>
                     {offer.time_label}
+                </p>
+                <p className="font-geist mt-1 m-0 text-[13px] text-muted">
+                    Booking {offer.booking_id}
+                    {offer.booking_number ? ` · ${offer.booking_number}` : ''}
                 </p>
 
                 {offer.flight ? (

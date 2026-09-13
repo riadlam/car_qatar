@@ -1,103 +1,251 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import Skeleton from '../ui/Skeleton';
+import {
+    fetchMapConfig,
+    hasMapboxToken,
+    addCompactAttribution,
+    mapInitOptions,
+} from '../../maps/mapboxClient';
+import { createHtmlElement, simplePinHtml } from '../../maps/markers';
+import { bboxToMaxBounds, expandBbox, getSearchScope, pointInBbox } from '../../maps/searchScopes';
+import { forwardGeocodeClient, reverseGeocodeClient, useMapboxSearch } from '../../maps/useMapboxSearch';
 
-const DOHA = [25.2854, 51.531];
-const NOMINATIM = 'https://nominatim.openstreetmap.org';
-/** Qatar first, then the GCC countries served by gulf trips */
-const COUNTRY_CODES = 'qa,ae,sa,om,kw,bh';
-
-function pinIcon() {
-    return L.divIcon({
-        className: 'almajd-map-marker',
-        iconSize: [26, 34],
-        iconAnchor: [13, 30],
-        html: `<svg width="26" height="34" viewBox="0 0 23 32" fill="none" aria-hidden="true">
-            <circle cx="11.29" cy="11.29" r="11.29" fill="#f0c5d2"/>
-            <line x1="11.5" y1="20.4" x2="11.5" y2="29.6" stroke="#5b0520" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="11.29" cy="11.29" r="9.4" fill="#5b0520"/>
-            <circle cx="11.29" cy="11.29" r="4.7" fill="#FBF8F2"/>
-          </svg>`,
-    });
-}
-
-function shortLabel(displayName) {
-    return String(displayName || '')
-        .split(',')
-        .slice(0, 3)
-        .join(',')
-        .trim();
+function LocateIcon({ spinning }) {
+    return (
+        <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            className={spinning ? 'animate-spin' : undefined}
+        >
+            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.75" />
+            <circle cx="12" cy="12" r="7.25" stroke="currentColor" strokeWidth="1.75" />
+            <path
+                d="M12 2.25v3.1M12 18.65v3.1M2.25 12h3.1M18.65 12h3.1"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+            />
+        </svg>
+    );
 }
 
 /**
- * Map selection sheet for pickup / drop-off fields.
- * Same Leaflet + Carto basemap and pin styling as the trip route map.
+ * Map selection sheet — Mapbox GL + Search Box (scoped by field).
  */
-export default function MapLocationModal({ open, label = 'location', initialValue = '', onClose, onSelect }) {
+export default function MapLocationModal({
+    open,
+    label = 'location',
+    initialValue = '',
+    initialPlace = null,
+    searchScope = 'qatar',
+    onClose,
+    onSelect,
+}) {
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const initialValueRef = useRef(initialValue);
+    const initialPlaceRef = useRef(initialPlace);
+    const scopeRef = useRef(getSearchScope(searchScope));
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [searching, setSearching] = useState(false);
     const [selected, setSelected] = useState(null);
     const [message, setMessage] = useState('');
+    const [locating, setLocating] = useState(false);
+    const [config, setConfig] = useState(null);
+    const scopeConfig = getSearchScope(searchScope);
+    const { suggestions, loading, suggestDebounced, retrieve, clear } = useMapboxSearch({
+        scope: searchScope,
+        proximity: scopeConfig.proximity,
+    });
 
     initialValueRef.current = initialValue;
+    initialPlaceRef.current = initialPlace;
+    scopeRef.current = scopeConfig;
 
-    const place = useCallback(async (lat, lng, presetLabel) => {
-        const map = mapRef.current;
-        if (map) {
-            if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
-            else {
-                markerRef.current = L.marker([lat, lng], { icon: pinIcon(), interactive: false }).addTo(map);
-            }
-            map.setView([lat, lng], Math.max(map.getZoom(), 14), { animate: true });
-        }
-
-        if (presetLabel) {
-            setSelected({ label: presetLabel, lat, lng });
+    const place = useCallback(async (lat, lng, preset = null) => {
+        const sc = scopeRef.current;
+        if (!pointInBbox(lng, lat, sc.bbox)) {
+            setMessage(sc.outOfBoundsMessage);
             return;
         }
 
-        setSelected({ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng });
+        const map = mapRef.current;
+        const color = config?.marker_color || '#5b0520';
+        if (map) {
+            if (markerRef.current) {
+                markerRef.current.setLngLat([lng, lat]);
+            } else {
+                markerRef.current = new mapboxgl.Marker({
+                    element: createHtmlElement(simplePinHtml(color)),
+                    anchor: 'bottom',
+                })
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+            }
+            map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14) });
+        }
+
+        if (preset?.label) {
+            setSelected({
+                label: preset.label,
+                lat,
+                lng,
+                place_id: preset.place_id || null,
+                provider: 'mapbox',
+                name: preset.name || preset.label,
+            });
+            setMessage('');
+            return;
+        }
+
+        setSelected({ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, provider: 'mapbox' });
         try {
-            const res = await fetch(`${NOMINATIM}/reverse?format=jsonv2&zoom=18&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            if (data?.display_name) setSelected({ label: shortLabel(data.display_name), lat, lng });
+            const rev = await reverseGeocodeClient(lng, lat);
+            if (rev?.label) setSelected(rev);
+            setMessage('');
         } catch {
             setMessage('Address lookup unavailable — coordinates will be used.');
         }
-    }, []);
+    }, [config?.marker_color]);
 
     useEffect(() => {
         if (!open) return undefined;
 
-        setQuery(initialValueRef.current || '');
-        setResults([]);
-        setSelected(null);
+        const typed = String(initialValueRef.current || '').trim();
+        const preset = initialPlaceRef.current;
+        const presetLat = Number(preset?.lat);
+        const presetLng = Number(preset?.lng);
+        const hasPreset = Number.isFinite(presetLat) && Number.isFinite(presetLng);
+        setQuery(typed || preset?.label || '');
+        setLocating(false);
+        setSelected(
+            hasPreset
+                ? {
+                      label: preset.label || typed,
+                      name: preset.name || preset.label || typed,
+                      lat: presetLat,
+                      lng: presetLng,
+                      place_id: preset.place_id || null,
+                      provider: 'mapbox',
+                  }
+                : null,
+        );
         setMessage('');
+        clear();
 
-        const el = mapEl.current;
-        if (!el) return undefined;
+        let cancelled = false;
+        let map;
+        const sc = getSearchScope(searchScope);
+        const fitBounds = bboxToMaxBounds(sc.bbox);
+        // Padded maxBounds so Mapbox doesn't drop the constraint on wide containers
+        const maxBounds = bboxToMaxBounds(expandBbox(sc.bbox, searchScope === 'gulf' ? 0.12 : 0.45));
 
-        const map = L.map(el, { attributionControl: false }).setView(DOHA, 11);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd',
-        }).addTo(map);
-        map.on('click', (e) => place(e.latlng.lat, e.latlng.lng));
-        mapRef.current = map;
-        requestAnimationFrame(() => map.invalidateSize());
+        const frameToScope = (instance) => {
+            if (!instance || cancelled) return;
+            instance.resize();
+            try {
+                instance.setProjection('mercator');
+            } catch {
+                /* ignore */
+            }
+            if (maxBounds) instance.setMaxBounds(maxBounds);
+            if (sc.minZoom != null) instance.setMinZoom(sc.minZoom);
+            if (fitBounds) {
+                instance.fitBounds(fitBounds, {
+                    padding: 36,
+                    duration: 0,
+                    maxZoom: sc.fitMaxZoom ?? 11,
+                });
+            }
+        };
+
+        fetchMapConfig().then((cfg) => {
+            if (cancelled || !mapEl.current) return;
+            if (!hasMapboxToken()) {
+                setMessage('Maps unavailable — add the Mapbox public token on the server.');
+                return;
+            }
+            setConfig(cfg);
+            map = addCompactAttribution(new mapboxgl.Map(
+                mapInitOptions(mapEl.current, cfg, {
+                    lng: hasPreset ? presetLng : sc.proximity.lng,
+                    lat: hasPreset ? presetLat : sc.proximity.lat,
+                    zoom: hasPreset ? 15 : (sc.fitMaxZoom ?? (searchScope === 'gulf' ? 5 : 11)),
+                    minZoom: sc.minZoom,
+                    maxBounds,
+                    ...(hasPreset
+                        ? {}
+                        : {
+                              bounds: fitBounds,
+                              fitBoundsOptions: { padding: 36, maxZoom: sc.fitMaxZoom ?? 11 },
+                          }),
+                    renderWorldCopies: false,
+                    projection: 'mercator',
+                }),
+            ));
+            map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+            map.on('click', (e) => place(e.lngLat.lat, e.lngLat.lng));
+            mapRef.current = map;
+
+            // Re-assert after Standard style may flip to globe
+            try {
+                map.setProjection('mercator');
+            } catch {
+                /* older builds */
+            }
+
+            const showExisting = async () => {
+                if (cancelled) return;
+                map.resize();
+                const current = initialPlaceRef.current;
+                const lat = Number(current?.lat);
+                const lng = Number(current?.lng);
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    place(lat, lng, {
+                        label: current.label || typed,
+                        name: current.name || current.label || typed,
+                        place_id: current.place_id,
+                    });
+                    return;
+                }
+                if (typed.length >= 2) {
+                    try {
+                        const found = await forwardGeocodeClient(typed, searchScope);
+                        if (cancelled) return;
+                        if (found && pointInBbox(found.lng, found.lat, scopeRef.current.bbox)) {
+                            place(found.lat, found.lng, found);
+                            return;
+                        }
+                    } catch {
+                        /* fall through to the country frame */
+                    }
+                }
+                frameToScope(map);
+            };
+
+            const onReady = () => {
+                showExisting();
+            };
+
+            if (map.loaded()) onReady();
+            else map.once('load', onReady);
+        });
 
         return () => {
-            map.remove();
-            mapRef.current = null;
+            cancelled = true;
             markerRef.current = null;
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
         };
-    }, [open, place]);
+    }, [open, place, clear, searchScope]);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -115,31 +263,48 @@ export default function MapLocationModal({ open, label = 'location', initialValu
 
     if (!open || typeof document === 'undefined') return null;
 
-    const runSearch = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const q = query.trim();
-        if (!q) return;
-
-        setSearching(true);
-        setMessage('');
-        try {
-            const res = await fetch(
-                `${NOMINATIM}/search?format=jsonv2&limit=6&countrycodes=${COUNTRY_CODES}&q=${encodeURIComponent(q)}`,
-            );
-            const data = await res.json();
-            const list = Array.isArray(data) ? data : [];
-            setResults(list);
-            if (list.length) {
-                place(Number(list[0].lat), Number(list[0].lon), shortLabel(list[0].display_name));
-            } else {
-                setMessage('No places found — tap the map to drop a pin.');
-            }
-        } catch {
-            setMessage('Search unavailable — tap the map to drop a pin.');
-        } finally {
-            setSearching(false);
+    const pickSuggestion = async (s) => {
+        const result = await retrieve(s.mapbox_id);
+        if (!result) {
+            setMessage('Could not load that place — try another or tap the map.');
+            return;
         }
+        if (!pointInBbox(result.lng, result.lat, scopeConfig.bbox)) {
+            setMessage(scopeConfig.outOfBoundsMessage);
+            return;
+        }
+        setQuery(result.label);
+        clear();
+        place(result.lat, result.lng, result);
+    };
+
+    const locateUser = () => {
+        if (typeof window === 'undefined' || !window.isSecureContext) {
+            setMessage('Location needs a secure page (localhost or HTTPS). Search or tap the map instead.');
+            return;
+        }
+        if (!navigator.geolocation) {
+            setMessage('Location is not available in this browser. Search or tap the map instead.');
+            return;
+        }
+
+        setLocating(true);
+        setMessage('Asking for your location…');
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setLocating(false);
+                place(pos.coords.latitude, pos.coords.longitude);
+            },
+            (err) => {
+                setLocating(false);
+                setMessage(
+                    err?.code === 1
+                        ? 'Location permission was denied. Search or tap the map instead.'
+                        : 'Could not read your location. Search or tap the map instead.',
+                );
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+        );
     };
 
     return createPortal(
@@ -159,46 +324,75 @@ export default function MapLocationModal({ open, label = 'location', initialValu
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-                    <form onSubmit={runSearch} className="flex items-center gap-2">
+                    <div className="relative">
                         <input
                             value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            onChange={(e) => {
+                                setQuery(e.target.value);
+                                suggestDebounced(e.target.value);
+                            }}
                             className="font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700"
-                            placeholder="Search address, airport, hotel, ..."
+                            placeholder={scopeConfig.searchHint}
                             aria-label="Search for a place"
+                            autoComplete="off"
                         />
-                        <button
-                            type="submit"
-                            disabled={searching}
-                            className="font-geist shrink-0 cursor-pointer rounded-full bg-wine-700 px-5 py-3 text-[15px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
-                        >
-                            {searching ? 'Searching' : 'Search'}
-                        </button>
-                    </form>
+                        {loading ? (
+                            <span className="absolute top-1/2 right-3 w-16 -translate-y-1/2">
+                                <Skeleton variant="inline" />
+                            </span>
+                        ) : null}
+                    </div>
 
-                    {results.length > 0 && (
+                    {searchScope === 'school' && (
+                        <p className="font-geist mt-2 m-0 text-[13px] leading-4 text-muted">
+                            Showing schools and universities in Qatar only.
+                        </p>
+                    )}
+
+                    {suggestions.length > 0 && (
                         <ul className="mt-3 m-0 list-none space-y-1 p-0">
-                            {results.map((r) => (
-                                <li key={`${r.place_id}`}>
+                            {suggestions.map((s) => (
+                                <li key={s.mapbox_id}>
                                     <button
                                         type="button"
-                                        onClick={() => place(Number(r.lat), Number(r.lon), shortLabel(r.display_name))}
-                                        className="font-geist block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-[15px] leading-5 text-ink-text transition hover:bg-page"
+                                        onClick={() => pickSuggestion(s)}
+                                        className="font-geist flex w-full cursor-pointer items-start gap-2 rounded-lg px-3 py-2.5 text-left transition hover:bg-page"
                                     >
-                                        {shortLabel(r.display_name)}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-[15px] leading-5 font-500 text-ink-text">
+                                                {s.name}
+                                            </span>
+                                            {s.secondary ? (
+                                                <span className="mt-0.5 block truncate text-[13px] leading-4 text-muted">
+                                                    {s.secondary}
+                                                </span>
+                                            ) : null}
+                                        </span>
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     )}
 
-                    <div
-                        ref={mapEl}
-                        className="almajd-route-map mt-4 h-[300px] w-full overflow-hidden rounded-lg border border-[#e0ddd6] bg-[#e8e6e1]"
-                    />
+                    <div className="relative mt-4">
+                        <div
+                            ref={mapEl}
+                            className="almajd-mb-map h-[300px] w-full overflow-hidden rounded-lg border border-[#e0ddd6] bg-[#e8e6e1]"
+                        />
+                        <button
+                            type="button"
+                            onClick={locateUser}
+                            disabled={locating}
+                            aria-label="Use my location"
+                            title="Use my location"
+                            className="absolute top-2 right-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-[10px] bg-white text-ink-text shadow-[0_2px_10px_rgba(15,19,25,0.12)] transition hover:bg-page disabled:cursor-wait disabled:opacity-70"
+                        >
+                            <LocateIcon spinning={locating} />
+                        </button>
+                    </div>
 
                     <p className="font-geist mt-3 m-0 text-[14px] leading-5 text-muted">
-                        {message || 'Tap anywhere on the map to move the pin.'}
+                        {message || scopeConfig.mapHint}
                     </p>
                 </div>
 

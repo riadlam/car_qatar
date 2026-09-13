@@ -1,23 +1,47 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import MapLocationModal from '../booking/MapLocationModal';
+import MapboxLocationField from '../booking/MapboxLocationField';
 import {
     CITY_TOUR_HOUR_OPTIONS,
-    GULF_DESTINATIONS,
     HOUR_OPTIONS,
     MAX_STOPS,
     PASSENGER_OPTIONS,
     SCHOOL_TERMS,
-    SERVICE_TABS,
     STUDENT_OPTIONS,
-    serviceMode,
 } from '../../data/bookingServices';
+import { fetchGulfDestinations, fetchServiceTypes } from '../../api/catalog';
+import { heroSearchScope } from '../../maps/searchScopes';
+import {
+    fallbackGulfDestinations,
+    fallbackServiceTabs,
+    mapGulfDestination,
+    mapServiceType,
+} from '../../utils/catalogMappers';
+import { tripSelectionToSearchParams } from '../../utils/bookingMappers';
 
-const TABS = SERVICE_TABS;
 const DEFAULT_TIME = '17:15';
-const LOCATION_PLACEHOLDER = 'Address, airport, hotel, ...';
+
+function hasCoords(coords) {
+    return coords != null && Number.isFinite(Number(coords.lat)) && Number.isFinite(Number(coords.lng));
+}
+
+function placeFromPick(loc) {
+    if (!hasCoords(loc)) return null;
+    return { lat: Number(loc.lat), lng: Number(loc.lng) };
+}
+
+function todayLocal() {
+    const d = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+}
+
+function emptyLeg() {
+    return { pickup: '', dropoff: '', pickupCoords: null, dropoffCoords: null };
+}
 
 const Chevron = (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -25,80 +49,56 @@ const Chevron = (
     </svg>
 );
 
-const PinIcon = (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z" />
-        <circle cx="12" cy="10" r="2.5" />
-    </svg>
-);
+const BookingToneContext = createContext('dark');
+const FieldDensityContext = createContext('regular');
 
-function Field({ id, label, children, endAdornment }) {
+function Field({ id, label, children, endAdornment, tone: toneProp }) {
+    const contextTone = useContext(BookingToneContext);
+    const compact = useContext(FieldDensityContext) === 'compact';
+    const tone = toneProp || contextTone;
+    const light = tone === 'light';
     return (
         <div className="relative flex min-w-0 flex-1 flex-col">
-            <label htmlFor={id} className="font-geist mb-1 text-[14px] leading-5 font-400 tracking-[0.15px] text-white/80">
+            <label
+                htmlFor={id}
+                className={`font-geist font-400 tracking-[0.15px] ${
+                    compact ? 'mb-0.5 text-[11px] leading-4' : 'mb-1 text-[14px] leading-5'
+                } ${light ? 'text-ink-text/70' : 'text-white/80'}`}
+            >
                 {label}
             </label>
-            <div className="relative flex items-center gap-2 border-b border-white/80 pb-2 transition-[border-color] focus-within:border-b-2 focus-within:border-wine-500">
+            <div
+                className={`relative flex items-center border-b transition-[border-color] focus-within:border-b-2 ${
+                    compact ? 'gap-1.5 pb-1' : 'gap-2 pb-2'
+                } ${
+                    light
+                        ? 'border-ink-text/25 focus-within:border-wine-700'
+                        : 'border-white/80 focus-within:border-wine-500'
+                }`}
+            >
                 {children}
-                {endAdornment && <span className="shrink-0 text-white/70">{endAdornment}</span>}
+                {endAdornment && (
+                    <span className={`shrink-0 ${light ? 'text-ink-text/45' : 'text-white/70'}`}>{endAdornment}</span>
+                )}
             </div>
         </div>
     );
 }
 
-const inputCls =
-    'font-geist w-full min-w-0 appearance-none border-0 bg-transparent p-0 text-[16px] leading-6 font-400 tracking-[0.15px] text-white outline-none placeholder:text-white/40';
-
-/** Text field with a map picker — every location on the widget is map selectable */
-function LocationField({ id, label, value, onChange, onPick }) {
-    const [pickerOpen, setPickerOpen] = useState(false);
-
-    return (
-        <>
-            <Field
-                id={id}
-                label={label}
-                endAdornment={
-                    <button
-                        type="button"
-                        onClick={() => setPickerOpen(true)}
-                        aria-label={`Select ${label.toLowerCase()} on the map`}
-                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
-                    >
-                        {PinIcon}
-                    </button>
-                }
-            >
-                <input
-                    id={id}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    className={inputCls}
-                    placeholder={LOCATION_PLACEHOLDER}
-                    autoComplete="off"
-                    required
-                />
-            </Field>
-            <MapLocationModal
-                open={pickerOpen}
-                label={label}
-                initialValue={value}
-                onClose={() => setPickerOpen(false)}
-                onSelect={(loc) => {
-                    onChange(loc.label);
-                    onPick?.(loc);
-                    setPickerOpen(false);
-                }}
-            />
-        </>
-    );
+function inputClass(tone = 'dark', compact = false) {
+    return `font-geist w-full min-w-0 appearance-none border-0 bg-transparent p-0 font-400 tracking-[0.15px] outline-none ${
+        compact ? 'text-[14px] leading-5' : 'text-[16px] leading-6'
+    } ${tone === 'light' ? 'text-ink-text placeholder:text-ink-text/35' : 'text-white placeholder:text-white/40'}`;
 }
 
 /**
  * Dropdown in the site's own style (same glass menu + wine active row as the nav),
  * portalled so the booking card's rounded clipping can't cut the list off.
  */
-function SelectField({ id, label, value, onChange, options }) {
+function SelectField({ id, label, value, onChange, options, tone: toneProp }) {
+    const contextTone = useContext(BookingToneContext);
+    const compact = useContext(FieldDensityContext) === 'compact';
+    const tone = toneProp || contextTone;
     const [open, setOpen] = useState(false);
     const [menuStyle, setMenuStyle] = useState(null);
     const triggerRef = useRef(null);
@@ -151,6 +151,7 @@ function SelectField({ id, label, value, onChange, options }) {
         <Field
             id={id}
             label={label}
+            tone={tone}
             endAdornment={
                 <span className={`block transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>{Chevron}</span>
             }
@@ -162,7 +163,9 @@ function SelectField({ id, label, value, onChange, options }) {
                 aria-haspopup="listbox"
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className="font-geist w-full min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-[16px] leading-6 font-400 tracking-[0.15px] text-white outline-none"
+                className={`font-geist w-full min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-400 tracking-[0.15px] outline-none ${
+                    compact ? 'text-[14px] leading-5' : 'text-[16px] leading-6'
+                } ${tone === 'light' ? 'text-ink-text' : 'text-white'}`}
             >
                 {selected?.label}
             </button>
@@ -180,7 +183,7 @@ function SelectField({ id, label, value, onChange, options }) {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -6 }}
                                 transition={{ duration: 0.18 }}
-                                className="nav-dd--dark z-[220] m-0 list-none overflow-y-auto rounded-lg p-2"
+                                className={`${tone === 'light' ? 'nav-dd--light' : 'nav-dd--dark'} z-[220] m-0 list-none overflow-y-auto rounded-lg p-2`}
                             >
                                 {options.map((o) => (
                                     <li key={o.value}>
@@ -193,7 +196,11 @@ function SelectField({ id, label, value, onChange, options }) {
                                                 setOpen(false);
                                             }}
                                             className={`font-geist block w-full cursor-pointer rounded-md px-3 py-2.5 text-left text-[15px] leading-5 whitespace-nowrap transition ${
-                                                o.value === value ? 'bg-wine-700 text-white' : 'text-white hover:bg-white/10'
+                                                o.value === value
+                                                    ? 'bg-wine-700 text-white'
+                                                    : tone === 'light'
+                                                      ? 'text-ink-text hover:bg-page'
+                                                      : 'text-white hover:bg-white/10'
                                             }`}
                                         >
                                             {o.label}
@@ -209,60 +216,205 @@ function SelectField({ id, label, value, onChange, options }) {
     );
 }
 
-function BookingForm({ tab, stacked = false, onSearch }) {
+export function BookingForm({
+    tab,
+    stacked = false,
+    onSearch,
+    gulfDestinations = fallbackGulfDestinations(),
+    maxStops = MAX_STOPS,
+    durationOptions = HOUR_OPTIONS,
+    passengerOptions = PASSENGER_OPTIONS,
+    studentOptions = STUDENT_OPTIONS,
+    termOptions = SCHOOL_TERMS,
+    tone = 'dark',
+    initial = null,
+    submitLabel = 'View options',
+    layout = 'default',
+    serviceOptions = null,
+    onServiceChange = null,
+}) {
     const uid = `${useId().replace(/:/g, '')}-${stacked ? 'm' : 'd'}`;
+    const compact = layout === 'bar';
+    const inputCls = inputClass(tone, compact);
+    const scheme = tone === 'light' ? 'light' : 'dark';
+    const fieldVariant = tone === 'light' ? 'light' : 'dark';
 
-    const [pickup, setPickup] = useState('');
-    const [dropoff, setDropoff] = useState('');
-    const [legs, setLegs] = useState([
-        { pickup: '', dropoff: '' },
-        { pickup: '', dropoff: '' },
-    ]);
-    const [duration, setDuration] = useState('2');
-    const [passengers, setPassengers] = useState('1');
-    const [destination, setDestination] = useState(GULF_DESTINATIONS[0].value);
-    const [schoolLocation, setSchoolLocation] = useState('');
-    const [students, setStudents] = useState('1');
-    const [term, setTerm] = useState(SCHOOL_TERMS[0].value);
-    const [date, setDate] = useState('');
-    const [time, setTime] = useState(DEFAULT_TIME);
-    const [pickupCoords, setPickupCoords] = useState(null);
+    const [pickup, setPickup] = useState(initial?.pickup || '');
+    const [dropoff, setDropoff] = useState(initial?.dropoff || '');
+    const [legs, setLegs] = useState(initial?.legs?.length ? initial.legs : [emptyLeg(), emptyLeg()]);
+    const [error, setError] = useState('');
+    const [duration, setDuration] = useState(initial?.duration || durationOptions[0]?.value || '2');
+    const [passengers, setPassengers] = useState(initial?.passengers || passengerOptions[0]?.value || '1');
+    const [destination, setDestination] = useState(
+        initial?.destination || gulfDestinations[0]?.value || '',
+    );
+    const [schoolLocation, setSchoolLocation] = useState(initial?.schoolLocation || '');
+    const [students, setStudents] = useState(initial?.students || studentOptions[0]?.value || '1');
+    const [term, setTerm] = useState(initial?.term || termOptions[0]?.value || SCHOOL_TERMS[0].value);
+    const [date, setDate] = useState(initial?.date || '');
+    const [time, setTime] = useState(initial?.time || DEFAULT_TIME);
+    const [pickupCoords, setPickupCoords] = useState(initial?.pickupCoords || null);
+    const [dropoffCoords, setDropoffCoords] = useState(initial?.dropoffCoords || null);
+    const [schoolCoords, setSchoolCoords] = useState(initial?.schoolCoords || null);
+
+    useEffect(() => {
+        if (!gulfDestinations.length) return;
+        setDestination((prev) =>
+            gulfDestinations.some((d) => d.value === prev)
+                ? prev
+                : gulfDestinations[0].value,
+        );
+    }, [gulfDestinations]);
+
+    useEffect(() => {
+        if (!durationOptions.length) return;
+        setDuration((prev) =>
+            durationOptions.some((o) => o.value === prev) ? prev : durationOptions[0].value,
+        );
+    }, [durationOptions]);
+
+    useEffect(() => {
+        if (!passengerOptions.length) return;
+        setPassengers((prev) =>
+            passengerOptions.some((o) => o.value === prev) ? prev : passengerOptions[0].value,
+        );
+    }, [passengerOptions]);
+
+    useEffect(() => {
+        if (!studentOptions.length) return;
+        setStudents((prev) =>
+            studentOptions.some((o) => o.value === prev) ? prev : studentOptions[0].value,
+        );
+    }, [studentOptions]);
+
+    useEffect(() => {
+        if (!termOptions.length) return;
+        setTerm((prev) =>
+            termOptions.some((o) => o.value === prev) ? prev : termOptions[0].value,
+        );
+    }, [termOptions]);
 
     const isMultiStops = tab === 'multi_stops';
     const isSchool = tab === 'school_chauffeured';
     const hasSchedule = !isSchool;
 
     const updateLeg = (index, key, value) =>
-        setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, [key]: value } : leg)));
+        setLegs((prev) =>
+            prev.map((leg, i) => {
+                if (i !== index) return leg;
+                const next = { ...leg, [key]: value };
+                if (key === 'pickup' || key === 'dropoff') next[`${key}Coords`] = null;
+                return next;
+            }),
+        );
+    const setLegCoords = (index, key, coords) =>
+        setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, [key]: coords } : leg)));
     const addLeg = () =>
-        setLegs((prev) => (prev.length >= MAX_STOPS ? prev : [...prev, { pickup: '', dropoff: '' }]));
+        setLegs((prev) => (prev.length >= maxStops ? prev : [...prev, emptyLeg()]));
     const removeLeg = (index) =>
         setLegs((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
 
-    const resolveDropoff = () => {
-        if (isMultiStops) return legs[legs.length - 1]?.dropoff?.trim() || '';
-        if (tab === 'arab_gulf_trips') return destination;
-        if (isSchool) return schoolLocation.trim();
-        if (tab === 'one_way') return dropoff.trim();
-        return '';
+    const gulfOption = gulfDestinations.find((d) => d.value === destination || d.slug === destination);
+
+    const missingMessage = () => {
+        const needsSchedule = () => {
+            if (!date) return 'Choose a pick-up date.';
+            if (date < todayLocal()) return 'Choose a pick-up date that is today or later.';
+            if (!time) return 'Choose a pick-up time.';
+            return '';
+        };
+
+        if (isMultiStops) {
+            if (!legs.length) return 'Add at least one stop.';
+            for (let i = 0; i < legs.length; i += 1) {
+                if (!hasCoords(legs[i].pickupCoords)) {
+                    return `Choose pick-up ${i + 1} from the suggestions.`;
+                }
+                if (!hasCoords(legs[i].dropoffCoords)) {
+                    return `Choose drop-off ${i + 1} from the suggestions.`;
+                }
+            }
+            return needsSchedule();
+        }
+
+        if (!hasCoords(pickupCoords)) return 'Choose a pick-up location from the suggestions.';
+
+        if (tab === 'by_hour') {
+            if (!duration) return 'Choose a duration.';
+            return needsSchedule();
+        }
+
+        if (tab === 'city_tour') {
+            if (!duration) return 'Choose a duration.';
+            if (!passengers) return 'Choose the number of passengers.';
+            return needsSchedule();
+        }
+
+        if (tab === 'arab_gulf_trips') {
+            if (!gulfOption?.slug && !gulfOption?.value) return 'Choose a destination.';
+            if (!hasCoords(gulfOption)) return 'This destination has no map location yet.';
+            if (!passengers) return 'Choose the number of passengers.';
+            return needsSchedule();
+        }
+
+        if (isSchool) {
+            if (!hasCoords(schoolCoords)) return 'Choose a school location from the suggestions.';
+            if (!students) return 'Choose the number of students.';
+            if (!term) return 'Choose a school term.';
+            return '';
+        }
+
+        if (!hasCoords(dropoffCoords)) return 'Choose a drop-off location from the suggestions.';
+        return needsSchedule();
     };
 
     const submit = (e) => {
         e.preventDefault();
+        const message = missingMessage();
+        if (message) {
+            setError(message);
+            return;
+        }
+        setError('');
+
+        const gulfSlug = gulfOption?.slug || gulfOption?.value || '';
         onSearch?.({
             tab,
             pickup: (isMultiStops ? legs[0]?.pickup || '' : pickup).trim(),
-            dropoff: resolveDropoff(),
+            dropoff: isMultiStops
+                ? legs[legs.length - 1]?.dropoff?.trim() || ''
+                : tab === 'arab_gulf_trips'
+                  ? gulfOption?.label || ''
+                  : isSchool
+                    ? schoolLocation.trim()
+                    : tab === 'one_way'
+                      ? dropoff.trim()
+                      : '',
             legs: isMultiStops
-                ? legs.map((leg) => ({ pickup: leg.pickup.trim(), dropoff: leg.dropoff.trim() }))
+                ? legs.map((leg) => ({
+                      pickup: leg.pickup.trim(),
+                      dropoff: leg.dropoff.trim(),
+                      pickupCoords: leg.pickupCoords,
+                      dropoffCoords: leg.dropoffCoords,
+                  }))
                 : null,
             duration: tab === 'by_hour' || tab === 'city_tour' ? duration : null,
             passengers: tab === 'city_tour' || tab === 'arab_gulf_trips' ? passengers : null,
             students: isSchool ? students : null,
             term: isSchool ? term : null,
+            gulf: tab === 'arab_gulf_trips' ? gulfSlug : null,
             date: hasSchedule ? date : '',
             time: hasSchedule ? time : '',
-            pickupCoords,
+            pickupCoords: isMultiStops ? legs[0]?.pickupCoords : pickupCoords,
+            dropoffCoords: isMultiStops
+                ? legs[legs.length - 1]?.dropoffCoords
+                : tab === 'arab_gulf_trips'
+                  ? { lat: Number(gulfOption.lat), lng: Number(gulfOption.lng) }
+                  : isSchool
+                    ? schoolCoords
+                    : tab === 'one_way'
+                      ? dropoffCoords
+                      : null,
         });
     };
 
@@ -273,7 +425,8 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className={`${inputCls} cursor-pointer [color-scheme:dark]`}
+                className={`${inputCls} cursor-pointer`}
+                style={{ colorScheme: scheme }}
                 aria-label="Select a date"
                 data-cy="date-picker-input"
             />
@@ -287,19 +440,30 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className={`${inputCls} cursor-pointer [color-scheme:dark]`}
+                className={`${inputCls} cursor-pointer`}
+                style={{ colorScheme: scheme }}
                 aria-label="Pickup time"
             />
         </Field>
     );
 
+    const locationScope = heroSearchScope(tab === 'arab_gulf_trips' ? 'gulf' : 'qatar');
+    const schoolScope = heroSearchScope('school');
+
     const pickupField = (
-        <LocationField
+        <MapboxLocationField
             id={`${uid}-pickup`}
             label="Pick up location"
             value={pickup}
-            onChange={setPickup}
-            onPick={(loc) => setPickupCoords({ lat: loc.lat, lng: loc.lng })}
+            coords={pickupCoords}
+            onChange={(v) => {
+                setPickup(v);
+                setPickupCoords(null);
+            }}
+            searchScope={locationScope}
+            onPick={(loc) => setPickupCoords(placeFromPick(loc))}
+            variant={fieldVariant}
+            density={compact ? 'compact' : 'regular'}
         />
     );
 
@@ -310,20 +474,27 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                 data-cy="search-button"
                 className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] leading-6 font-500 tracking-[0.15px] whitespace-nowrap text-white transition hover:bg-wine-600 lg:min-h-10 lg:min-w-[9.5rem] lg:py-2"
             >
-                View options
+                {submitLabel}
             </button>
         </div>
     );
 
+    const formError = error ? (
+        <p className={`font-geist m-0 text-[13px] leading-5 ${tone === 'light' ? 'text-wine-700' : 'text-rose-200'}`} role="alert">
+            {error}
+        </p>
+    ) : null;
+
     const divider = !stacked && (
         <>
-            <hr aria-orientation="vertical" aria-hidden="true" className="mx-4 hidden w-px self-stretch border-0 bg-white/25 lg:block" />
-            <hr aria-hidden="true" className="border-0 border-t border-white/15 lg:hidden" />
+            <hr aria-orientation="vertical" aria-hidden="true" className={`mx-4 hidden w-px self-stretch border-0 lg:block ${tone === 'light' ? 'bg-ink-text/15' : 'bg-white/25'}`} />
+            <hr aria-hidden="true" className={`border-0 border-t lg:hidden ${tone === 'light' ? 'border-ink-text/10' : 'border-white/15'}`} />
         </>
     );
 
-    if (isMultiStops) {
+    if (isMultiStops && layout !== 'bar') {
         return (
+            <BookingToneContext.Provider value={tone}>
             <form onSubmit={submit} className="flex w-full flex-col gap-5">
                 {legs.map((leg, index) => (
                     <div
@@ -331,24 +502,37 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                         key={`leg-${index}`}
                         className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3"
                     >
-                        <LocationField
+                        <MapboxLocationField
                             id={`${uid}-leg-${index}-pickup`}
                             label={`Pick up location ${index + 1}`}
                             value={leg.pickup}
+                            coords={leg.pickupCoords}
                             onChange={(v) => updateLeg(index, 'pickup', v)}
-                            onPick={index === 0 ? (loc) => setPickupCoords({ lat: loc.lat, lng: loc.lng }) : undefined}
+                            onPick={(loc) => setLegCoords(index, 'pickupCoords', placeFromPick(loc))}
+                            searchScope={locationScope}
+                            variant={fieldVariant}
+                            density={compact ? 'compact' : 'regular'}
                         />
-                        <LocationField
+                        <MapboxLocationField
                             id={`${uid}-leg-${index}-dropoff`}
                             label={`Drop off location ${index + 1}`}
                             value={leg.dropoff}
+                            coords={leg.dropoffCoords}
                             onChange={(v) => updateLeg(index, 'dropoff', v)}
+                            onPick={(loc) => setLegCoords(index, 'dropoffCoords', placeFromPick(loc))}
+                            searchScope={locationScope}
+                            variant={fieldVariant}
+                            density={compact ? 'compact' : 'regular'}
                         />
                         {legs.length > 1 && (
                             <button
                                 type="button"
                                 onClick={() => removeLeg(index)}
-                                className="font-geist shrink-0 cursor-pointer self-start rounded-full border border-white/25 px-4 py-2 text-[14px] leading-5 font-500 text-white transition hover:bg-white/10 sm:self-end"
+                                className={`font-geist shrink-0 cursor-pointer self-start rounded-full border px-4 py-2 text-[14px] leading-5 font-500 transition sm:self-end ${
+                                    tone === 'light'
+                                        ? 'border-ink-text/20 text-ink-text hover:bg-page'
+                                        : 'border-white/25 text-white hover:bg-white/10'
+                                }`}
                             >
                                 Remove
                             </button>
@@ -356,11 +540,15 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     </div>
                 ))}
 
-                {legs.length < MAX_STOPS && (
+                {legs.length < maxStops && (
                     <button
                         type="button"
                         onClick={addLeg}
-                        className="font-geist w-full cursor-pointer rounded-full border border-white/25 px-4 py-2.5 text-[15px] leading-5 font-500 text-white transition hover:bg-white/10 sm:w-auto sm:self-start"
+                        className={`font-geist w-full cursor-pointer rounded-full border px-4 py-2.5 text-[15px] leading-5 font-500 transition sm:w-auto sm:self-start ${
+                            tone === 'light'
+                                ? 'border-ink-text/20 text-ink-text hover:bg-page'
+                                : 'border-white/25 text-white hover:bg-white/10'
+                        }`}
                     >
                         Add stop
                     </button>
@@ -371,7 +559,9 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     {timeField}
                     {submitButton}
                 </div>
+                {formError}
             </form>
+            </BookingToneContext.Provider>
         );
     }
 
@@ -385,7 +575,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Duration"
                     value={duration}
                     onChange={setDuration}
-                    options={HOUR_OPTIONS}
+                    options={durationOptions.length ? durationOptions : HOUR_OPTIONS}
                 />,
             ];
         }
@@ -399,7 +589,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Duration"
                     value={duration}
                     onChange={setDuration}
-                    options={CITY_TOUR_HOUR_OPTIONS}
+                    options={durationOptions.length ? durationOptions : CITY_TOUR_HOUR_OPTIONS}
                 />,
                 <SelectField
                     key="passengers"
@@ -407,7 +597,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Number of passengers"
                     value={passengers}
                     onChange={setPassengers}
-                    options={PASSENGER_OPTIONS}
+                    options={passengerOptions.length ? passengerOptions : PASSENGER_OPTIONS}
                 />,
             ];
         }
@@ -421,7 +611,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Destination"
                     value={destination}
                     onChange={setDestination}
-                    options={GULF_DESTINATIONS}
+                    options={gulfDestinations}
                 />,
                 <SelectField
                     key="passengers"
@@ -429,7 +619,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Number of passengers"
                     value={passengers}
                     onChange={setPassengers}
-                    options={PASSENGER_OPTIONS}
+                    options={passengerOptions.length ? passengerOptions : PASSENGER_OPTIONS}
                 />,
             ];
         }
@@ -437,12 +627,20 @@ function BookingForm({ tab, stacked = false, onSearch }) {
         if (isSchool) {
             return [
                 pickupField,
-                <LocationField
+                <MapboxLocationField
                     key="school"
                     id={`${uid}-school`}
                     label="School / university location"
                     value={schoolLocation}
-                    onChange={setSchoolLocation}
+                    coords={schoolCoords}
+                    onChange={(v) => {
+                        setSchoolLocation(v);
+                        setSchoolCoords(null);
+                    }}
+                    onPick={(loc) => setSchoolCoords(placeFromPick(loc))}
+                    searchScope={schoolScope}
+                    variant={fieldVariant}
+                    density={compact ? 'compact' : 'regular'}
                 />,
                 <SelectField
                     key="students"
@@ -450,30 +648,154 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                     label="Number of students"
                     value={students}
                     onChange={setStudents}
-                    options={STUDENT_OPTIONS}
+                    options={studentOptions.length ? studentOptions : STUDENT_OPTIONS}
                 />,
             ];
         }
 
         return [
             pickupField,
-            <LocationField
+            <MapboxLocationField
                 key="dropoff"
                 id={`${uid}-dropoff`}
                 label="Drop off location"
                 value={dropoff}
-                onChange={setDropoff}
+                coords={dropoffCoords}
+                onChange={(v) => {
+                    setDropoff(v);
+                    setDropoffCoords(null);
+                }}
+                onPick={(loc) => setDropoffCoords(placeFromPick(loc))}
+                searchScope={locationScope}
+                variant={fieldVariant}
+                density={compact ? 'compact' : 'regular'}
             />,
         ];
     })();
 
     const wideTrip = tripFields.length > 2;
 
+    if (layout === 'bar') {
+        const slot = 'flex w-full min-w-0 sm:w-[calc(50%-0.5rem)] sm:max-w-[18rem] sm:flex-1';
+        const barFields = isMultiStops
+            ? legs.flatMap((leg, index) => {
+                  const row = [
+                      <div key={`bar-leg-${index}-pickup`} className={slot}>
+                          <MapboxLocationField
+                              id={`${uid}-leg-${index}-pickup`}
+                              label={`Pick up ${index + 1}`}
+                              value={leg.pickup}
+                              coords={leg.pickupCoords}
+                              onChange={(v) => updateLeg(index, 'pickup', v)}
+                              onPick={(loc) => setLegCoords(index, 'pickupCoords', placeFromPick(loc))}
+                              searchScope={locationScope}
+                              variant={fieldVariant}
+                              density="compact"
+                          />
+                      </div>,
+                      <div key={`bar-leg-${index}-dropoff`} className={slot}>
+                          <MapboxLocationField
+                              id={`${uid}-leg-${index}-dropoff`}
+                              label={`Drop off ${index + 1}`}
+                              value={leg.dropoff}
+                              coords={leg.dropoffCoords}
+                              onChange={(v) => updateLeg(index, 'dropoff', v)}
+                              onPick={(loc) => setLegCoords(index, 'dropoffCoords', placeFromPick(loc))}
+                              searchScope={locationScope}
+                              variant={fieldVariant}
+                              density="compact"
+                          />
+                      </div>,
+                  ];
+                  if (legs.length > 1) {
+                      row.push(
+                          <button
+                              key={`bar-leg-${index}-remove`}
+                              type="button"
+                              onClick={() => removeLeg(index)}
+                              className="font-geist mb-1 shrink-0 cursor-pointer self-end rounded-full border border-ink-text/20 px-3 py-1.5 text-[12px] font-500 text-ink-text"
+                          >
+                              Remove
+                          </button>,
+                      );
+                  }
+                  return row;
+              })
+            : tripFields.map((field, index) => (
+                  <div key={field.key || `bar-field-${index}`} className={slot}>
+                      {field}
+                  </div>
+              ));
+
+        return (
+            <BookingToneContext.Provider value={tone}>
+                <FieldDensityContext.Provider value="compact">
+                    <form
+                        onSubmit={submit}
+                        className="mx-auto flex w-full max-w-5xl flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center sm:gap-3"
+                    >
+                        {serviceOptions?.length ? (
+                            <div className="flex w-full min-w-0 sm:w-[9.5rem] sm:max-w-[12rem] sm:flex-1">
+                                <SelectField
+                                    id={`${uid}-service`}
+                                    label="Service"
+                                    value={tab}
+                                    onChange={onServiceChange}
+                                    options={serviceOptions}
+                                />
+                            </div>
+                        ) : null}
+                        {barFields}
+                        {isMultiStops && legs.length < maxStops ? (
+                            <button
+                                type="button"
+                                onClick={addLeg}
+                                className="font-geist mb-1 shrink-0 cursor-pointer self-end rounded-full border border-ink-text/20 px-3 py-1.5 text-[12px] font-500 text-ink-text"
+                            >
+                                Add stop
+                            </button>
+                        ) : null}
+                        {hasSchedule ? (
+                            <>
+                                <div className="flex w-full min-w-0 sm:w-[9.5rem] sm:max-w-[12rem] sm:flex-1">{dateField}</div>
+                                <div className="flex w-full min-w-0 sm:w-[8.5rem] sm:max-w-[10rem] sm:flex-1">{timeField}</div>
+                            </>
+                        ) : (
+                            <div className="flex w-full min-w-0 sm:w-[9.5rem] sm:max-w-[12rem] sm:flex-1">
+                                <SelectField
+                                    id={`${uid}-term`}
+                                    label="Duration"
+                                    value={term}
+                                    onChange={setTerm}
+                                    options={termOptions.length ? termOptions : SCHOOL_TERMS}
+                                />
+                            </div>
+                        )}
+                        <button
+                            type="submit"
+                            className="font-geist flex h-11 w-full shrink-0 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 text-[14px] font-500 whitespace-nowrap text-white transition hover:bg-wine-600 sm:mb-0.5 sm:h-9 sm:w-auto"
+                        >
+                            {submitLabel}
+                        </button>
+                        {error ? (
+                            <p className="font-geist m-0 w-full text-[12px] leading-4 text-wine-700" role="alert">
+                                {error}
+                            </p>
+                        ) : null}
+                    </form>
+                </FieldDensityContext.Provider>
+            </BookingToneContext.Provider>
+        );
+    }
+
     return (
+        <BookingToneContext.Provider value={tone}>
         <form
             onSubmit={submit}
             className={`flex w-full items-stretch ${
-                stacked ? 'flex-col gap-5' : 'flex-col gap-4 lg:min-h-[60px] lg:flex-row lg:items-center lg:gap-0'
+                stacked
+                    ? 'flex-col gap-5'
+                    : 'flex-col gap-4 lg:min-h-[60px] lg:flex-row lg:flex-wrap lg:items-center lg:gap-0'
             }`}
         >
             <div
@@ -506,7 +828,7 @@ function BookingForm({ tab, stacked = false, onSearch }) {
                         label="Duration"
                         value={term}
                         onChange={setTerm}
-                        options={SCHOOL_TERMS}
+                        options={termOptions.length ? termOptions : SCHOOL_TERMS}
                     />
                 )}
             </div>
@@ -514,19 +836,24 @@ function BookingForm({ tab, stacked = false, onSearch }) {
             {divider}
 
             {submitButton}
+            {formError ? <div className="w-full pt-3">{formError}</div> : null}
         </form>
+        </BookingToneContext.Provider>
     );
 }
 
-function TabPills({ tab, setTab, className = '' }) {
+export function TabPills({ tab, setTab, tabs, className = '', tone = 'dark' }) {
+    const light = tone === 'light';
     return (
         <div
             role="radiogroup"
             aria-label="Trip type selection"
-            className={`bl-glass-dark relative w-full max-w-full rounded-2xl border border-white/25 p-1.5 ${className}`}
+            className={`relative w-full max-w-full rounded-2xl border p-1.5 ${
+                light ? 'border-ink-text/15 bg-page' : 'bl-glass-dark border-white/25'
+            } ${className}`}
         >
             <div className="-mx-0.5 flex gap-1 overflow-x-auto px-0.5 py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden">
-                {TABS.map((t) => {
+                {tabs.map((t) => {
                     const active = tab === t.id;
                     return (
                         <button
@@ -536,7 +863,11 @@ function TabPills({ tab, setTab, className = '' }) {
                             aria-checked={active}
                             onClick={() => setTab(t.id)}
                             className={`font-geist shrink-0 rounded-full px-3 py-2.5 text-center text-[13px] leading-4 font-500 tracking-[0.15px] whitespace-nowrap transition sm:px-3.5 sm:text-[14px] sm:leading-5 lg:px-4 lg:text-[15px] ${
-                                active ? 'bg-wine-700 text-white shadow-sm' : 'text-white hover:bg-white/10'
+                                active
+                                    ? 'bg-wine-700 text-white shadow-sm'
+                                    : light
+                                      ? 'text-ink-text hover:bg-white'
+                                      : 'text-white hover:bg-white/10'
                             }`}
                         >
                             {t.label}
@@ -549,9 +880,88 @@ function TabPills({ tab, setTab, className = '' }) {
 }
 
 export default function BookingWidget({ variant = 'desktop' }) {
+    const [searchParams] = useSearchParams();
+    const requestedService = searchParams.get('service');
     const [tab, setTab] = useState('one_way');
+    const [serviceTabs, setServiceTabs] = useState(() => fallbackServiceTabs());
+    const [gulfDestinations, setGulfDestinations] = useState(() => fallbackGulfDestinations());
     const navigate = useNavigate();
     const isMobile = variant === 'mobile';
+
+    useEffect(() => {
+        let cancelled = false;
+        Promise.all([fetchServiceTypes(), fetchGulfDestinations()])
+            .then(([types, destinations]) => {
+                if (cancelled) return;
+                const mappedTabs = (Array.isArray(types) ? types : []).map(mapServiceType);
+                if (mappedTabs.length) {
+                    setServiceTabs(mappedTabs);
+                    setTab((prev) => {
+                        if (requestedService && mappedTabs.some((t) => t.id === requestedService)) {
+                            return requestedService;
+                        }
+                        return mappedTabs.some((t) => t.id === prev) ? prev : mappedTabs[0].id;
+                    });
+                }
+                const mappedGulf = (Array.isArray(destinations) ? destinations : []).map(
+                    mapGulfDestination,
+                );
+                if (mappedGulf.length) setGulfDestinations(mappedGulf);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setServiceTabs(fallbackServiceTabs());
+                setGulfDestinations(fallbackGulfDestinations());
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [requestedService]);
+
+    useEffect(() => {
+        if (!requestedService) return;
+        setTab((prev) => (serviceTabs.some((t) => t.id === requestedService) ? requestedService : prev));
+    }, [requestedService, serviceTabs]);
+
+    const maxStops = useMemo(() => {
+        const multi = serviceTabs.find((t) => t.id === 'multi_stops');
+        return multi?.max_stops || MAX_STOPS;
+    }, [serviceTabs]);
+
+    const activeService = useMemo(
+        () => serviceTabs.find((t) => t.id === tab) || null,
+        [serviceTabs, tab],
+    );
+
+    const formDurationOptions = useMemo(() => {
+        if (activeService?.duration_options?.length) return activeService.duration_options;
+        if (tab === 'city_tour') return CITY_TOUR_HOUR_OPTIONS;
+        return HOUR_OPTIONS;
+    }, [activeService, tab]);
+
+    const formPassengerOptions = useMemo(
+        () =>
+            activeService?.passenger_options?.length
+                ? activeService.passenger_options
+                : PASSENGER_OPTIONS,
+        [activeService],
+    );
+
+    const formStudentOptions = useMemo(
+        () =>
+            activeService?.student_options?.length
+                ? activeService.student_options
+                : STUDENT_OPTIONS,
+        [activeService],
+    );
+
+    const formTermOptions = useMemo(
+        () =>
+            activeService?.term_options?.length
+                ? activeService.term_options
+                : SCHOOL_TERMS,
+        [activeService],
+    );
 
     const goBooking = ({
         tab: selectedTab,
@@ -562,29 +972,31 @@ export default function BookingWidget({ variant = 'desktop' }) {
         passengers,
         students,
         term,
+        gulf,
         date,
         time,
         pickupCoords,
+        dropoffCoords,
     }) => {
-        const q = new URLSearchParams();
-        const mode = serviceMode(selectedTab);
-        if (pickup) q.set('pickup', pickup);
-        if (dropoff) q.set('dropoff', dropoff);
-        if (time) q.set('time', time);
-        if (date) q.set('date', date);
-        q.set('mode', mode);
-        q.set('service', selectedTab);
-        if (mode === 'hourly' && duration) q.set('duration', duration);
-        if (passengers) q.set('passengers', passengers);
-        if (students) q.set('students', students);
-        if (term) q.set('term', term);
-        legs?.forEach((leg) => {
-            if (leg.pickup || leg.dropoff) q.append('legs', `${leg.pickup} > ${leg.dropoff}`);
-        });
-        if (pickupCoords) {
-            q.set('lat', String(pickupCoords.lat));
-            q.set('lng', String(pickupCoords.lng));
-        }
+        const mode = serviceTabs.find((t) => t.id === selectedTab)?.mode || 'transfer';
+        const q = tripSelectionToSearchParams(
+            {
+                tab: selectedTab,
+                pickup,
+                dropoff,
+                legs,
+                duration,
+                passengers,
+                students,
+                term,
+                gulf,
+                date,
+                time,
+                pickupCoords,
+                dropoffCoords,
+            },
+            mode,
+        );
         navigate(`/booking?${q.toString()}`);
     };
 
@@ -593,7 +1005,7 @@ export default function BookingWidget({ variant = 'desktop' }) {
             <div data-cy="booking-widget" className="mx-auto flex w-full max-w-full flex-col items-center justify-center">
                 {/* Sticky glass tabs — scrollable on narrow screens */}
                 <div className="sticky top-[72px] z-30 mb-4 w-full py-2">
-                    <TabPills tab={tab} setTab={setTab} />
+                    <TabPills tab={tab} setTab={setTab} tabs={serviceTabs} />
                 </div>
 
                 {/* Glass booking card */}
@@ -606,7 +1018,17 @@ export default function BookingWidget({ variant = 'desktop' }) {
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                         >
-                            <BookingForm tab={tab} stacked onSearch={goBooking} />
+                            <BookingForm
+                                tab={tab}
+                                stacked
+                                onSearch={goBooking}
+                                gulfDestinations={gulfDestinations}
+                                maxStops={maxStops}
+                                durationOptions={formDurationOptions}
+                                passengerOptions={formPassengerOptions}
+                                studentOptions={formStudentOptions}
+                                termOptions={formTermOptions}
+                            />
                         </motion.div>
                     </AnimatePresence>
                 </div>
@@ -617,7 +1039,7 @@ export default function BookingWidget({ variant = 'desktop' }) {
     return (
         <div data-cy="booking-widget" className="mx-auto flex w-full max-w-full flex-col items-center justify-center">
             <div className="mb-6 w-full max-w-[1120px]">
-                <TabPills tab={tab} setTab={setTab} />
+                <TabPills tab={tab} setTab={setTab} tabs={serviceTabs} />
             </div>
 
             <div className="bl-glass-dark w-full max-w-full overflow-hidden rounded-lg border border-white/15 p-6" role="search">
@@ -629,7 +1051,16 @@ export default function BookingWidget({ variant = 'desktop' }) {
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                     >
-                        <BookingForm tab={tab} onSearch={goBooking} />
+                        <BookingForm
+                            tab={tab}
+                            onSearch={goBooking}
+                            gulfDestinations={gulfDestinations}
+                            maxStops={maxStops}
+                            durationOptions={formDurationOptions}
+                            passengerOptions={formPassengerOptions}
+                            studentOptions={formStudentOptions}
+                            termOptions={formTermOptions}
+                        />
                     </motion.div>
                 </AnimatePresence>
             </div>

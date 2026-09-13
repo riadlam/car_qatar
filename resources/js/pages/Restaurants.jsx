@@ -7,6 +7,7 @@ import SeoSplit from '../components/corporations/SeoSplit';
 import ScrollTop from '../components/corporations/ScrollTop';
 import DestinationScheduler from '../components/explore/DestinationScheduler';
 import { RESTAURANT_IMG, RESTAURANT_DESTINATIONS, BOOK_HREF } from '../components/restaurants/assets';
+import { useExploreCategory } from '../hooks/useExploreCategory';
 
 const RESTAURANT_CARDS = [
     {
@@ -51,10 +52,12 @@ const RESTAURANT_CARDS = [
     },
 ];
 
-function HeroScheduler({ stacked = false }) {
+function HeroScheduler({ stacked = false, explore }) {
     return (
         <DestinationScheduler
-            destinations={RESTAURANT_DESTINATIONS}
+            destinations={explore.destinations}
+            selectedDestination={explore.selectedDestination}
+            onDestinationChange={explore.setSelectedDestination}
             destinationLabel="Restaurant"
             destinationPlaceholder="Search restaurants & lunch venues in Qatar…"
             pickupPlaceholder="Address, airport, hotel, ..."
@@ -82,7 +85,7 @@ function useIsPhone() {
     return isPhone;
 }
 
-function Hero() {
+function Hero({ explore }) {
     const isPhone = useIsPhone();
 
     if (isPhone) {
@@ -116,7 +119,7 @@ function Hero() {
                         </div>
 
                         <div className="w-full">
-                            <HeroScheduler stacked />
+                            <HeroScheduler stacked explore={explore} />
                         </div>
                     </div>
                 </div>
@@ -157,7 +160,7 @@ function Hero() {
                 </div>
 
                 <div className="relative z-10 mx-auto -mt-20 w-full max-w-[1170px] px-6 lg:-mt-24 lg:px-8">
-                    <HeroScheduler />
+                    <HeroScheduler explore={explore} />
                 </div>
             </div>
         </section>
@@ -185,11 +188,17 @@ function Breadcrumb() {
 }
 
 export default function Restaurants() {
+    const explore = useExploreCategory('restaurant', RESTAURANT_CARDS, RESTAURANT_DESTINATIONS);
+
     return (
         <SiteLayout>
-            <Hero />
+            <Hero explore={explore} />
             <Breadcrumb />
-            <CardCarousel title="Tables and lunch spots we drive to daily" cards={RESTAURANT_CARDS} />
+            <CardCarousel
+                title="Tables and lunch spots we drive to daily"
+                cards={explore.cards}
+                onCardClick={explore.onCardClick}
+            />
             <CalloutBanner
                 title="Arrive on time for the reservation"
                 body="Curb-side drop-off at restaurants and hotel dining rooms, then a calm ride back when the meal ends."

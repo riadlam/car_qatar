@@ -9,7 +9,19 @@ const PENDING_EMAIL_KEY = 'auth_pending_email';
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('auth_user');
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+        try {
+            const parsed = JSON.parse(stored);
+            // Drop legacy mock sessions
+            if (String(parsed?.id || '').startsWith('local_')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+                return null;
+            }
+            return parsed;
+        } catch {
+            return null;
+        }
     });
     const [loading, setLoading] = useState(true);
 
@@ -17,6 +29,12 @@ export function AuthProvider({ children }) {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('auth_user', JSON.stringify(nextUser));
         setUser(nextUser);
+    }, []);
+
+    const persistUser = useCallback((nextUser) => {
+        localStorage.setItem('auth_user', JSON.stringify(nextUser));
+        setUser(nextUser);
+        return nextUser;
     }, []);
 
     const clearSession = useCallback(() => {
@@ -28,13 +46,10 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const token = localStorage.getItem('auth_token');
 
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-
-        // Local mock sessions skip API /me
-        if (String(token).startsWith('local_')) {
+        if (!token || String(token).startsWith('local_')) {
+            if (String(token || '').startsWith('local_')) {
+                clearSession();
+            }
             setLoading(false);
             return;
         }
@@ -42,14 +57,13 @@ export function AuthProvider({ children }) {
         authApi
             .me()
             .then((data) => {
-                localStorage.setItem('auth_user', JSON.stringify(data.user));
-                setUser(data.user);
+                persistUser(data.user);
             })
             .catch(() => {
                 clearSession();
             })
             .finally(() => setLoading(false));
-    }, [clearSession]);
+    }, [clearSession, persistUser]);
 
     const setReturnTo = useCallback((path) => {
         if (path && path !== '/login' && path !== '/register' && path !== '/complete-profile') {
@@ -82,55 +96,81 @@ export function AuthProvider({ children }) {
         async (payload) => {
             const data = await authApi.register(payload);
             persistSession(data.user, data.token);
+            sessionStorage.removeItem(PENDING_EMAIL_KEY);
             return data.user;
         },
         [persistSession],
     );
 
-    /** Local profile completion (no backend yet) */
+    /** Signup step 2 — maps CompleteProfile form → API register */
     const completeProfile = useCallback(
-        (profile) => {
+        async (profile) => {
             const email = profile.email || getPendingEmail();
             const isCompany = profile.accountType === 'company';
-            const displayName = isCompany
-                ? profile.companyName || email
-                : [profile.firstName, profile.lastName].filter(Boolean).join(' ');
-            const nextUser = {
-                id: `local_${Date.now()}`,
+            const isChauffeur = profile.accountType === 'chauffeur';
+
+            const payload = {
                 email,
-                name: displayName,
-                account_type: isCompany ? 'company' : 'individual',
-                title: isCompany ? '' : profile.title || '',
-                first_name: isCompany ? '' : profile.firstName || '',
-                last_name: isCompany ? '' : profile.lastName || '',
+                password: profile.password,
+                password_confirmation: profile.passwordConfirm || profile.password,
+                account_type: isChauffeur ? 'chauffeur' : isCompany ? 'company' : 'individual',
+                title: isCompany ? undefined : profile.title || 'Mr.',
+                first_name: isCompany ? undefined : profile.firstName || '',
+                last_name: isCompany ? undefined : profile.lastName || '',
+                company_name: isCompany ? profile.companyName || '' : undefined,
                 phone: profile.phone || '',
-                company: isCompany ? profile.companyName || '' : '',
-                preferred_language: profile.preferredLanguage || '',
-                street_address: '',
-                has_password: Boolean(profile.password),
-                payment_methods: [],
-                marketing_emails: true,
-                booking_notifications: 'email_sms',
-                language: profile.preferredLanguage || 'en',
+                preferred_language: profile.preferredLanguage || null,
             };
-            persistSession(nextUser, `local_${Date.now()}`);
-            sessionStorage.removeItem(PENDING_EMAIL_KEY);
-            return nextUser;
+
+            if (isChauffeur) {
+                const user = await register(payload);
+                return { ...user, application_pending: true };
+            }
+
+            return register(payload);
         },
-        [getPendingEmail, persistSession],
+        [getPendingEmail, register],
     );
 
-    /** Merge account fields into the current user and persist */
+    /** Profile fields go to the API. Cards are saved through /payment-methods. */
     const updateUser = useCallback(
-        (patch) => {
-            setUser((current) => {
-                if (!current) return current;
-                const next = { ...current, ...patch };
-                localStorage.setItem('auth_user', JSON.stringify(next));
-                return next;
-            });
+        async (patch) => {
+            const payload = { ...patch };
+            if (Object.prototype.hasOwnProperty.call(payload, 'company')) {
+                payload.company_name = payload.company;
+                delete payload.company;
+            }
+            delete payload.payment_methods;
+            delete payload.has_password;
+            delete payload.password_updated_at;
+
+            const data = await authApi.updateProfile(payload);
+            persistUser(data.user);
+            return data.user;
         },
-        [],
+        [persistUser],
+    );
+
+    const updateEmail = useCallback(
+        async ({ email, current_password }) => {
+            const data = await authApi.updateEmail({ email, current_password });
+            persistUser(data.user);
+            return data.user;
+        },
+        [persistUser],
+    );
+
+    const updatePassword = useCallback(
+        async ({ current_password, password, password_confirmation }) => {
+            const data = await authApi.updatePassword({
+                current_password,
+                password,
+                password_confirmation,
+            });
+            persistSession(data.user, data.token);
+            return data.user;
+        },
+        [persistSession],
     );
 
     const logout = useCallback(async () => {
@@ -144,9 +184,18 @@ export function AuthProvider({ children }) {
         }
     }, [clearSession]);
 
-    const deleteAccount = useCallback(async () => {
-        await logout();
-    }, [logout]);
+    const deleteAccount = useCallback(
+        async ({ current_password } = {}) => {
+            await authApi.deleteAccount({ current_password });
+            clearSession();
+        },
+        [clearSession],
+    );
+
+    const refreshUser = useCallback(async () => {
+        const data = await authApi.me();
+        return persistUser(data.user);
+    }, [persistUser]);
 
     const value = useMemo(
         () => ({
@@ -158,7 +207,10 @@ export function AuthProvider({ children }) {
             logout,
             completeProfile,
             updateUser,
+            updateEmail,
+            updatePassword,
             deleteAccount,
+            refreshUser,
             setReturnTo,
             consumeReturnTo,
             setPendingEmail,
@@ -172,7 +224,10 @@ export function AuthProvider({ children }) {
             logout,
             completeProfile,
             updateUser,
+            updateEmail,
+            updatePassword,
             deleteAccount,
+            refreshUser,
             setReturnTo,
             consumeReturnTo,
             setPendingEmail,
