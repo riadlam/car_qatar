@@ -22,6 +22,8 @@ class MapboxGeocodingService
             'access_token' => $token,
             'permanent' => 'true',
             'language' => $settings->language ?: 'en',
+            'limit' => 1,
+            'types' => 'address,street,poi',
         ];
 
         $response = Http::timeout(12)
@@ -125,11 +127,15 @@ class MapboxGeocodingService
             ]);
         }
 
+        $keepPin = $lat !== null && $lng !== null;
+        $pinLat = $keepPin ? $lat : (float) ($feature['routable_latitude'] ?? $feature['latitude']);
+        $pinLng = $keepPin ? $lng : (float) ($feature['routable_longitude'] ?? $feature['longitude']);
+
         return array_merge($input, [
-            'lat' => $feature['latitude'],
-            'lng' => $feature['longitude'],
-            'latitude' => $feature['latitude'],
-            'longitude' => $feature['longitude'],
+            'lat' => $pinLat,
+            'lng' => $pinLng,
+            'latitude' => $pinLat,
+            'longitude' => $pinLng,
             'formatted_address' => $feature['label'],
             'label' => $feature['label'],
             'name' => $feature['name'] ?? $feature['label'],
@@ -157,6 +163,7 @@ class MapboxGeocodingService
         }
 
         $props = $feature['properties'] ?? [];
+        $routable = $props['coordinates']['routable_points'][0] ?? null;
         $label = $props['full_address']
             ?? $props['place_formatted']
             ?? $props['name']
@@ -173,6 +180,8 @@ class MapboxGeocodingService
             'label' => $label,
             'longitude' => (float) $coords[0],
             'latitude' => (float) $coords[1],
+            'routable_longitude' => isset($routable['longitude']) ? (float) $routable['longitude'] : null,
+            'routable_latitude' => isset($routable['latitude']) ? (float) $routable['latitude'] : null,
             'raw' => [
                 'id' => $feature['id'] ?? null,
                 'feature_type' => $props['feature_type'] ?? null,

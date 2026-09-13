@@ -107,7 +107,14 @@ export default function MapLocationModal({
         setSelected({ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, provider: 'mapbox' });
         try {
             const rev = await reverseGeocodeClient(lng, lat);
-            if (rev?.label) setSelected(rev);
+            if (rev?.label) {
+                setSelected({
+                    ...rev,
+                    lat,
+                    lng,
+                });
+                setQuery(rev.label);
+            }
             setMessage('');
         } catch {
             setMessage('Address lookup unavailable — coordinates will be used.');

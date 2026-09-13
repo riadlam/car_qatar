@@ -8,6 +8,7 @@ use App\Http\Resources\ChauffeurRideResource;
 use App\Models\CancellationReason;
 use App\Models\RideAssignment;
 use App\Services\Dispatch\DispatchService;
+use App\Services\Maps\MapboxDirectionsService;
 use App\Services\Tracking\TrackingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class RideController extends Controller
     public function __construct(
         private readonly TrackingService $tracking,
         private readonly DispatchService $dispatch,
+        private readonly MapboxDirectionsService $maps,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -123,6 +125,16 @@ class RideController extends Controller
 
         $recordedAt = isset($data['recorded_at']) ? now()->parse($data['recorded_at']) : now();
         $before = $assignment->status;
+        $snapped = $this->maps->snapToRoad(
+            $lng,
+            $lat,
+            $chauffeur->current_longitude !== null ? (float) $chauffeur->current_longitude : null,
+            $chauffeur->current_latitude !== null ? (float) $chauffeur->current_latitude : null,
+        );
+        if ($snapped) {
+            $lng = $snapped['lng'];
+            $lat = $snapped['lat'];
+        }
 
         $chauffeur->forceFill([
             'current_latitude' => $lat,

@@ -67,6 +67,7 @@ export default function useChauffeurLocation(trip) {
             if (sent && !moving && !arrival) return;
 
             sentRef.current = { ...fix, nearPickup, nearDropoff, at: Date.now() };
+            const heading = Number.isFinite(position.coords.heading) ? position.coords.heading : null;
             postChauffeurLocation({
                 booking_id: current.bookingId,
                 latitude: fix.lat,
@@ -75,6 +76,14 @@ export default function useChauffeurLocation(trip) {
                 heading: position.coords.heading,
                 speed: position.coords.speed,
                 recorded_at: new Date(position.timestamp).toISOString(),
+            }).then((res) => {
+                const snapped = res?.chauffeur;
+                if (snapped?.latitude == null || snapped?.longitude == null) return;
+                tripRef.current?.onFix?.({
+                    lat: Number(snapped.latitude),
+                    lng: Number(snapped.longitude),
+                    heading,
+                });
             }).catch(() => {});
         };
 

@@ -98,4 +98,68 @@ class MapboxDirectionsService
 
         return $route;
     }
+
+    /**
+     * Snap a GPS fix onto the road so the van matches the route, not a rooftop.
+     *
+     * @return array{lng: float, lat: float}|null
+     */
+    public function snapToRoad(float $lng, float $lat, ?float $previousLng = null, ?float $previousLat = null): ?array
+    {
+        $token = config('services.mapbox.secret_token') ?: config('services.mapbox.public_token');
+        if (! $token) {
+            return null;
+        }
+
+        $current = [round($lng, 6), round($lat, 6)];
+        $hasPrevious = $previousLng !== null && $previousLat !== null
+            && $this->meters($lat, $lng, $previousLat, $previousLng) <= 2000;
+        $points = $hasPrevious
+            ? [[round($previousLng, 6), round($previousLat, 6)], $current]
+            : [[round($lng - 0.00002, 6), round($lat, 6)], $current];
+
+        $coords = collect($points)->map(fn (array $point) => $point[0].','.$point[1])->implode(';');
+        $radiuses = implode(';', array_fill(0, count($points), '30'));
+
+        $response = Http::timeout(6)
+            ->connectTimeout(3)
+            ->acceptJson()
+            ->get('https://api.mapbox.com/matching/v5/mapbox/driving/'.$coords, [
+                'geometries' => 'geojson',
+                'overview' => 'false',
+                'tidy' => 'true',
+                'radiuses' => $radiuses,
+                'access_token' => $token,
+            ]);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $trace = $response->json('tracepoints.'.(count($points) - 1));
+        $location = is_array($trace) ? ($trace['location'] ?? null) : null;
+        if (! is_array($location) || count($location) < 2) {
+            return null;
+        }
+
+        $snappedLng = (float) $location[0];
+        $snappedLat = (float) $location[1];
+        $moved = $this->meters($lat, $lng, $snappedLat, $snappedLng);
+        if ($moved > 40) {
+            return null;
+        }
+
+        return ['lng' => $snappedLng, 'lat' => $snappedLat];
+    }
+
+    private function meters(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earth = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+
+        return $earth * (2 * atan2(sqrt($a), sqrt(1 - $a)));
+    }
 }

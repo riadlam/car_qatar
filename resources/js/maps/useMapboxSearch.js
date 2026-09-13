@@ -2,6 +2,38 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchMapConfig, getMapboxToken } from './mapboxClient';
 import { getSearchScope } from './searchScopes';
 
+function metersBetween(a, b) {
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Road entrance when Mapbox has one nearby; otherwise the place itself. */
+export function navigablePoint(feature, fallbackLng, fallbackLat) {
+    const props = feature?.properties || {};
+    const geometry = feature?.geometry?.coordinates || [];
+    const placeLng = Number(geometry[0] ?? props.coordinates?.longitude ?? fallbackLng);
+    const placeLat = Number(geometry[1] ?? props.coordinates?.latitude ?? fallbackLat);
+    const routable = props.coordinates?.routable_points?.[0] || props.routable_points?.[0];
+    const roadLng = Number(routable?.longitude);
+    const roadLat = Number(routable?.latitude);
+
+    if (Number.isFinite(roadLng) && Number.isFinite(roadLat) && Number.isFinite(placeLng) && Number.isFinite(placeLat)) {
+        if (metersBetween({ lat: placeLat, lng: placeLng }, { lat: roadLat, lng: roadLng }) <= 120) {
+            return { lng: roadLng, lat: roadLat };
+        }
+    }
+
+    return {
+        lng: Number.isFinite(placeLng) ? placeLng : fallbackLng,
+        lat: Number.isFinite(placeLat) ? placeLat : fallbackLat,
+    };
+}
+
 function newSessionToken() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID();
@@ -124,15 +156,15 @@ export function useMapboxSearch({ scope = 'qatar', proximity } = {}) {
         const feature = data.features?.[0];
         if (!feature) return null;
 
-        const [lng, lat] = feature.geometry?.coordinates || [];
         const props = feature.properties || {};
+        const point = navigablePoint(feature);
         sessionRef.current = newSessionToken();
 
         return {
             label: props.full_address || props.name || props.place_formatted,
             name: props.name,
-            lat,
-            lng,
+            lat: point.lat,
+            lng: point.lng,
             place_id: props.mapbox_id || mapboxId,
             provider: 'mapbox',
         };
@@ -181,14 +213,14 @@ export async function forwardGeocodeClient(query, scope = 'qatar') {
     const feature = data.features?.[0];
     if (!feature) return null;
     const props = feature.properties || {};
-    const [lng, lat] = feature.geometry?.coordinates || [];
-    if (lat == null || lng == null) return null;
+    const point = navigablePoint(feature);
+    if (point.lat == null || point.lng == null) return null;
 
     return {
         label: props.full_address || props.place_formatted || props.name || q,
         name: props.name || q,
-        lat,
-        lng,
+        lat: point.lat,
+        lng: point.lng,
         place_id: props.mapbox_id || feature.id,
         provider: 'mapbox',
     };
@@ -203,19 +235,27 @@ export async function reverseGeocodeClient(lng, lat) {
         latitude: String(lat),
         access_token: token,
         language: config.language || 'en',
+        limit: '1',
+        types: 'address,street,poi',
     });
-    const res = await fetch(`https://api.mapbox.com/search/geocode/v6/reverse?${params}`);
+    let res = await fetch(`https://api.mapbox.com/search/geocode/v6/reverse?${params}`);
     if (!res.ok) return null;
-    const data = await res.json();
-    const feature = data.features?.[0];
+    let data = await res.json();
+    let feature = data.features?.[0];
+    if (!feature) {
+        params.delete('types');
+        res = await fetch(`https://api.mapbox.com/search/geocode/v6/reverse?${params}`);
+        if (!res.ok) return null;
+        data = await res.json();
+        feature = data.features?.[0];
+    }
     if (!feature) return null;
     const props = feature.properties || {};
-    const [rlng, rlat] = feature.geometry?.coordinates || [lng, lat];
     return {
         label: props.full_address || props.place_formatted || props.name,
         name: props.name,
-        lat: rlat,
-        lng: rlng,
+        lat,
+        lng,
         place_id: props.mapbox_id || feature.id,
         provider: 'mapbox',
     };
