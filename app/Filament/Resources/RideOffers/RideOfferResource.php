@@ -29,6 +29,13 @@ class RideOfferResource extends Resource
 
     protected static ?string $navigationLabel = 'Ride Offers';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Ride Offer';
 
     protected static ?string $pluralModelLabel = 'Ride Offers';

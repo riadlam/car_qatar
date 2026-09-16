@@ -2,17 +2,16 @@
 
 namespace App\Filament\Resources\Bookings\RelationManagers;
 
-use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\DissociateAction;
-use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -20,13 +19,27 @@ class GuestsRelationManager extends RelationManager
 {
     protected static string $relationship = 'guests';
 
+    protected static ?string $title = 'Guests';
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
+                TextInput::make('title')
+                    ->maxLength(50),
                 TextInput::make('first_name')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('last_name')
+                    ->maxLength(255),
+                TextInput::make('email')
+                    ->email()
+                    ->maxLength(255),
+                TextInput::make('phone')
+                    ->tel()
+                    ->maxLength(50),
+                Toggle::make('is_primary')
+                    ->label('Primary guest'),
             ]);
     }
 
@@ -36,25 +49,37 @@ class GuestsRelationManager extends RelationManager
             ->recordTitleAttribute('first_name')
             ->columns([
                 TextColumn::make('first_name')
-                    ->searchable(),
+                    ->label('First name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('last_name')
+                    ->label('Last name')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('phone')
+                    ->placeholder('—')
+                    ->toggleable(),
+                TextColumn::make('email')
+                    ->placeholder('—')
+                    ->toggleable(),
+                IconColumn::make('is_primary')
+                    ->label('Primary')
+                    ->boolean(),
             ])
-            ->filters([
-                //
-            ])
+            ->defaultSort('id')
             ->headerActions([
                 CreateAction::make(),
-                AssociateAction::make(),
             ])
             ->recordActions([
                 EditAction::make(),
-                DissociateAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DissociateBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->emptyStateHeading('No guests')
+            ->emptyStateDescription('Passengers on this trip will appear here.');
     }
 }

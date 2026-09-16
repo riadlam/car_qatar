@@ -7,6 +7,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class PaymentForm
@@ -15,32 +16,47 @@ class PaymentForm
     {
         return $schema
             ->components([
-                Select::make('booking_id')
-                    ->relationship('booking', 'id')
-                    ->required(),
-                Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->default(null),
-                TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('currency')
-                    ->required()
-                    ->default('USD'),
-                Select::make('status')
-                    ->options(PaymentStatus::class)
-                    ->default('pending')
-                    ->required(),
-                TextInput::make('method')
-                    ->default(null),
-                TextInput::make('provider')
-                    ->default(null),
-                TextInput::make('provider_payment_id')
-                    ->default(null),
-                DateTimePicker::make('paid_at'),
-                Textarea::make('metadata')
-                    ->default(null)
-                    ->columnSpanFull(),
+                Section::make('Payment')
+                    ->columns(2)
+                    ->schema([
+                        Select::make('booking_id')
+                            ->relationship('booking', 'booking_number')
+                            ->searchable()
+                            ->required(),
+                        Select::make('user_id')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->default(null),
+                        TextInput::make('amount')
+                            ->required()
+                            ->numeric(),
+                        TextInput::make('currency')
+                            ->required()
+                            ->default('QAR'),
+                        Select::make('status')
+                            ->options(PaymentStatus::class)
+                            ->default('pending')
+                            ->required(),
+                        TextInput::make('method')
+                            ->default(null),
+                    ]),
+                Section::make('Provider')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('provider')
+                            ->default(null),
+                        TextInput::make('provider_payment_id')
+                            ->label('Provider payment ID')
+                            ->default(null),
+                        Textarea::make('metadata')
+                            ->default(null)
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Timeline')
+                    ->columns(2)
+                    ->schema([
+                        DateTimePicker::make('paid_at'),
+                    ]),
             ]);
     }
 }

@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PricingRuleResource extends Resource
 {
@@ -55,5 +56,11 @@ class PricingRuleResource extends Resource
             'create' => CreatePricingRule::route('/create'),
             'edit' => EditPricingRule::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereHas('vehicleClass', fn (Builder $query) => $query->where('slug', 'van'));
     }
 }

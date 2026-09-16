@@ -27,6 +27,13 @@ class CancellationPolicyResource extends Resource
 
     protected static ?string $navigationLabel = 'Cancellation Policies';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Cancellation Policy';
 
     protected static ?string $pluralModelLabel = 'Cancellation Policies';

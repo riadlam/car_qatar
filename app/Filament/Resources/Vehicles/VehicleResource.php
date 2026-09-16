@@ -29,6 +29,13 @@ class VehicleResource extends Resource
 
     protected static ?string $navigationLabel = 'Vehicles';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Vehicle';
 
     protected static ?string $pluralModelLabel = 'Vehicles';

@@ -27,6 +27,13 @@ class SchoolTermResource extends Resource
 
     protected static ?string $navigationLabel = 'School terms';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'School term';
 
     protected static ?string $pluralModelLabel = 'School terms';

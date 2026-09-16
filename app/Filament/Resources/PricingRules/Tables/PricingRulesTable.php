@@ -24,70 +24,30 @@ class PricingRulesTable
                     ->label('Vehicle class')
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('city.name')
-                    ->searchable()
-                    ->toggleable(),
                 TextColumn::make('base_price')
+                    ->label('Starting fee')
                     ->money(fn ($record) => $record->currency ?? 'USD')
                     ->sortable(),
-                TextColumn::make('minimum_price')
+                TextColumn::make('per_km')
+                    ->label('Per km')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('hourly_price')
+                    ->label('Hourly')
                     ->money(fn ($record) => $record->currency ?? 'USD')
-                    ->sortable()
-                    ->toggleable(),
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('tax_rate')
+                    ->label('Tax %')
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('status')
                     ->badge()
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('currency')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('per_km')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('per_minute')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('hourly_price')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('included_km_per_hour')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('extra_km_price')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('extra_minute_price')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('waiting_price')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('tax_rate')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('starts_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('ends_at')
-                    ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('priority')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime()

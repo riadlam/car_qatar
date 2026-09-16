@@ -27,6 +27,13 @@ class AmenityResource extends Resource
 
     protected static ?string $navigationLabel = 'Amenities';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Amenity';
 
     protected static ?string $pluralModelLabel = 'Amenities';

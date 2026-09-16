@@ -16,6 +16,9 @@ export function mapExplorePlaces(places = []) {
             area: p.area || '',
             lat: p.lat ?? null,
             lng: p.lng ?? null,
+            place_id: p.place_id || null,
+            formatted_address: p.formatted_address || null,
+            provider: p.provider || 'mapbox',
         }));
 
     const destinations = list
@@ -26,6 +29,9 @@ export function mapExplorePlaces(places = []) {
             area: p.area || '',
             lat: p.lat ?? null,
             lng: p.lng ?? null,
+            place_id: p.place_id || null,
+            formatted_address: p.formatted_address || null,
+            provider: p.provider || 'mapbox',
         }));
 
     return { carousel, destinations };
@@ -39,5 +45,8 @@ export function placeToDestinationOption(place) {
         area: place.area || '',
         lat: place.lat ?? null,
         lng: place.lng ?? null,
+        place_id: place.place_id || null,
+        formatted_address: place.formatted_address || null,
+        provider: place.provider || 'mapbox',
     };
 }

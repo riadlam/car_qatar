@@ -2,14 +2,13 @@
 
 namespace App\Filament\Resources\Bookings\RelationManagers;
 
-use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\DissociateAction;
-use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -20,13 +19,25 @@ class StopsRelationManager extends RelationManager
 {
     protected static string $relationship = 'stops';
 
+    protected static ?string $title = 'Stops';
+
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('sequence')
+                    ->numeric()
                     ->required()
-                    ->maxLength(255),
+                    ->minValue(1),
+                Select::make('location_id')
+                    ->label('Location')
+                    ->relationship('location', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Textarea::make('notes')
+                    ->rows(2)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -36,25 +47,33 @@ class StopsRelationManager extends RelationManager
             ->recordTitleAttribute('sequence')
             ->columns([
                 TextColumn::make('sequence')
-                    ->searchable(),
+                    ->label('#')
+                    ->sortable()
+                    ->width('4rem'),
+                TextColumn::make('location.name')
+                    ->label('Location')
+                    ->searchable()
+                    ->placeholder('—')
+                    ->wrap(),
+                TextColumn::make('notes')
+                    ->placeholder('—')
+                    ->limit(40)
+                    ->toggleable(),
             ])
-            ->filters([
-                //
-            ])
+            ->defaultSort('sequence')
             ->headerActions([
                 CreateAction::make(),
-                AssociateAction::make(),
             ])
             ->recordActions([
                 EditAction::make(),
-                DissociateAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DissociateBulkAction::make(),
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->emptyStateHeading('No stops')
+            ->emptyStateDescription('Multi-stop waypoints for this trip will appear here.');
     }
 }

@@ -27,6 +27,13 @@ class SurchargeResource extends Resource
 
     protected static ?string $navigationLabel = 'Surcharges';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Surcharge';
 
     protected static ?string $pluralModelLabel = 'Surcharges';

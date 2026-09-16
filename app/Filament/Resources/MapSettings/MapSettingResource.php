@@ -23,6 +23,13 @@ class MapSettingResource extends Resource
 
     protected static ?string $navigationLabel = 'Map settings';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Map settings';
 
     protected static ?string $pluralModelLabel = 'Map settings';

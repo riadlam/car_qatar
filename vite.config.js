@@ -11,7 +11,11 @@ export default defineConfig(({ mode }) => {
     return {
         plugins: [
             laravel({
-                input: ['resources/css/app.css', 'resources/js/main.jsx'],
+                input: [
+                    'resources/css/app.css',
+                    'resources/js/main.jsx',
+                    'resources/js/filament/adminMapboxPicker.jsx',
+                ],
                 refresh: true,
             }),
             react(),

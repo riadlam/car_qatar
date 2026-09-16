@@ -28,6 +28,16 @@ class GulfDestinationsTable
                 TextColumn::make('city.name')
                     ->searchable()
                     ->toggleable(),
+                TextColumn::make('latitude')
+                    ->label('Map pin')
+                    ->formatStateUsing(fn ($state, $record) => $record->latitude && $record->longitude
+                        ? number_format((float) $record->latitude, 4).', '.number_format((float) $record->longitude, 4)
+                        : 'Not linked')
+                    ->color(fn ($state, $record) => $record->latitude && $record->longitude ? 'success' : 'warning')
+                    ->badge()
+                    ->tooltip(fn ($record) => $record->latitude && $record->longitude
+                        ? "{$record->latitude}, {$record->longitude}"
+                        : 'Edit and link Mapbox coordinates'),
                 TextColumn::make('status')
                     ->badge()
                     ->searchable()

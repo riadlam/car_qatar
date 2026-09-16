@@ -27,6 +27,13 @@ class CountryResource extends Resource
 
     protected static ?string $navigationLabel = 'Countries';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Country';
 
     protected static ?string $pluralModelLabel = 'Countries';

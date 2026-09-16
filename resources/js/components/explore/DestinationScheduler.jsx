@@ -183,6 +183,9 @@ export default function DestinationScheduler({
                 area: d.area,
                 lat: d.lat ?? null,
                 lng: d.lng ?? null,
+                place_id: d.place_id || null,
+                formatted_address: d.formatted_address || null,
+                provider: d.provider || 'mapbox',
             })),
         [destinations],
     );
@@ -192,7 +195,14 @@ export default function DestinationScheduler({
         if (!destination) return null;
         const match = options.find((o) => o.value === destination.value || o.label === destination.label);
         return match
-            ? { ...match, ...destination, lat: destination.lat ?? match.lat, lng: destination.lng ?? match.lng }
+            ? {
+                  ...match,
+                  ...destination,
+                  lat: destination.lat ?? match.lat,
+                  lng: destination.lng ?? match.lng,
+                  place_id: destination.place_id ?? match.place_id,
+                  formatted_address: destination.formatted_address ?? match.formatted_address,
+              }
             : destination;
     }, [destination, options]);
 
@@ -235,11 +245,19 @@ export default function DestinationScheduler({
             setError('');
             try {
                 const place = await forwardGeocodeClient(
-                    [selectValue.label, selectValue.area].filter(Boolean).join(', ') + ', Qatar',
+                    [selectValue.formatted_address || selectValue.label, selectValue.area]
+                        .filter(Boolean)
+                        .join(', ') + ', Qatar',
                     'qatar',
                 );
                 dropLat = place?.lat;
                 dropLng = place?.lng;
+                if (place?.place_id && !selectValue.place_id) {
+                    selectValue.place_id = place.place_id;
+                }
+                if (place?.label && !selectValue.formatted_address) {
+                    selectValue.formatted_address = place.label;
+                }
             } catch {
                 dropLat = null;
                 dropLng = null;
@@ -252,7 +270,7 @@ export default function DestinationScheduler({
         }
 
         setError('');
-        const dropoff = selectValue.label;
+        const dropoff = selectValue.formatted_address || selectValue.label;
         const q = new URLSearchParams();
         q.set('pickup', pickupLabel);
         q.set('dropoff', dropoff);
@@ -262,6 +280,9 @@ export default function DestinationScheduler({
         q.set('lng', String(pickupCoords.lng));
         q.set('drop_lat', String(dropLat));
         q.set('drop_lng', String(dropLng));
+        if (selectValue.place_id) {
+            q.set('drop_place_id', String(selectValue.place_id));
+        }
         q.set('mode', 'transfer');
         q.set('service', service === 'tourist_trip' ? 'one_way' : service || 'one_way');
         navigate(`/booking?${q.toString()}`);

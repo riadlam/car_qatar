@@ -29,6 +29,13 @@ class QuoteResource extends Resource
 
     protected static ?string $navigationLabel = 'Quotes';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Quote';
 
     protected static ?string $pluralModelLabel = 'Quotes';

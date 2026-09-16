@@ -29,6 +29,13 @@ class LocationResource extends Resource
 
     protected static ?string $navigationLabel = 'Locations';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Location';
 
     protected static ?string $pluralModelLabel = 'Locations';

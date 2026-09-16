@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\ExplorePlaces\Schemas;
 
+use App\Filament\Forms\MapboxLocationFields;
 use App\Models\ExplorePlace;
-use App\Services\Maps\MapboxGeocodingService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -121,71 +122,33 @@ class ExplorePlaceForm
                             ->native(false),
                     ]),
 
-                Section::make('Map location')
-                    ->description('Search Mapbox (Qatar). When a guest clicks this card, this place loads into the schedule picker.')
+                Section::make('Map location (required for booking)')
+                    ->description('Search Mapbox or open the pin map (same as the homepage hero). Guests who click this card then Continue get this exact pin on /booking.')
                     ->columns(2)
-                    ->schema([
-                        Select::make('mapbox_pick')
-                            ->label('Search place on Mapbox')
-                            ->searchable()
-                            ->dehydrated(false)
-                            ->placeholder('Type a hotel, beach, mall…')
-                            ->helperText('Requires MAPBOX_SECRET_TOKEN or public token in .env.')
-                            ->getSearchResultsUsing(function (string $search): array {
-                                if (strlen(trim($search)) < 2) {
-                                    return [];
-                                }
-
-                                $features = app(MapboxGeocodingService::class)->search($search, 8);
-
-                                $options = [];
-                                foreach ($features as $feature) {
-                                    $payload = base64_encode(json_encode([
-                                        'place_id' => $feature['place_id'],
-                                        'label' => $feature['label'],
-                                        'latitude' => $feature['latitude'],
-                                        'longitude' => $feature['longitude'],
-                                    ], JSON_THROW_ON_ERROR));
-                                    $options[$payload] = $feature['label'];
-                                }
-
-                                return $options;
-                            })
-                            ->afterStateUpdated(function (?string $state, Set $set): void {
-                                if (! filled($state)) {
-                                    return;
-                                }
-
-                                try {
-                                    $decoded = json_decode(base64_decode($state, true) ?: '', true, 512, JSON_THROW_ON_ERROR);
-                                } catch (\Throwable) {
-                                    return;
-                                }
-
-                                $set('formatted_address', $decoded['label'] ?? null);
-                                $set('latitude', $decoded['latitude'] ?? null);
-                                $set('longitude', $decoded['longitude'] ?? null);
-                                $set('place_id', $decoded['place_id'] ?? null);
+                    ->headerActions([
+                        Action::make('clearMapLocation')
+                            ->label('Clear pin')
+                            ->color('gray')
+                            ->link()
+                            ->action(function (Set $set): void {
+                                $set('formatted_address', null);
+                                $set('latitude', null);
+                                $set('longitude', null);
+                                $set('place_id', null);
                                 $set('provider', 'mapbox');
-                            })
+                            }),
+                    ])
+                    ->schema([
+                        Placeholder::make('map_link_status')
+                            ->label('Booking pin')
+                            ->content(fn (Get $get): HtmlString => MapboxLocationFields::statusPlaceholder($get, true))
                             ->columnSpanFull(),
-                        TextInput::make('formatted_address')
-                            ->label('Formatted address')
-                            ->columnSpanFull(),
-                        TextInput::make('latitude')
-                            ->numeric()
-                            ->step('any'),
-                        TextInput::make('longitude')
-                            ->numeric()
-                            ->step('any'),
-                        TextInput::make('place_id')
-                            ->label('Mapbox place id')
-                            ->disabled()
-                            ->dehydrated(),
-                        TextInput::make('provider')
-                            ->default('mapbox')
-                            ->disabled()
-                            ->dehydrated(),
+                        ...MapboxLocationFields::schema(
+                            scope: 'qatar',
+                            withAddress: true,
+                            withPlaceId: true,
+                            coordsRequired: true,
+                        ),
                     ]),
             ]);
     }

@@ -51,8 +51,17 @@ class ExplorePlacesTable
                     ->label('Picker')
                     ->boolean(),
                 TextColumn::make('latitude')
-                    ->label('Map')
-                    ->formatStateUsing(fn ($state, $record) => $record->latitude && $record->longitude ? 'Set' : '—'),
+                    ->label('Map pin')
+                    ->formatStateUsing(fn ($state, $record) => $record->latitude && $record->longitude
+                        ? ($record->formatted_address
+                            ? \Illuminate\Support\Str::limit($record->formatted_address, 42)
+                            : number_format((float) $record->latitude, 4).', '.number_format((float) $record->longitude, 4))
+                        : 'Not linked')
+                    ->color(fn ($state, $record) => $record->latitude && $record->longitude ? 'success' : 'warning')
+                    ->badge()
+                    ->tooltip(fn ($record) => $record->latitude && $record->longitude
+                        ? "{$record->latitude}, {$record->longitude}"
+                        : 'Edit and search Mapbox to link a pin'),
                 TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state === 'active' ? 'On site' : 'Hidden')
