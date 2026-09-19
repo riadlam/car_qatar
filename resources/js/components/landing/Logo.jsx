@@ -9,7 +9,7 @@ export default function Logo({ compact = false, inverted = false, className = ''
                 aria-hidden="true"
             >
                 <img
-                    src="/images/brand/al-majd-mark.jpg"
+                    src="/images/brand/al-majd-mark.png"
                     alt=""
                     className="h-full w-auto max-w-none object-contain"
                     draggable={false}
