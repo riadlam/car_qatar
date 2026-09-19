@@ -1,8 +1,8 @@
 @php
-    $height = $height ?? 32;
+    $height = $height ?? 44;
 @endphp
-<div class="fi-logo flex items-center gap-2.5" style="height: {{ $height }}px;">
-    <span class="inline-flex h-8 w-auto shrink-0 items-center justify-center" aria-hidden="true">
+<div class="fi-logo flex items-center gap-3" style="height: {{ $height }}px;">
+    <span class="inline-flex h-11 w-auto shrink-0 items-center justify-center" aria-hidden="true">
         <img
             src="{{ asset('images/brand/al-majd-mark.png') }}"
             alt=""

@@ -38,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->brandName('AL MAJD')
             ->brandLogo(fn () => view('filament.brand-logo'))
-            ->brandLogoHeight('2.25rem')
+            ->brandLogoHeight('2.75rem')
             ->favicon(asset('favicon.ico'))
             ->colors([
                 'primary' => Color::hex('#5b0520'),
