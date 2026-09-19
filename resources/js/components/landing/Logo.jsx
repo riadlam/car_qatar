@@ -3,7 +3,7 @@ export default function Logo({ compact = false, inverted = false, className = ''
     const sub = inverted ? 'text-wine-600' : 'text-hero-title';
 
     return (
-        <div className={`flex min-w-0 items-center gap-3 sm:gap-3.5 ${className}`}>
+        <div className={`flex min-w-0 items-center gap-1.5 sm:gap-2 ${className}`}>
             <span
                 className="relative inline-flex h-11 w-auto shrink-0 items-center justify-center sm:h-[3.25rem]"
                 aria-hidden="true"
