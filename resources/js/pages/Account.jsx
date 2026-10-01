@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { isActiveChauffeur, isCustomer, chauffeurStatusLabel } from '../utils/roles';
+import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../utils/roles';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
+import { getWallet } from '../api/wallet';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
@@ -149,6 +150,7 @@ export default function Account() {
     const [draft, setDraft] = useState({});
     const [cardOpen, setCardOpen] = useState(false);
     const [cards, setCards] = useState([]);
+    const [wallet, setWallet] = useState(null);
     const [cardError, setCardError] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [saving, setSaving] = useState(false);
@@ -183,10 +185,19 @@ export default function Account() {
             .catch(() => {
                 if (!cancelled) setCards([]);
             });
+        if (isCustomer(user) || isPartnerAdmin(user)) {
+            getWallet()
+                .then((data) => {
+                    if (!cancelled) setWallet(data);
+                })
+                .catch(() => {
+                    if (!cancelled) setWallet(null);
+                });
+        }
         return () => {
             cancelled = true;
         };
-    }, [isAuthenticated]);
+    }, [isAuthenticated, user]);
 
     if (loading || !user) {
         return <Skeleton variant="page" />;
@@ -267,6 +278,14 @@ export default function Account() {
                                 className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
                             >
                                 Chauffeur portal
+                            </Link>
+                        ) : null}
+                        {isPartnerAdmin(user) ? (
+                            <Link
+                                to="/partner"
+                                className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
+                            >
+                                Partner portal
                             </Link>
                         ) : null}
                     </div>
@@ -361,6 +380,53 @@ export default function Account() {
                                 }
                             />
                         </Section>
+
+                        {(isCustomer(user) || isPartnerAdmin(user)) && wallet ? (
+                            <Section title="Wallet">
+                                <div className="rounded-xl border border-[#e8e8ea] bg-[#fafafa] px-4 py-5">
+                                    <p className="font-geist m-0 text-[13px] font-500 tracking-[0.04em] text-muted uppercase">
+                                        Available balance
+                                    </p>
+                                    <p className="font-fragment mt-2 m-0 text-[32px] leading-10 text-ink-text">
+                                        {wallet.currency} {Number(wallet.balance).toFixed(2)}
+                                    </p>
+                                    <p className="font-geist mt-2 m-0 text-[14px] text-muted">
+                                        Use your wallet at checkout when the balance covers the trip total.
+                                        Only AL MAJD admin can add funds.
+                                    </p>
+                                </div>
+                                {(wallet.transactions || []).length > 0 ? (
+                                    <ul className="mt-4 m-0 list-none space-y-2 p-0">
+                                        {wallet.transactions.slice(0, 8).map((tx) => (
+                                            <li
+                                                key={tx.id}
+                                                className="flex items-center justify-between gap-3 border-b border-[#f3f3f4] py-3 last:border-b-0"
+                                            >
+                                                <div>
+                                                    <p className="font-geist m-0 text-[14px] font-500 text-ink-text">
+                                                        {tx.type === 'credit' ? 'Credit' : 'Debit'}
+                                                        {tx.note ? ` · ${tx.note}` : ''}
+                                                    </p>
+                                                    <p className="font-geist mt-0.5 m-0 text-[12px] text-muted">
+                                                        {tx.created_at
+                                                            ? new Date(tx.created_at).toLocaleString()
+                                                            : ''}
+                                                    </p>
+                                                </div>
+                                                <p
+                                                    className={`font-geist m-0 text-[14px] font-500 ${
+                                                        tx.type === 'credit' ? 'text-wine-700' : 'text-ink-text'
+                                                    }`}
+                                                >
+                                                    {tx.type === 'credit' ? '+' : '−'}
+                                                    {wallet.currency} {Number(tx.amount).toFixed(2)}
+                                                </p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : null}
+                            </Section>
+                        ) : null}
 
                         <Section
                             title="Payment methods"

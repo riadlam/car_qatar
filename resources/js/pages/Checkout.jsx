@@ -5,13 +5,17 @@ import AddCardModal from '../components/account/AddCardModal';
 import BillingModal, { billingSummary } from '../components/checkout/BillingModal';
 import CheckoutSidebar from '../components/booking/CheckoutSidebar';
 import CheckoutMobile from '../components/booking/CheckoutMobile';
+import ChauffeurGenderPicker from '../components/booking/ChauffeurGenderPicker';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
+import { isPartnerAdmin } from '../utils/roles';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 import { createQuotes, getQuote } from '../api/quotes';
 import { createBooking, listBookings } from '../api/bookings';
+import { claimBookingDraft, getBookingDraft } from '../api/bookingDrafts';
 import Skeleton from '../components/ui/Skeleton';
 import { getBillingProfile, getPaymentMethods } from '../api/checkout';
+import { getWallet } from '../api/wallet';
 import { tripParamsToQuotePayload } from '../utils/bookingMappers';
 import {
     fallbackVehicles,
@@ -123,10 +127,56 @@ export default function Checkout() {
     const { isAuthenticated, loading, user, setReturnTo } = useAuth();
     const { guests, findById } = useSavedGuests();
 
+    const draftId = params.get('draft') || '';
+    const [draftReady, setDraftReady] = useState(!draftId);
+    const [draftError, setDraftError] = useState('');
+
     const vehicleId = params.get('vehicle') || 'van';
     const quoteIdParam = params.get('quote_id');
     const [quote, setQuote] = useState(null);
-    const [quoteLoading, setQuoteLoading] = useState(Boolean(quoteIdParam));
+    const [quoteLoading, setQuoteLoading] = useState(Boolean(quoteIdParam) || Boolean(draftId));
+
+    // Restore trip progress from DB draft (after login / create account)
+    useEffect(() => {
+        if (!draftId) {
+            setDraftReady(true);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            setDraftError('');
+            try {
+                let draft = await getBookingDraft(draftId);
+                if (isAuthenticated && draft.user_id == null) {
+                    draft = await claimBookingDraft(draftId);
+                }
+                if (cancelled) return;
+                const payload = draft.payload && typeof draft.payload === 'object' ? draft.payload : {};
+                const next = new URLSearchParams();
+                Object.entries(payload).forEach(([key, value]) => {
+                    if (value != null && String(value) !== '') {
+                        next.set(key, String(value));
+                    }
+                });
+                next.set('draft', draftId);
+                setParams(next, { replace: true });
+                setDraftReady(true);
+            } catch (err) {
+                if (!cancelled) {
+                    setDraftError(
+                        err?.response?.data?.message ||
+                            'This booking session expired. Please start again from booking.',
+                    );
+                    setDraftReady(true);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+        // Only re-run when draft id / auth flips — payload apply is once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftId, isAuthenticated]);
 
     const vehicle = useMemo(() => {
         const fallback =
@@ -140,7 +190,8 @@ export default function Checkout() {
         return {
             ...base,
             total: Number(quote.total ?? base.total),
-            base: Number(quote.subtotal ?? base.base),
+            // Absorb invisible fees (e.g. partner commission) into display base so base+tax=total.
+            base: Number(quote.subtotal ?? base.base) + Number(quote.fees ?? 0),
             tax: Number(quote.tax_amount ?? base.tax),
             currency,
             quote_id: quote.id,
@@ -148,15 +199,20 @@ export default function Checkout() {
     }, [vehicleId, quote]);
 
     useEffect(() => {
+        if (!draftReady) return;
         let cancelled = false;
         const load = async () => {
             setQuoteLoading(true);
             try {
                 if (quoteIdParam) {
-                    const existing = await getQuote(quoteIdParam);
-                    if (!quoteIsStale(existing)) {
-                        if (!cancelled) setQuote(existing);
-                        return;
+                    try {
+                        const existing = await getQuote(quoteIdParam);
+                        if (!quoteIsStale(existing)) {
+                            if (!cancelled) setQuote(existing);
+                            return;
+                        }
+                    } catch {
+                        // Guest quotes often 403 after login — recreate below
                     }
                 }
                 const payload = tripParamsToQuotePayload(params, {
@@ -189,6 +245,7 @@ export default function Checkout() {
         // Re-load when trip params that affect price change
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
+        draftReady,
         quoteIdParam,
         vehicleId,
         params.get('pickup'),
@@ -235,11 +292,15 @@ export default function Checkout() {
     const [booking, setBooking] = useState(false);
     const [notes, setNotes] = useState('');
     const [preferredLanguage, setPreferredLanguage] = useState('');
+    const [preferredChauffeurGender, setPreferredChauffeurGender] = useState('');
+    const [genderError, setGenderError] = useState('');
     const [appliedOffer, setAppliedOffer] = useState('');
     const [bookError, setBookError] = useState('');
     const [bookingBlocked, setBookingBlocked] = useState(false);
     const [tripDialogOpen, setTripDialogOpen] = useState(false);
     const [billing, setBilling] = useState(null);
+    const [wallet, setWallet] = useState(null);
+    const [payWithWallet, setPayWithWallet] = useState(false);
     const [languageTouched, setLanguageTouched] = useState(false);
 
     useEffect(() => {
@@ -276,20 +337,23 @@ export default function Checkout() {
     useEffect(() => {
         if (loading) return;
         if (!isAuthenticated) {
-            const from = `/booking/checkout${window.location.search}`;
+            const from = draftId
+                ? `/booking/checkout?draft=${encodeURIComponent(draftId)}`
+                : `/booking/checkout${window.location.search}`;
             setReturnTo(from);
             navigate(`/login?from=${encodeURIComponent(from)}`, { replace: true });
         }
-    }, [loading, isAuthenticated, navigate, setReturnTo]);
+    }, [loading, isAuthenticated, navigate, setReturnTo, draftId]);
 
     useEffect(() => {
         if (!isAuthenticated) return;
         let cancelled = false;
-        Promise.all([getPaymentMethods(), getBillingProfile()])
-            .then(([methods, profile]) => {
+        Promise.all([getPaymentMethods(), getBillingProfile(), getWallet().catch(() => null)])
+            .then(([methods, profile, walletData]) => {
                 if (cancelled) return;
                 setCards(methods);
                 setBilling(profile);
+                setWallet(walletData);
                 const preferred = methods.find((card) => card.is_default) || methods[0];
                 if (preferred) setSelectedCardId(preferred.id);
             })
@@ -303,6 +367,21 @@ export default function Checkout() {
             cancelled = true;
         };
     }, [isAuthenticated]);
+
+    const tripTotal = Number(vehicle?.total ?? 0);
+    const walletBalance = Number(wallet?.balance ?? 0);
+    const bookingCurrency = vehicle?.currency === 'US$' ? 'USD' : vehicle?.currency || wallet?.currency || 'QAR';
+    const walletSufficient =
+        wallet?.status === 'active' &&
+        tripTotal > 0 &&
+        walletBalance >= tripTotal &&
+        String(wallet?.currency || '').toUpperCase() === String(bookingCurrency || '').toUpperCase();
+
+    useEffect(() => {
+        if (!walletSufficient && payWithWallet) {
+            setPayWithWallet(false);
+        }
+    }, [walletSufficient, payWithWallet]);
 
     const backToBooking = () => {
         const q = new URLSearchParams(params);
@@ -335,7 +414,7 @@ export default function Checkout() {
         setParams(q, { replace: true });
     };
 
-    const canBook = Boolean(billing);
+    const canBook = (Boolean(billing) || isPartnerAdmin(user)) && Boolean(preferredChauffeurGender);
     const billingLine = billingSummary(billing);
 
     useEffect(() => {
@@ -354,13 +433,18 @@ export default function Checkout() {
     }, [isAuthenticated]);
 
     const onBook = async () => {
-        if (!billing) return;
+        if (!billing && !isPartnerAdmin(user)) return;
+        if (!preferredChauffeurGender) {
+            setGenderError('Please choose a male or female chauffeur.');
+            return;
+        }
         if (bookingBlocked) {
             setTripDialogOpen(true);
             return;
         }
         setBooking(true);
         setBookError('');
+        setGenderError('');
         try {
             let current = quote;
             if (quoteIsStale(current)) {
@@ -390,13 +474,38 @@ export default function Checkout() {
                   }
                 : undefined;
 
-            const booked = await createBooking({
+            if (isPartnerAdmin(user) && !selectedGuest) {
+                throw new Error('Partner bookings require a guest traveler. Add a guest before confirming.');
+            }
+
+            const { booking: booked, payment_link: paymentLink } = await createBooking({
                 quote_id: Number(quoteId),
-                for_myself: !selectedGuest,
+                for_myself: isPartnerAdmin(user) ? false : !selectedGuest,
                 guest: guestPayload,
                 customer_notes: notes || undefined,
                 preferred_language: preferredLanguage || undefined,
+                preferred_chauffeur_gender: preferredChauffeurGender,
+                // Server ignores any amount — only this flag; debit uses booking.total_amount.
+                pay_with_wallet: Boolean(payWithWallet && walletSufficient),
             });
+            if (isPartnerAdmin(user)) {
+                if (!payWithWallet && paymentLink?.url && navigator.clipboard?.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(paymentLink.url);
+                    } catch {
+                        // ignore clipboard failures
+                    }
+                }
+                navigate('/partner/rides', {
+                    replace: true,
+                    state: {
+                        paymentLink: payWithWallet ? null : paymentLink?.url || null,
+                        bookingId: booked.id,
+                        paidWithWallet: Boolean(payWithWallet),
+                    },
+                });
+                return;
+            }
             navigate(`/journeys/ride/${booked.id}`);
         } catch (err) {
             if (err?.response?.status === 409) {
@@ -416,7 +525,24 @@ export default function Checkout() {
         }
     };
 
-    if (loading || !isAuthenticated || quoteLoading) {
+    if (draftError) {
+        return (
+            <SiteLayout>
+                <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center px-6 py-16 text-center">
+                    <h1 className="font-fragment m-0 text-2xl text-ink-text">Booking session expired</h1>
+                    <p className="font-geist mt-3 m-0 text-[15px] text-muted">{draftError}</p>
+                    <Link
+                        to="/booking"
+                        className="font-geist mt-8 inline-flex rounded-full bg-wine-700 px-6 py-3 text-[15px] font-500 text-white no-underline"
+                    >
+                        Back to booking
+                    </Link>
+                </div>
+            </SiteLayout>
+        );
+    }
+
+    if (loading || !isAuthenticated || !draftReady || quoteLoading) {
         return <Skeleton variant="page" />;
     }
 
@@ -436,6 +562,12 @@ export default function Checkout() {
                 preferredLanguage={preferredLanguage}
                 setPreferredLanguage={onPreferredLanguageChange}
                 preferredLanguages={PREFERRED_LANGUAGES}
+                preferredChauffeurGender={preferredChauffeurGender}
+                setPreferredChauffeurGender={(value) => {
+                    setPreferredChauffeurGender(value);
+                    setGenderError('');
+                }}
+                genderError={genderError}
                 canBook={canBook}
                 booking={booking}
                 onBook={onBook}
@@ -476,8 +608,39 @@ export default function Checkout() {
                                     Payment preferences
                                 </h2>
                                 <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
-                                    You can save a card now. Nothing is charged when you book.
+                                    {payWithWallet
+                                        ? 'This booking will be paid from your wallet balance. The amount is verified on the server.'
+                                        : 'You can save a card now, or pay with wallet if your balance covers the total.'}
                                 </p>
+
+                                {wallet ? (
+                                    <label
+                                        className={`mt-5 flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition ${
+                                            payWithWallet && walletSufficient
+                                                ? 'border-wine-700 bg-wine-50'
+                                                : 'border-[#e0ddd6]'
+                                        } ${!walletSufficient ? 'opacity-70' : ''}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="mt-1 accent-[#5b0520]"
+                                            checked={payWithWallet && walletSufficient}
+                                            disabled={!walletSufficient}
+                                            onChange={(e) => setPayWithWallet(e.target.checked)}
+                                        />
+                                        <span>
+                                            <span className="font-geist block text-[15px] font-500 text-ink-text">
+                                                Pay with wallet
+                                            </span>
+                                            <span className="font-geist mt-0.5 block text-[13px] text-muted">
+                                                Balance: {wallet.currency} {walletBalance.toFixed(2)}
+                                                {!walletSufficient
+                                                    ? ' — not enough for this trip'
+                                                    : ` — covers ${vehicle?.currency || wallet.currency} ${tripTotal.toFixed(2)}`}
+                                            </span>
+                                        </span>
+                                    </label>
+                                ) : null}
 
                                 <div className="mt-5">
                                     {cards.length === 0 ? (
@@ -539,6 +702,10 @@ export default function Checkout() {
                                         <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
                                             {billingLine}
                                         </p>
+                                    ) : isPartnerAdmin(user) ? (
+                                        <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
+                                            Optional for partners — guest pays via the payment link.
+                                        </p>
                                     ) : (
                                         <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
                                             Add a billing address before you book.
@@ -593,6 +760,18 @@ export default function Checkout() {
                                 </h2>
 
                                 <div className="mt-5">
+                                    <ChauffeurGenderPicker
+                                        value={preferredChauffeurGender}
+                                        onChange={(value) => {
+                                            setPreferredChauffeurGender(value);
+                                            setGenderError('');
+                                        }}
+                                        error={genderError}
+                                        name="preferred-chauffeur-gender-desktop"
+                                    />
+                                </div>
+
+                                <div className="mt-6">
                                     <p className="font-geist m-0 text-[14px] text-muted">
                                         Preferred language{' '}
                                         <span className="text-muted/80">(optional)</span>

@@ -45,6 +45,15 @@ class ChauffeursTable
                     ->date()
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make('gender')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'male' => 'Male',
+                        'female' => 'Female',
+                        default => '—',
+                    })
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->badge()
                     ->searchable()

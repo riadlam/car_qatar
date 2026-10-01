@@ -32,7 +32,12 @@ export async function getBookingTrack(id) {
 
 export async function createBooking(payload) {
     const { data } = await api.post('/bookings', payload);
-    return data.booking || data;
+    return {
+        booking: data.booking || data,
+        payment_link: data.payment_link || null,
+        paid_with_wallet: Boolean(data.paid_with_wallet),
+        wallet: data.wallet || null,
+    };
 }
 
 export async function cancelBooking(id, payload) {

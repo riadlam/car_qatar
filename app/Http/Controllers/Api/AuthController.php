@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\UserResource;
-use App\Models\Chauffeur;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,11 +20,9 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         $accountType = $data['account_type'];
+        $isPerson = $accountType === 'individual';
 
-        $isChauffeur = $accountType === 'chauffeur';
-        $isPerson = $accountType === 'individual' || $isChauffeur;
-
-        $user = DB::transaction(function () use ($data, $accountType, $isChauffeur, $isPerson) {
+        $user = DB::transaction(function () use ($data, $accountType, $isPerson) {
             $user = User::create([
                 'name' => User::deriveDisplayName(
                     $accountType,
@@ -47,18 +44,11 @@ class AuthController extends Controller
                 'street_address' => null,
                 'marketing_emails' => true,
                 'booking_notifications' => 'email_sms',
-                'status' => $isChauffeur ? 'pending' : 'active',
+                'status' => 'active',
             ]);
             $user->forceFill([
-                'role' => $isChauffeur ? UserRole::Chauffeur : UserRole::Customer,
+                'role' => UserRole::Customer,
             ])->save();
-
-            if ($isChauffeur) {
-                Chauffeur::query()->create([
-                    'user_id' => $user->id,
-                    'status' => 'pending',
-                ]);
-            }
 
             return $user;
         });
@@ -69,7 +59,6 @@ class AuthController extends Controller
             'user' => (new UserResource($user->load('chauffeur')))->resolve(),
             'token' => $token,
             'token_type' => 'Bearer',
-            'application_status' => $isChauffeur ? 'pending' : null,
         ], 201);
     }
 

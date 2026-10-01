@@ -41,6 +41,16 @@ class UserResource extends JsonResource
             'chauffeur_id' => $this->role === UserRole::Chauffeur
                 ? $this->chauffeur?->id
                 : null,
+            'wallet_balance' => $this->when(
+                in_array($this->role, [UserRole::Customer, UserRole::PartnerAdmin], true),
+                fn () => (float) ($this->wallet?->balance
+                    ?? app(\App\Services\Wallet\WalletService::class)->ensureWallet($this->resource)->balance),
+            ),
+            'wallet_currency' => $this->when(
+                in_array($this->role, [UserRole::Customer, UserRole::PartnerAdmin], true),
+                fn () => $this->wallet?->currency
+                    ?? app(\App\Services\Wallet\WalletService::class)->ensureWallet($this->resource)->currency,
+            ),
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

@@ -54,9 +54,32 @@ class BookingResource extends JsonResource
             'fees' => $this->fees,
             'discount' => $this->discount,
             'total_amount' => $this->total_amount,
+            'partner_id' => $this->partner_id,
+            'partner_commission_amount' => $this->when(
+                $this->partner_id && $this->viewerIsPartner($request),
+                fn () => $this->partner_commission_amount,
+            ),
+            'partner_commission_status' => $this->when(
+                $this->partner_id && $this->viewerIsPartner($request),
+                fn () => $this->partner_commission_status,
+            ),
+            'payment_link_url' => $this->when(
+                $this->partner_id && $this->viewerIsPartner($request) && $this->relationLoaded('paymentLinks'),
+                function () {
+                    $link = $this->paymentLinks
+                        ->filter(fn ($l) => $l->isUsable())
+                        ->sortByDesc('id')
+                        ->first();
+
+                    return $link
+                        ? app(\App\Services\Partners\BookingPaymentLinkService::class)->publicUrl($link)
+                        : null;
+                },
+            ),
             'customer_notes' => $this->customer_notes,
             'customer_reference' => $this->customer_reference,
             'preferred_language' => $this->preferred_language,
+            'preferred_chauffeur_gender' => $this->preferred_chauffeur_gender,
             'seat_addon_id' => $this->seat_addon_id,
             'billing' => $this->billing,
             'cancelled_at' => $this->cancelled_at,
@@ -188,5 +211,15 @@ class BookingResource extends JsonResource
         }
 
         return (string) ($payment->status?->value ?? $payment->status ?? 'Pending');
+    }
+
+    private function viewerIsPartner(Request $request): bool
+    {
+        $user = $request->user();
+        if (! $user || ! $this->partner_id) {
+            return false;
+        }
+
+        return $user->partners()->where('partners.id', $this->partner_id)->exists();
     }
 }

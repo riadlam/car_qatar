@@ -116,6 +116,11 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                         <div className="min-w-0 pb-3">
                             <p className="font-geist m-0 text-[12px] text-muted">{offer.time_label}</p>
                             <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{offer.pickup}</p>
+                            {offer.distance_to_pickup_km != null ? (
+                                <p className="font-geist mt-1 m-0 text-[13px] font-500 text-wine-700">
+                                    {Number(offer.distance_to_pickup_km).toFixed(1)} km from you
+                                </p>
+                            ) : null}
                             {offer.flight ? (
                                 <p className="font-geist mt-1 m-0 text-[13px] text-wine-700">{offer.flight}</p>
                             ) : null}

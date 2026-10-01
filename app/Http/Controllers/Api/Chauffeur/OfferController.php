@@ -34,6 +34,14 @@ class OfferController extends Controller
         $min = $request->query('min_payout');
         $max = $request->query('max_payout');
 
+        $chauffeur = $chauffeur->fresh() ?? $chauffeur;
+        $lat = $chauffeur->current_latitude !== null ? (float) $chauffeur->current_latitude : null;
+        $lng = $chauffeur->current_longitude !== null ? (float) $chauffeur->current_longitude : null;
+        $locationFresh = $lat !== null
+            && $lng !== null
+            && $chauffeur->last_location_at !== null
+            && $chauffeur->last_location_at->gte(now()->subMinutes(DispatchService::LOCATION_MAX_AGE_MINUTES));
+
         $offers = RideOffer::query()
             ->where('chauffeur_id', $chauffeur->id)
             ->whereIn('status', ['pending', 'offered'])
@@ -57,7 +65,41 @@ class OfferController extends Controller
             ->orderByDesc('booking_id')
             ->get();
 
-        return ChauffeurOfferResource::collection($offers)->response();
+        // Nearest pickup first (server-side distance from chauffeur → client pickup).
+        if ($locationFresh) {
+            $offers = $offers
+                ->map(function (RideOffer $offer) use ($lat, $lng) {
+                    $pickup = $offer->booking?->pickupLocation;
+                    $distance = null;
+                    if ($pickup?->latitude !== null && $pickup?->longitude !== null) {
+                        $distance = round($this->dispatch->distanceKm(
+                            $lat,
+                            $lng,
+                            (float) $pickup->latitude,
+                            (float) $pickup->longitude,
+                        ), 2);
+                    }
+                    $offer->setAttribute('distance_to_pickup_km', $distance);
+
+                    return $offer;
+                })
+                ->sortBy(fn (RideOffer $offer) => $offer->distance_to_pickup_km ?? PHP_FLOAT_MAX)
+                ->values();
+        }
+
+        $response = ChauffeurOfferResource::collection($offers)->response();
+        $payload = $response->getData(true);
+        $payload['meta'] = [
+            'sorted_by' => $locationFresh ? 'nearest_pickup' : null,
+            'location_required' => $this->dispatch->radiusMatchingEnabled(),
+            'location_fresh' => $locationFresh,
+            'radius_km' => $this->dispatch->radiusKm(),
+            'message' => ! $locationFresh && $this->dispatch->radiusMatchingEnabled()
+                ? 'Enable location so we can show rides nearest to you.'
+                : null,
+        ];
+
+        return response()->json($payload);
     }
 
     public function accept(Request $request, RideOffer $offer): JsonResponse

@@ -36,6 +36,12 @@ class ChauffeurForm
                         TextInput::make('status')
                             ->required()
                             ->default('pending'),
+                        Select::make('gender')
+                            ->options([
+                                'male' => 'Male',
+                                'female' => 'Female',
+                            ])
+                            ->required(),
                     ]),
                 Section::make('License')
                     ->columns(2)

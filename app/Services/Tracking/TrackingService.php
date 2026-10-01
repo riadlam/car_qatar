@@ -126,6 +126,7 @@ class TrackingService
 
     /**
      * waiting | to_pickup | to_dropoff
+     * Status-driven only — GPS proximity must not flip the client phase.
      */
     public function tripStep(Booking $booking, ?RideAssignment $assignment, ?float $carLat = null, ?float $carLng = null): string
     {
@@ -134,20 +135,7 @@ class TrackingService
             return 'waiting';
         }
 
-        if (in_array($status, ['arrived', 'in_progress'], true)) {
-            return 'to_dropoff';
-        }
-
-        $pickup = $booking->relationLoaded('pickupLocation')
-            ? $booking->pickupLocation
-            : $booking->pickupLocation()->first();
-
-        if ($this->withinMeters(
-            $carLat,
-            $carLng,
-            $pickup?->latitude !== null ? (float) $pickup->latitude : null,
-            $pickup?->longitude !== null ? (float) $pickup->longitude : null,
-        )) {
+        if ($status === 'in_progress') {
             return 'to_dropoff';
         }
 
@@ -195,7 +183,7 @@ class TrackingService
         $dropoff = $booking->dropoffLocation;
         $status = $assignment?->status;
 
-        $target = in_array($status, ['in_progress', 'arrived'], true) && $dropoff
+        $target = $status === 'in_progress' && $dropoff
             ? $dropoff
             : $pickup;
 
@@ -292,8 +280,8 @@ class TrackingService
     {
         return match ($assignment?->status) {
             'en_route' => 'Chauffeur on the way',
-            'arrived' => 'Chauffeur has arrived',
-            'in_progress' => 'Ride in progress',
+            'arrived' => 'Chauffeur waiting at pickup',
+            'in_progress' => 'Trip in progress',
             'assigned' => 'Chauffeur assigned',
             'completed' => 'Ride completed',
             default => $assignment ? 'Chauffeur assigned' : null,

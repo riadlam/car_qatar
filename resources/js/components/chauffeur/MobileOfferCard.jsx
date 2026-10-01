@@ -133,6 +133,11 @@ export default function MobileOfferCard({ offer, onAccept }) {
                         </div>
                         <p className="font-geist m-0 pb-3 text-[15px] font-500 text-ink-text">{offer.pickup_short || offer.pickup}</p>
                     </div>
+                    {offer.distance_to_pickup_km != null ? (
+                        <p className="font-geist -mt-1 mb-2 ml-6 m-0 text-[12px] font-500 text-wine-700">
+                            {Number(offer.distance_to_pickup_km).toFixed(1)} km away
+                        </p>
+                    ) : null}
                     <div className="flex gap-3">
                         <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-wine-700" />
                         <p className="font-geist m-0 text-[15px] font-500 text-ink-text">

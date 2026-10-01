@@ -32,6 +32,7 @@ class Booking extends Model
         'cost_center_id',
         'seat_addon_id',
         'preferred_language',
+        'preferred_chauffeur_gender',
         'billing',
         'cancelled_at',
         'completed_at',
@@ -45,6 +46,12 @@ class Booking extends Model
         'fees',
         'discount',
         'total_amount',
+        'partner_id',
+        'booked_by_user_id',
+        'partner_commission_type',
+        'partner_commission_value',
+        'partner_commission_amount',
+        'partner_commission_status',
     ];
 
     protected function casts(): array
@@ -58,6 +65,8 @@ class Booking extends Model
             'fees' => 'decimal:2',
             'discount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'partner_commission_value' => 'decimal:2',
+            'partner_commission_amount' => 'decimal:2',
             'status' => BookingStatus::class,
             'payment_status' => PaymentStatus::class,
             'billing' => 'array',
@@ -76,6 +85,21 @@ class Booking extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(Partner::class);
+    }
+
+    public function bookedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'booked_by_user_id');
+    }
+
+    public function paymentLinks(): HasMany
+    {
+        return $this->hasMany(BookingPaymentLink::class);
     }
 
     public function quote(): BelongsTo

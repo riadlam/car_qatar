@@ -8,5 +8,5 @@ export const CH_IMG = {
     faq: '/images/chauffeurs/faq.jpg',
 };
 
-export const APPLY_HREF = '/register';
+export const APPLY_HREF = '/help';
 export const HELP_HREF = '/help';

@@ -131,6 +131,13 @@ class BookingForm
                             ->default(null),
                         TextInput::make('preferred_language')
                             ->default(null),
+                        Select::make('preferred_chauffeur_gender')
+                            ->label('Preferred chauffeur gender')
+                            ->options([
+                                'male' => 'Male',
+                                'female' => 'Female',
+                            ])
+                            ->nullable(),
                         Textarea::make('billing')
                             ->default(null)
                             ->columnSpanFull(),

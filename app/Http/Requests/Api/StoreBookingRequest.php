@@ -33,6 +33,7 @@ class StoreBookingRequest extends FormRequest
             'payment_method_id' => ['prohibited'],
             'customer_notes' => ['nullable', 'string', 'max:2000'],
             'preferred_language' => ['nullable', 'string', Rule::in(['eng', 'ind', 'fr', 'phil', 'esp', 'jor', 'ita', 'ar'])],
+            'preferred_chauffeur_gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'for_myself' => ['nullable', 'boolean'],
             'guest' => ['nullable', 'array'],
             'guest.title' => ['nullable', 'string', 'max:20'],
@@ -40,6 +41,9 @@ class StoreBookingRequest extends FormRequest
             'guest.last_name' => ['required_with:guest', 'string', 'max:255'],
             'guest.email' => ['nullable', 'email', 'max:255'],
             'guest.phone' => ['nullable', 'string', 'max:30'],
+            // Client may only request wallet payment; amount is always taken from the quote/booking server-side.
+            'pay_with_wallet' => ['nullable', 'boolean'],
+            'wallet_amount' => ['prohibited'],
             'customer_reference' => ['prohibited'],
             'billing' => ['prohibited'],
             'cost_center_id' => ['prohibited'],

@@ -98,6 +98,14 @@ class BookingsTable
                 TextColumn::make('preferred_language')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('preferred_chauffeur_gender')
+                    ->label('Chauffeur gender')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'male' => 'Male',
+                        'female' => 'Female',
+                        default => '—',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('cancelled_at')
                     ->dateTime()
                     ->sortable()

@@ -95,16 +95,46 @@ class RideController extends Controller
         $data = $request->validated();
         $lat = (float) $data['latitude'];
         $lng = (float) $data['longitude'];
+        $recordedAt = isset($data['recorded_at']) ? now()->parse($data['recorded_at']) : now();
+
+        // Presence ping (offers matching) — no active trip required.
+        if (empty($data['booking_id'])) {
+            $chauffeur->forceFill([
+                'current_latitude' => $lat,
+                'current_longitude' => $lng,
+                'last_location_at' => $recordedAt,
+            ])->save();
+
+            $this->dispatch->syncChauffeur($chauffeur->fresh() ?? $chauffeur);
+
+            return response()->json([
+                'message' => 'Location saved.',
+                'chauffeur' => [
+                    'id' => $chauffeur->id,
+                    'latitude' => $lat,
+                    'longitude' => $lng,
+                    'last_location_at' => $chauffeur->last_location_at,
+                ],
+            ]);
+        }
 
         $assignment = RideAssignment::query()
             ->where('chauffeur_id', $chauffeur->id)
-            ->where('booking_id', $data['booking_id'] ?? 0)
+            ->where('booking_id', $data['booking_id'])
             ->whereIn('status', DispatchService::ONGOING)
             ->with('booking.pickupLocation', 'booking.dropoffLocation', 'booking.stops.location')
             ->first();
 
         if (! $assignment?->booking) {
-            return response()->json(['ignored' => true, 'message' => 'No active trip.']);
+            // Still refresh presence so offers stay nearby-aware.
+            $chauffeur->forceFill([
+                'current_latitude' => $lat,
+                'current_longitude' => $lng,
+                'last_location_at' => $recordedAt,
+            ])->save();
+            $this->dispatch->syncChauffeur($chauffeur->fresh() ?? $chauffeur);
+
+            return response()->json(['ignored' => true, 'message' => 'No active trip.', 'presence' => true]);
         }
 
         $booking = $assignment->booking;
@@ -123,7 +153,6 @@ class RideController extends Controller
             return response()->json(['ignored' => true, 'message' => 'Unmoved.']);
         }
 
-        $recordedAt = isset($data['recorded_at']) ? now()->parse($data['recorded_at']) : now();
         $before = $assignment->status;
         $snapped = $this->maps->snapToRoad(
             $lng,

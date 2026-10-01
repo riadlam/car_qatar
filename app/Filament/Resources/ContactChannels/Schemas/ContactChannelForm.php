@@ -15,7 +15,7 @@ class ContactChannelForm
         return $schema
             ->components([
                 Section::make('Contact us item')
-                    ->description('Shown in the Contact us menu in the site header. Use full links (tel:, mailto:, https://wa.me/…, or a site path).')
+                    ->description('Shown in the Contact us menu. Choose type “Leave a message / form” to open the on-site form (messages appear under Leave messages). Otherwise use a full link.')
                     ->columns(2)
                     ->schema([
                         TextInput::make('label')
@@ -33,11 +33,6 @@ class ContactChannelForm
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->helperText('Stable id (e.g. call_us).'),
-                        TextInput::make('href')
-                            ->label('Link / destination')
-                            ->required()
-                            ->columnSpanFull()
-                            ->helperText('Examples: tel:+97440000000 · mailto:concierge@almajd.com · https://wa.me/97440000000 · /help'),
                         Select::make('type')
                             ->options([
                                 'phone' => 'Phone',
@@ -48,7 +43,25 @@ class ContactChannelForm
                             ])
                             ->required()
                             ->default('link')
-                            ->native(false),
+                            ->live()
+                            ->native(false)
+                            ->helperText('Form type opens a modal on the website; submissions show in Leave messages.'),
+                        TextInput::make('href')
+                            ->label('Link / destination')
+                            ->required(fn (callable $get): bool => $get('type') !== 'form')
+                            ->dehydrated()
+                            ->dehydrateStateUsing(function (?string $state, callable $get): string {
+                                if ($get('type') === 'form') {
+                                    return filled($state) ? (string) $state : '#leave-message';
+                                }
+
+                                return (string) $state;
+                            })
+                            ->default('#leave-message')
+                            ->columnSpanFull()
+                            ->helperText(fn (callable $get): string => $get('type') === 'form'
+                                ? 'Optional for form type (site opens the leave-message modal). Can leave as #leave-message.'
+                                : 'Examples: tel:+97440000000 · mailto:concierge@almajd.com · https://wa.me/97440000000 · /help'),
                         TextInput::make('sort_order')
                             ->numeric()
                             ->required()

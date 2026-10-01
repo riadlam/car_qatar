@@ -141,7 +141,7 @@ export default function Booking() {
             return {
                 ...v,
                 total: Number(quote.total),
-                base: Number(quote.subtotal),
+                base: Number(quote.subtotal) + Number(quote.fees || 0),
                 tax: Number(quote.tax_amount),
                 currency,
                 quote_id: quote.id,

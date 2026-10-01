@@ -77,6 +77,9 @@ class ChauffeurOfferResource extends JsonResource
             'payout' => $booking?->total_amount !== null ? (float) $booking->total_amount : null,
             'currency' => $booking?->currency ?: '',
             'distance_km' => $distance !== null ? (float) $distance : null,
+            'distance_to_pickup_km' => $offer->getAttribute('distance_to_pickup_km') !== null
+                ? (float) $offer->getAttribute('distance_to_pickup_km')
+                : null,
             'booking_number' => $booking?->booking_number,
             'offered_at' => $offer->offered_at,
         ];

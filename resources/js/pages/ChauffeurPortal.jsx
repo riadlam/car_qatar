@@ -18,14 +18,15 @@ import {
 } from '../api/bookings';
 import { subscribePrivate } from '../echo';
 import useChauffeurLocation from '../hooks/useChauffeurLocation';
+import useChauffeurOfferPresence from '../hooks/useChauffeurOfferPresence';
 
 const TABS = [
     {
         id: 'offers',
         label: 'Offers',
         path: '/chauffeur',
-        emptyTitle: 'No offers right now',
-        emptyBody: 'New ride offers will appear here when passengers book nearby.',
+        emptyTitle: 'No nearby offers',
+        emptyBody: 'Enable location to see rides closest to you. New bookings in your area will appear here.',
     },
     {
         id: 'current',
@@ -269,6 +270,7 @@ export default function ChauffeurPortal() {
     const baseId = useId();
     const [query, setQuery] = useState('');
     const [offers, setOffers] = useState([]);
+    const [offersMeta, setOffersMeta] = useState(null);
     const [offersReady, setOffersReady] = useState(false);
     const [offersError, setOffersError] = useState('');
     const [offersBlocked, setOffersBlocked] = useState('');
@@ -302,6 +304,9 @@ export default function ChauffeurPortal() {
         if (tabParam === 'profile') return TABS[3];
         return TABS[0];
     }, [tabParam]);
+
+    // Presence GPS while idle so offers are filtered to nearest pickups.
+    useChauffeurOfferPresence(!currentRide);
 
     const q = query.trim().toLowerCase();
     const rides = profile?.rides || [];
@@ -368,6 +373,7 @@ export default function ChauffeurPortal() {
             const fresh = await listChauffeurOffers(payoutQuery(filters)).catch(() => null);
             if (fresh) {
                 setOffers(fresh.data || []);
+                setOffersMeta(fresh.meta || null);
                 setOffersBlocked(fresh.blocked ? (fresh.message || message) : '');
             }
             throw error;
@@ -383,6 +389,7 @@ export default function ChauffeurPortal() {
         } catch {
             const fresh = await listChauffeurOffers(payoutQuery(filters)).catch(() => null);
             if (fresh) setOffers(fresh.data || []);
+            if (fresh) setOffersMeta(fresh.meta || null);
             setToast('Could not decline this offer.');
         }
         window.setTimeout(() => setToast(''), 2000);
@@ -400,6 +407,7 @@ export default function ChauffeurPortal() {
                 .then((res) => {
                     if (!cancelled) {
                         setOffers(res.data || []);
+                        setOffersMeta(res.meta || null);
                         setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
                         setOffersError('');
                     }
@@ -407,6 +415,7 @@ export default function ChauffeurPortal() {
                 .catch((err) => {
                     if (!cancelled) {
                         setOffers([]);
+                        setOffersMeta(null);
                         setOffersError(err?.response?.data?.message || 'Could not load offers.');
                     }
                 })
@@ -429,6 +438,7 @@ export default function ChauffeurPortal() {
                 .then((res) => {
                     if (!cancelled) {
                         setOffers(res.data || []);
+                        setOffersMeta(res.meta || null);
                         setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
                         setOffersError('');
                     }
@@ -436,6 +446,7 @@ export default function ChauffeurPortal() {
                 .catch((err) => {
                     if (!cancelled) {
                         setOffers([]);
+                        setOffersMeta(null);
                         setOffersError(err?.response?.data?.message || 'Could not load offers.');
                     }
                 })
@@ -708,6 +719,7 @@ export default function ChauffeurPortal() {
                                             listChauffeurOffers(payoutQuery(filters))
                                                 .then((res) => {
                                                     setOffers(res.data || []);
+                                                    setOffersMeta(res.meta || null);
                                                     setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
                                                     setOffersError('');
                                                 })
@@ -726,8 +738,21 @@ export default function ChauffeurPortal() {
                                     />
                                 ) : filteredOffers.length === 0 ? (
                                     <EmptyState
-                                        title={offersError ? 'Could not load offers' : offersBlocked ? 'One trip at a time' : activeTab.emptyTitle}
-                                        body={offersError || offersBlocked || activeTab.emptyBody}
+                                        title={
+                                            offersError
+                                                ? 'Could not load offers'
+                                                : offersBlocked
+                                                  ? 'One trip at a time'
+                                                  : offersMeta?.location_required && !offersMeta?.location_fresh
+                                                    ? 'Location needed'
+                                                    : activeTab.emptyTitle
+                                        }
+                                        body={
+                                            offersError ||
+                                            offersBlocked ||
+                                            offersMeta?.message ||
+                                            activeTab.emptyBody
+                                        }
                                     />
                                 ) : (
                                     <>

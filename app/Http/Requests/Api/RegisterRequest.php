@@ -18,14 +18,13 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isIndividual = $this->input('account_type') === 'individual'
-            || $this->input('account_type') === 'chauffeur';
+        $isIndividual = $this->input('account_type') === 'individual';
         $isCompany = $this->input('account_type') === 'company';
 
         return [
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
-            'account_type' => ['required', 'string', Rule::in(['individual', 'company', 'chauffeur'])],
+            'account_type' => ['required', 'string', Rule::in(['individual', 'company'])],
             'title' => [$isIndividual ? 'required' : 'nullable', 'string', Rule::in(['Mr.', 'Mrs.', 'Ms.', 'Mx.'])],
             'first_name' => [$isIndividual ? 'required' : 'nullable', 'string', 'max:255'],
             'last_name' => [$isIndividual ? 'required' : 'nullable', 'string', 'max:255'],

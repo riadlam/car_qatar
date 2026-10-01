@@ -42,12 +42,17 @@ class PartnersTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('commission_type')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Fee type')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'flat' => 'Flat',
+                        'percent' => 'Percent',
+                        default => (string) $state,
+                    })
+                    ->badge(),
                 TextColumn::make('commission_value')
+                    ->label('Fee value')
                     ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
                 TextColumn::make('address')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),

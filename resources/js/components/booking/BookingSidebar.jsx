@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { createBookingDraft } from '../../api/bookingDrafts';
 import { formatMoney } from '../../data/bookingVehicles';
 import { useSavedGuests } from '../../hooks/useSavedGuests';
 import Skeleton from '../ui/Skeleton';
@@ -32,6 +33,7 @@ export default function BookingSidebar({
     const [guestOpen, setGuestOpen] = useState(false);
     const [selectedGuestId, setSelectedGuestId] = useState(null);
     const [addGuestOpen, setAddGuestOpen] = useState(false);
+    const [continuing, setContinuing] = useState(false);
 
     useEffect(() => {
         if (!selectedGuestId) return;
@@ -45,7 +47,7 @@ export default function BookingSidebar({
         [guests, selectedGuestId],
     );
 
-    const selectVehicle = () => {
+    const buildCheckoutQuery = () => {
         const q = new URLSearchParams(params);
         q.set('vehicle', vehicle.id);
         if (quoteId) q.set('quote_id', String(quoteId));
@@ -60,16 +62,38 @@ export default function BookingSidebar({
         } else {
             q.delete('guest');
         }
-        const checkoutPath = `/booking/checkout?${q.toString()}`;
-        if (!isAuthenticated) {
-            setReturnTo(checkoutPath);
-            navigate(`/login?from=${encodeURIComponent(checkoutPath)}`);
-            return;
-        }
-        if (forGuest && !selectedGuest) {
+        return q;
+    };
+
+    const selectVehicle = async () => {
+        if (forGuest && !selectedGuest && isAuthenticated) {
             setGuestOpen(true);
             return;
         }
+
+        const q = buildCheckoutQuery();
+        const checkoutPath = `/booking/checkout?${q.toString()}`;
+
+        if (!isAuthenticated) {
+            setContinuing(true);
+            try {
+                const payload = Object.fromEntries(q.entries());
+                const draft = await createBookingDraft({
+                    payload,
+                    return_path: '/booking/checkout',
+                });
+                const resumePath = `/booking/checkout?draft=${encodeURIComponent(draft.id)}`;
+                setReturnTo(resumePath);
+                navigate(`/login?from=${encodeURIComponent(resumePath)}`);
+            } catch {
+                setReturnTo(checkoutPath);
+                navigate(`/login?from=${encodeURIComponent(checkoutPath)}`);
+            } finally {
+                setContinuing(false);
+            }
+            return;
+        }
+
         navigate(checkoutPath);
     };
 
@@ -281,10 +305,16 @@ export default function BookingSidebar({
                         name="reserve-vehicle"
                         data-cy="reserve-vehicle"
                         onClick={selectVehicle}
-                        disabled={!quoteId}
+                        disabled={!quoteId || continuing}
                         className="font-geist hidden min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
                     >
-                        {quoteId ? 'Continue to checkout' : priceFailed ? 'Price unavailable' : 'Loading price…'}
+                        {continuing
+                            ? 'Saving…'
+                            : quoteId
+                              ? 'Continue to checkout'
+                              : priceFailed
+                                ? 'Price unavailable'
+                                : 'Loading price…'}
                     </button>
                 </div>
             </div>
@@ -295,12 +325,20 @@ export default function BookingSidebar({
                         <motion.button
                             type="button"
                             onClick={selectVehicle}
-                            disabled={!quoteId}
-                            animate={quoteId ? { y: [0, -7, 0] } : { y: 0 }}
+                            disabled={!quoteId || continuing}
+                            animate={quoteId && !continuing ? { y: [0, -7, 0] } : { y: 0 }}
                             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                             className="font-geist pointer-events-auto flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-full bg-wine-700 px-5 py-3 text-[16px] font-500 text-white shadow-[0_12px_32px_rgba(91,5,32,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <span>{quoteId ? 'Continue to checkout' : priceFailed ? 'Price unavailable' : 'Loading price…'}</span>
+                            <span>
+                                {continuing
+                                    ? 'Saving…'
+                                    : quoteId
+                                      ? 'Continue to checkout'
+                                      : priceFailed
+                                        ? 'Price unavailable'
+                                        : 'Loading price…'}
+                            </span>
                             {quoteId && vehicle.total != null ? (
                                 <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[14px]">
                                     {formatMoney(vehicle.total, vehicle.currency)}

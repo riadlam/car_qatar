@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureActiveChauffeur;
+use App\Http\Middleware\EnsureActivePartner;
 use App\Http\Middleware\EnsureCustomer;
+use App\Http\Middleware\EnsureCustomerOrPartner;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->alias([
             'customer' => EnsureCustomer::class,
+            'customer.or.partner' => EnsureCustomerOrPartner::class,
             'chauffeur.active' => EnsureActiveChauffeur::class,
+            'partner.active' => EnsureActivePartner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

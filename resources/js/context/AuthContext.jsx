@@ -107,13 +107,12 @@ export function AuthProvider({ children }) {
         async (profile) => {
             const email = profile.email || getPendingEmail();
             const isCompany = profile.accountType === 'company';
-            const isChauffeur = profile.accountType === 'chauffeur';
 
             const payload = {
                 email,
                 password: profile.password,
                 password_confirmation: profile.passwordConfirm || profile.password,
-                account_type: isChauffeur ? 'chauffeur' : isCompany ? 'company' : 'individual',
+                account_type: isCompany ? 'company' : 'individual',
                 title: isCompany ? undefined : profile.title || 'Mr.',
                 first_name: isCompany ? undefined : profile.firstName || '',
                 last_name: isCompany ? undefined : profile.lastName || '',
@@ -121,11 +120,6 @@ export function AuthProvider({ children }) {
                 phone: profile.phone || '',
                 preferred_language: profile.preferredLanguage || null,
             };
-
-            if (isChauffeur) {
-                const user = await register(payload);
-                return { ...user, application_pending: true };
-            }
 
             return register(payload);
         },

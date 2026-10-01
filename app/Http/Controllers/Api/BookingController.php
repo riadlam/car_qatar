@@ -11,6 +11,7 @@ use App\Models\Booking;
 use App\Models\CancellationReason;
 use App\Models\Quote;
 use App\Services\Booking\BookingService;
+use App\Services\Wallet\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,14 +19,15 @@ class BookingController extends Controller
 {
     public function __construct(
         private readonly BookingService $bookings,
+        private readonly WalletService $wallets,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Booking::class);
 
-        $bookings = Booking::query()
-            ->where('user_id', $request->user()->id)
+        $user = $request->user();
+        $query = Booking::query()
             ->with([
                 'guest',
                 'vehicleClass',
@@ -39,11 +41,22 @@ class BookingController extends Controller
                 'cancellations.cancelledBy',
                 'payments',
                 'user',
+                'paymentLinks',
             ])
-            ->orderByDesc('pickup_at')
-            ->paginate(15);
+            ->orderByDesc('pickup_at');
 
-        $blocked = $this->bookings->hasOpenBooking($request->user());
+        if ($user->role === \App\Enums\UserRole::PartnerAdmin) {
+            $partnerIds = $user->partners()->pluck('partners.id');
+            $query->whereIn('partner_id', $partnerIds);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $bookings = $query->paginate(15);
+
+        $blocked = $user->role === \App\Enums\UserRole::PartnerAdmin
+            ? false
+            : $this->bookings->hasOpenBooking($user);
 
         return response()->json([
             'data' => BookingResource::collection($bookings->getCollection())->resolve(),
@@ -69,9 +82,37 @@ class BookingController extends Controller
             $data,
         );
 
-        return response()->json([
+        $paidWithWallet = false;
+        if (! empty($data['pay_with_wallet'])) {
+            $booking = $this->wallets->payBooking($request->user(), $booking);
+            $paidWithWallet = true;
+        }
+
+        $payload = [
             'booking' => (new BookingResource($booking))->resolve(),
-        ], 201);
+            'paid_with_wallet' => $paidWithWallet,
+        ];
+
+        if ($booking->partner_id && ! $paidWithWallet && $booking->payment_status?->value !== 'paid') {
+            $link = $booking->paymentLinks->filter(fn ($l) => $l->isUsable())->sortByDesc('id')->first()
+                ?? $booking->paymentLinks()->latest('id')->first();
+            if ($link) {
+                $payload['payment_link'] = [
+                    'url' => app(\App\Services\Partners\BookingPaymentLinkService::class)->publicUrl($link),
+                    'expires_at' => $link->expires_at?->toIso8601String(),
+                ];
+            }
+        }
+
+        if ($paidWithWallet) {
+            $wallet = $this->wallets->ensureWallet($request->user())->fresh();
+            $payload['wallet'] = [
+                'balance' => (float) $wallet->balance,
+                'currency' => $wallet->currency,
+            ];
+        }
+
+        return response()->json($payload, 201);
     }
 
     public function show(Booking $booking): JsonResponse

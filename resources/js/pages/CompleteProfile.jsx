@@ -18,7 +18,7 @@ const fieldClass =
  */
 export default function CompleteProfile() {
     const navigate = useNavigate();
-    const { getPendingEmail, completeProfile, consumeReturnTo, isAuthenticated, user, loading } = useAuth();
+    const { getPendingEmail, completeProfile, consumeReturnTo, isAuthenticated, loading } = useAuth();
     const { showToast } = useToast();
     const email = getPendingEmail();
 
@@ -35,27 +35,20 @@ export default function CompleteProfile() {
     });
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
-
-    const pendingReview =
-        submitted ||
-        (isAuthenticated && user?.account_type === 'chauffeur' && user?.chauffeur_status === 'pending');
-    const declined =
-        isAuthenticated && user?.account_type === 'chauffeur' && user?.chauffeur_status === 'declined';
 
     useEffect(() => {
         if (loading) return;
-        if (!email && !pendingReview && !declined && !isAuthenticated) {
+        if (!email && !isAuthenticated) {
             navigate('/login', { replace: true });
         }
-    }, [email, navigate, pendingReview, declined, isAuthenticated, loading]);
+    }, [email, navigate, isAuthenticated, loading]);
 
     useEffect(() => {
-        if (loading || pendingReview || declined) return;
+        if (loading) return;
         if (isAuthenticated && !email) {
             navigate(consumeReturnTo(), { replace: true });
         }
-    }, [isAuthenticated, email, consumeReturnTo, navigate, loading, pendingReview, declined]);
+    }, [isAuthenticated, email, consumeReturnTo, navigate, loading]);
 
     const firstApiError = (err) => {
         const errors = err?.response?.data?.errors;
@@ -82,8 +75,7 @@ export default function CompleteProfile() {
             setError('Passwords do not match.');
             return;
         }
-        const isPerson = accountType === 'individual' || accountType === 'chauffeur';
-        if (isPerson) {
+        if (accountType === 'individual') {
             if (!form.firstName.trim() || !form.lastName.trim()) {
                 setError('Please enter your first and last name.');
                 return;
@@ -107,10 +99,6 @@ export default function CompleteProfile() {
                 password: form.password,
                 passwordConfirm: form.passwordConfirm,
             });
-            if (nextUser?.application_pending) {
-                setSubmitted(true);
-                return;
-            }
             const first = nextUser?.first_name || nextUser?.name?.split?.(' ')?.[0];
             showToast(
                 first
@@ -125,83 +113,11 @@ export default function CompleteProfile() {
         }
     };
 
-    if (loading && !submitted) {
+    if (loading) {
         return <Skeleton variant="page" />;
     }
 
-    if (!email && !pendingReview && !declined) return null;
-
-    if (declined) {
-        return (
-            <main className="flex min-h-screen flex-col bg-white text-ink-text">
-                <header className="flex items-center justify-between px-6 py-5 lg:px-12">
-                    <Link to="/" aria-label="AL MAJD home">
-                        <Logo compact inverted />
-                    </Link>
-                </header>
-                <div className="flex flex-1 items-start justify-center px-6 pt-16 pb-16">
-                    <div className="w-full max-w-[480px] text-center">
-                        <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                            Application not approved
-                        </h1>
-                        <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
-                            You&apos;re still signed in. Your chauffeur application was declined.
-                        </p>
-                        <Link
-                            to="/"
-                            className="font-geist mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
-                        >
-                            Back to home
-                        </Link>
-                    </div>
-                </div>
-            </main>
-        );
-    }
-
-    if (pendingReview) {
-        return (
-            <main className="flex min-h-screen flex-col bg-white text-ink-text">
-                <header className="flex items-center justify-between px-6 py-5 lg:px-12">
-                    <Link to="/" aria-label="AL MAJD home">
-                        <Logo compact inverted />
-                    </Link>
-                </header>
-                <div className="flex flex-1 items-start justify-center px-6 pt-16 pb-16">
-                    <div className="w-full max-w-[480px] text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-wine-50 text-wine-700">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
-                                <path
-                                    d="M8 12.5l2.5 2.5L16 9.5"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </div>
-                        <span className="font-geist inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[12px] font-500 tracking-wide text-amber-900 uppercase">
-                            Waiting confirmation
-                        </span>
-                        <h1 className="font-fragment m-0 mt-4 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                            Waiting confirmation
-                        </h1>
-                        <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
-                            You&apos;re signed in. Your chauffeur application is waiting for confirmation. We&apos;ll
-                            contact you when a decision is ready.
-                        </p>
-                        <Link
-                            to="/"
-                            className="font-geist mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
-                        >
-                            Back to home
-                        </Link>
-                    </div>
-                </div>
-            </main>
-        );
-    }
+    if (!email) return null;
 
     return (
         <main className="flex min-h-screen flex-col bg-white text-ink-text">
@@ -233,12 +149,11 @@ export default function CompleteProfile() {
                     <div
                         role="tablist"
                         aria-label="Account type"
-                        className="mt-8 grid grid-cols-3 gap-1 rounded-full border border-[#e0ddd6] bg-[#f7f6f3] p-1"
+                        className="mt-8 grid grid-cols-2 gap-1 rounded-full border border-[#e0ddd6] bg-[#f7f6f3] p-1"
                     >
                         {[
                             { id: 'individual', label: 'Individual' },
                             { id: 'company', label: 'Company' },
-                            { id: 'chauffeur', label: 'Chauffeur' },
                         ].map((tab) => {
                             const on = accountType === tab.id;
                             return (
@@ -411,9 +326,7 @@ export default function CompleteProfile() {
                                 }}
                             />
                             <p className="font-geist mt-2 m-0 text-[13px] leading-5 text-muted">
-                                {accountType === 'chauffeur'
-                                    ? 'We will use this number to contact you about your application.'
-                                    : 'We will use this number to contact you about your ride.'}
+                                We will use this number to contact you about your ride.
                             </p>
                         </fieldset>
 
@@ -473,11 +386,7 @@ export default function CompleteProfile() {
                             disabled={submitting}
                             className="font-geist mt-2 inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                         >
-                            {submitting
-                                ? 'Sending…'
-                                : accountType === 'chauffeur'
-                                  ? 'Submit application'
-                                  : 'Create account'}
+                            {submitting ? 'Sending…' : 'Create account'}
                         </button>
                     </form>
                 </div>

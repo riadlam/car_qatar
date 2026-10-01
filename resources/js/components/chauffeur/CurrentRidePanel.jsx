@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import TripLiveMap from '../journeys/TripLiveMap';
-import { cancelChauffeurRide } from '../../api/bookings';
+import { cancelChauffeurRide, updateChauffeurRideStatus } from '../../api/bookings';
 import CancelReasonModal from '../journeys/CancelReasonModal';
 import { formatPayout } from '../../data/chauffeurPortal';
+
+const ARRIVAL_HINT_METERS = 120;
 
 function PhoneIcon() {
     return (
@@ -46,9 +48,30 @@ function initials(name) {
     );
 }
 
+function metersBetween(lat1, lng1, lat2, lng2) {
+    if (![lat1, lng1, lat2, lng2].every(finite)) return null;
+    const toRad = (deg) => (Number(deg) * Math.PI) / 180;
+    const R = 6371000;
+    const dLat = toRad(Number(lat2) - Number(lat1));
+    const dLng = toRad(Number(lng2) - Number(lng1));
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(Number(lat1))) * Math.cos(toRad(Number(lat2))) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+function ctaLabel(nextStatus) {
+    if (nextStatus === 'arrived') return 'Arrived — waiting for client';
+    if (nextStatus === 'in_progress') return 'Start trip';
+    if (nextStatus === 'completed') return 'Arrived at drop-off';
+    if (nextStatus === 'en_route') return 'On the way';
+    return null;
+}
+
 /**
  * Active ride from the chauffeur assignment API. Map position and progress
  * come from stored coordinates only — no simulated motion.
+ * Status advances only when the chauffeur taps the primary CTA.
  */
 export default function CurrentRidePanel({ ride, onUpdated }) {
     const [busy, setBusy] = useState(false);
@@ -70,17 +93,53 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
     }
 
     const hasCar = finite(ride.car_lat) && finite(ride.car_lng);
-    const toDropoff = ride.status === 'arrived' || ride.status === 'in_progress';
+    const toDropoff = ride.status === 'in_progress';
     const targetLat = toDropoff && finite(ride.drop_lat) ? Number(ride.drop_lat) : Number(ride.lat);
     const targetLng = toDropoff && finite(ride.drop_lng) ? Number(ride.drop_lng) : Number(ride.lng);
     const progress = finite(ride.progress) ? Math.min(1, Math.max(0, Number(ride.progress))) : null;
     const eta = finite(ride.eta_minutes) ? Math.max(1, Math.round(Number(ride.eta_minutes))) : null;
     const pickupDone = ride.status === 'in_progress' || ride.status === 'completed';
     const atPickup = ride.status === 'arrived';
+    const tripStarted = ride.status === 'in_progress';
+    const nextStatus = ride.next_status || null;
+    const primaryLabel = ctaLabel(nextStatus);
+
+    const nearPickup =
+        hasCar &&
+        metersBetween(ride.car_lat, ride.car_lng, ride.lat, ride.lng) != null &&
+        metersBetween(ride.car_lat, ride.car_lng, ride.lat, ride.lng) <= ARRIVAL_HINT_METERS;
+    const nearDropoff =
+        hasCar &&
+        metersBetween(ride.car_lat, ride.car_lng, ride.drop_lat, ride.drop_lng) != null &&
+        metersBetween(ride.car_lat, ride.car_lng, ride.drop_lat, ride.drop_lng) <= ARRIVAL_HINT_METERS;
+
+    let proximityHint = null;
+    if (nextStatus === 'arrived' && nearPickup) proximityHint = 'You’re at the pickup';
+    if (nextStatus === 'completed' && nearDropoff) proximityHint = 'You’re at the drop-off';
+    if (nextStatus === 'in_progress' && nearPickup) proximityHint = 'Passenger ready? Start when you’re both set';
+
     const mapsUrl = finite(ride.lat) && finite(ride.lng) && finite(targetLat) && finite(targetLng)
         ? `https://www.google.com/maps/dir/?api=1&origin=${hasCar ? ride.car_lat : ride.lat},${hasCar ? ride.car_lng : ride.lng}&destination=${targetLat},${targetLng}&travelmode=driving`
         : '';
     const vehicleLine = [ride.vehicle_label, ride.plate].filter(Boolean).join(' · ');
+
+    const advanceTrip = async () => {
+        if (busy || !nextStatus) return;
+        setBusy(true);
+        setError('');
+        try {
+            const updated = await updateChauffeurRideStatus(ride.id, nextStatus);
+            onUpdated?.(updated);
+        } catch (err) {
+            setError(
+                err?.response?.data?.message ||
+                    err?.response?.data?.errors?.status?.[0] ||
+                    'Could not update this trip step.',
+            );
+        } finally {
+            setBusy(false);
+        }
+    };
 
     const cancelTrip = async (payload) => {
         if (busy) return;
@@ -180,7 +239,11 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                             </div>
                             <div className="min-w-0 pb-4">
                                 <p className="font-geist m-0 text-[12px] text-muted">
-                                    {pickupDone ? 'Pickup · done' : atPickup ? 'Pickup · arrived' : 'Pickup'}
+                                    {pickupDone
+                                        ? 'Pickup · done'
+                                        : atPickup
+                                          ? 'Pickup · waiting'
+                                          : 'Pickup'}
                                 </p>
                                 <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{ride.pickup}</p>
                             </div>
@@ -191,12 +254,40 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                             </span>
                             <div className="min-w-0">
                                 <p className="font-geist m-0 text-[12px] text-wine-700 font-500">
-                                    {ride.status === 'in_progress' && eta != null ? `Drop-off · ${eta} min` : 'Drop-off'}
+                                    {tripStarted && eta != null
+                                        ? `Drop-off · ${eta} min`
+                                        : tripStarted
+                                          ? 'Drop-off · trip started'
+                                          : ride.status === 'completed'
+                                            ? 'Drop-off · done'
+                                            : 'Drop-off'}
                                 </p>
                                 <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{ride.dropoff}</p>
                             </div>
                         </li>
                     </ol>
+
+                    {primaryLabel ? (
+                        <div className="mt-5">
+                            {proximityHint ? (
+                                <p className="font-geist mb-2 m-0 text-[13px] font-500 text-wine-700">
+                                    {proximityHint}
+                                </p>
+                            ) : null}
+                            <button
+                                type="button"
+                                disabled={busy}
+                                onClick={advanceTrip}
+                                className={`font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full px-4 text-[15px] font-500 text-white transition disabled:cursor-wait disabled:opacity-60 ${
+                                    proximityHint
+                                        ? 'bg-wine-700 shadow-md ring-2 ring-wine-700/30 hover:bg-wine-600'
+                                        : 'bg-wine-700 hover:bg-wine-600'
+                                }`}
+                            >
+                                {busy ? 'Updating…' : primaryLabel}
+                            </button>
+                        </div>
+                    ) : null}
                 </section>
 
                 <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
@@ -219,7 +310,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                                 href={mapsUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-wine-700 px-4 text-[14px] font-500 text-white transition hover:bg-wine-600"
+                                className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#d8d8dc] bg-white px-4 text-[14px] font-500 text-ink-text transition hover:border-wine-700"
                             >
                                 <NavIcon />
                                 Navigate

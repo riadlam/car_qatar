@@ -89,6 +89,30 @@ class BookingInfolist
                             ->size('lg')
                             ->weight('bold'),
                     ]),
+                Section::make('Partner commission')
+                    ->columns(2)
+                    ->visible(fn (Booking $record): bool => $record->partner_id !== null)
+                    ->schema([
+                        TextEntry::make('partner.display_name')
+                            ->label('Partner')
+                            ->placeholder('—'),
+                        TextEntry::make('bookedBy.name')
+                            ->label('Booked by')
+                            ->placeholder('—'),
+                        TextEntry::make('partner_commission_type')
+                            ->label('Fee type')
+                            ->placeholder('—'),
+                        TextEntry::make('partner_commission_value')
+                            ->label('Fee value')
+                            ->placeholder('—'),
+                        TextEntry::make('partner_commission_amount')
+                            ->label('Fee amount')
+                            ->money(fn (Booking $record): string => $record->currency ?: 'QAR'),
+                        TextEntry::make('partner_commission_status')
+                            ->label('Fee status')
+                            ->badge()
+                            ->placeholder('—'),
+                    ]),
                 Section::make('Notes & references')
                     ->columns(2)
                     ->collapsed()
@@ -105,6 +129,14 @@ class BookingInfolist
                             ->placeholder('—'),
                         TextEntry::make('preferred_language')
                             ->label('Preferred language')
+                            ->placeholder('—'),
+                        TextEntry::make('preferred_chauffeur_gender')
+                            ->label('Preferred chauffeur')
+                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                'male' => 'Male chauffeur',
+                                'female' => 'Female chauffeur',
+                                default => '—',
+                            })
                             ->placeholder('—'),
                         TextEntry::make('billing')
                             ->placeholder('—')

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from './Logo';
+import LeaveMessageModal from './LeaveMessageModal';
 import { useAuth } from '../../context/AuthContext';
-import { isActiveChauffeur, isCustomer, chauffeurStatusLabel } from '../../utils/roles';
+import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../../utils/roles';
 import { fetchContactChannels } from '../../api/catalog';
 
 import BookingHeader from '../booking/BookingHeader';
@@ -19,6 +20,7 @@ const LIGHT_TOP_PATHS = [
     '/account',
     '/journeys',
     '/chauffeur',
+    '/partner',
 ];
 
 const EXPLORE_QATAR = [
@@ -30,10 +32,10 @@ const EXPLORE_QATAR = [
 ];
 
 const CONTACT_US_FALLBACK = [
-    { key: 'call_us', label: 'Call us', href: 'tel:+97440000000' },
-    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000' },
-    { key: 'leave_message', label: 'Leave a message', href: '/help' },
-    { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com' },
+    { key: 'call_us', label: 'Call us', href: 'tel:+97440000000', type: 'phone' },
+    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000', type: 'whatsapp' },
+    { key: 'leave_message', label: 'Leave a message', href: '#leave-message', type: 'form' },
+    { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com', type: 'email' },
 ];
 
 const LANGS = [{ label: 'English (US)', href: '#' }];
@@ -77,7 +79,7 @@ function UserIcon({ className = '' }) {
                 strokeLinejoin="round"
             />
             <path
-                d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 13.6569 6 12 6C10.3431 6 9 7.34315 9 9C9 10.6569 10.3431 12 12 12Z"
+                d="M12 12C13.6569 12 15 10.6569 15 9C15 7.34315 9 7.34315 9 9C9 10.3431 10.6569 12 12 12Z"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -85,6 +87,10 @@ function UserIcon({ className = '' }) {
             />
         </svg>
     );
+}
+
+function isFormChannel(item) {
+    return item?.type === 'form' || typeof item?.onSelect === 'function';
 }
 
 function NavDropdown({ label, items, light, align = 'start' }) {
@@ -98,6 +104,10 @@ function NavDropdown({ label, items, light, align = 'start' }) {
         document.addEventListener('mousedown', onDoc);
         return () => document.removeEventListener('mousedown', onDoc);
     }, []);
+
+    const itemClass = `font-geist block w-full rounded-md px-3 py-2.5 text-left text-[15px] leading-5 whitespace-nowrap transition ${
+        light ? 'text-ink-text hover:bg-black/5' : 'text-white hover:bg-white/10'
+    }`;
 
     return (
         <li className="relative" ref={ref}>
@@ -124,23 +134,36 @@ function NavDropdown({ label, items, light, align = 'start' }) {
                         } ${light ? 'nav-dd--light' : 'nav-dd--dark'}`}
                     >
                         {items.map((item) => {
+                            if (isFormChannel(item)) {
+                                return (
+                                    <li key={item.key || item.label}>
+                                        <button
+                                            type="button"
+                                            className={itemClass}
+                                            onClick={() => {
+                                                setOpen(false);
+                                                item.onSelect?.();
+                                            }}
+                                        >
+                                            {item.label}
+                                        </button>
+                                    </li>
+                                );
+                            }
+                            const href = item.href || '#';
                             const external =
-                                /^https?:/i.test(item.href) ||
-                                item.href.startsWith('mailto:') ||
-                                item.href.startsWith('tel:');
+                                /^https?:/i.test(href) ||
+                                href.startsWith('mailto:') ||
+                                href.startsWith('tel:');
                             return (
                                 <li key={item.key || item.label}>
                                     <a
-                                        href={item.href}
+                                        href={href}
                                         onClick={() => setOpen(false)}
-                                        {...(external && /^https?:/i.test(item.href)
+                                        {...(external && /^https?:/i.test(href)
                                             ? { target: '_blank', rel: 'noreferrer' }
                                             : {})}
-                                        className={`font-geist block rounded-md px-3 py-2.5 text-[15px] leading-5 whitespace-nowrap transition ${
-                                            light
-                                                ? 'text-ink-text hover:bg-black/5'
-                                                : 'text-white hover:bg-white/10'
-                                        }`}
+                                        className={itemClass}
                                     >
                                         {item.label}
                                     </a>
@@ -161,38 +184,56 @@ export default function Navbar() {
     const [pastHero, setPastHero] = useState(false);
     const [open, setOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
-    const [contactUs, setContactUs] = useState(CONTACT_US_FALLBACK);
+    const [leaveMessageOpen, setLeaveMessageOpen] = useState(false);
+    const [contactUs, setContactUs] = useState([]);
     const isBooking = location.pathname.startsWith('/booking');
     const isChauffeurPortal = location.pathname.startsWith('/chauffeur');
     const lightTop =
         LIGHT_TOP_PATHS.includes(location.pathname) ||
         location.pathname.startsWith('/journeys') ||
-        location.pathname.startsWith('/chauffeur');
+        location.pathname.startsWith('/chauffeur') ||
+        location.pathname.startsWith('/partner') ||
+        location.pathname.startsWith('/pay');
     const profileLabel =
         user?.first_name?.trim() ||
         user?.name?.split?.(' ')?.[0] ||
         'Profile';
 
+    const openLeaveMessage = useCallback(() => {
+        setOpen(false);
+        setLeaveMessageOpen(true);
+    }, []);
+
+    const mapChannels = useCallback(
+        (channels) =>
+            channels.map((c) => {
+                const type = c.type || (c.key === 'leave_message' ? 'form' : 'link');
+                return {
+                    key: c.key,
+                    label: c.label,
+                    href: c.href || '#',
+                    type,
+                    onSelect: type === 'form' ? openLeaveMessage : undefined,
+                };
+            }),
+        [openLeaveMessage],
+    );
+
     useEffect(() => {
+        setContactUs(mapChannels(CONTACT_US_FALLBACK));
         let cancelled = false;
         fetchContactChannels()
             .then((channels) => {
                 if (cancelled || !Array.isArray(channels) || !channels.length) return;
-                setContactUs(
-                    channels.map((c) => ({
-                        key: c.key,
-                        label: c.label,
-                        href: c.href,
-                    })),
-                );
+                setContactUs(mapChannels(channels));
             })
             .catch(() => {
-                if (!cancelled) setContactUs(CONTACT_US_FALLBACK);
+                if (!cancelled) setContactUs(mapChannels(CONTACT_US_FALLBACK));
             });
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [mapChannels]);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
@@ -235,352 +276,379 @@ export default function Navbar() {
     const loginHref = `/login?from=${encodeURIComponent(location.pathname + location.search)}`;
 
     return (
-        <motion.header
-            initial={{ y: -24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className={`fixed inset-x-0 top-0 z-50 min-h-[72px] transition-colors duration-300 lg:min-h-[88px] ${
-                isChauffeurPortal ? 'hidden lg:block' : ''
-            } ${
-                light
-                    ? 'bg-page/90 text-ink-text backdrop-blur-xl'
-                    : 'bg-transparent text-white'
-            }`}
-        >
-            {!light && (
-                <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"
-                    aria-hidden="true"
-                />
-            )}
-            <div className="relative mx-auto flex h-[72px] w-full max-w-[100vw] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:h-[88px] lg:px-12">
-                <a href="/" aria-label="Go to Homepage" className="relative z-10 shrink-0">
-                    <Logo compact inverted={light} />
-                </a>
+        <>
+            <motion.header
+                initial={{ y: -24, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className={`fixed inset-x-0 top-0 z-50 min-h-[72px] transition-colors duration-300 lg:min-h-[88px] ${
+                    isChauffeurPortal ? 'hidden lg:block' : ''
+                } ${
+                    light
+                        ? 'bg-page/90 text-ink-text backdrop-blur-xl'
+                        : 'bg-transparent text-white'
+                }`}
+            >
+                {!light && (
+                    <div
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"
+                        aria-hidden="true"
+                    />
+                )}
+                <div className="relative mx-auto flex h-[72px] w-full max-w-[100vw] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:h-[88px] lg:px-12">
+                    <a href="/" aria-label="Go to Homepage" className="relative z-10 shrink-0">
+                        <Logo compact inverted={light} />
+                    </a>
 
-                <nav className="relative z-10 hidden lg:block" aria-label="Primary">
-                    <ul className="m-0 flex list-none items-center gap-1 p-0 xl:gap-2">
-                        <li>
-                            <a
-                                href="/#book"
-                                className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
-                                    light
-                                        ? 'text-ink-text/85 hover:text-ink-text'
-                                        : 'text-white/90 hover:text-white'
-                                }`}
-                            >
-                                Book
-                            </a>
-                        </li>
-                        <NavDropdown label="Explore Qatar" items={EXPLORE_QATAR} light={light} />
-                        <li>
-                            <a
-                                href="/business-solutions"
-                                className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
-                                    light
-                                        ? 'text-ink-text/85 hover:text-ink-text'
-                                        : 'text-white/90 hover:text-white'
-                                }`}
-                            >
-                                Business solutions
-                            </a>
-                        </li>
-                        <NavDropdown label="Contact us" items={contactUs} light={light} />
-                        <li>
-                            <a
-                                href="/about-us"
-                                className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
-                                    light
-                                        ? 'text-ink-text/85 hover:text-ink-text'
-                                        : 'text-white/90 hover:text-white'
-                                }`}
-                            >
-                                About us
-                            </a>
-                        </li>
-                        <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
-                        <li className="ml-1">
-                            {isAuthenticated ? (
-                                <Link
-                                    to="/account"
-                                    data-cy="profile-button"
-                                    className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
-                                        light
-                                            ? 'nav-signin--light border-ink-text/12'
-                                            : 'nav-signin--dark border-white/25'
-                                    }`}
-                                >
-                                    <UserIcon />
-                                    {profileLabel}
-                                    {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
-                                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-500 text-amber-900">
-                                            {chauffeurStatusLabel(user)}
-                                        </span>
-                                    ) : null}
-                                </Link>
-                            ) : (
-                                <Link
-                                    to={loginHref}
-                                    data-cy="sign-in-button"
-                                    className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
-                                        light
-                                            ? 'nav-signin--light border-ink-text/12'
-                                            : 'nav-signin--dark border-white/25'
-                                    }`}
-                                >
-                                    <UserIcon />
-                                    Sign in / Sign up
-                                </Link>
-                            )}
-                        </li>
-                        <AnimatePresence initial={false}>
-                            {pastHero && (
-                                <li>
-                                    <motion.a
-                                        href="/#book"
-                                        initial={{ opacity: 0, scale: 0.92, x: 8 }}
-                                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                                        exit={{ opacity: 0, scale: 0.92, x: 8 }}
-                                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                                        className="font-geist ml-1 inline-flex rounded-full bg-wine-700 px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap text-white transition hover:bg-wine-600"
-                                    >
-                                        Book now
-                                    </motion.a>
-                                </li>
-                            )}
-                        </AnimatePresence>
-                    </ul>
-                </nav>
-
-                <div className="relative z-10 flex items-center gap-2 lg:hidden">
-                    <AnimatePresence>
-                        {pastHero && !open && (
-                            <motion.a
-                                href="/#book"
-                                initial={{ opacity: 0, scale: 0.92, x: 8 }}
-                                animate={{ opacity: 1, scale: 1, x: 0 }}
-                                exit={{ opacity: 0, scale: 0.92, x: 8 }}
-                                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                                className="font-geist rounded-full bg-wine-700 px-3.5 py-2 text-[14px] leading-5 font-500 whitespace-nowrap text-white transition hover:bg-wine-600 sm:px-4 sm:text-[15px]"
-                            >
-                                Book now
-                            </motion.a>
-                        )}
-                    </AnimatePresence>
-                    <Link
-                        to={isAuthenticated ? '/account' : loginHref}
-                        aria-label={isAuthenticated ? 'Open profile' : 'Sign in or sign up'}
-                        className={`nav-user font-geist flex h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[13px] font-500 whitespace-nowrap ${
-                            light ? 'nav-user--light border-ink-text/12' : 'nav-user--dark border-white/25'
-                        }`}
-                    >
-                        <UserIcon />
-                        <span>{isAuthenticated ? profileLabel : 'Sign in / Sign up'}</span>
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={() => setOpen((v) => !v)}
-                        className={`nav-burger flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border ${
-                            light ? 'nav-burger--light border-ink-text/12' : 'nav-burger--dark border-white/25'
-                        }`}
-                        aria-label="Toggle menu"
-                        aria-expanded={open}
-                    >
-                        <span
-                            className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
-                                open ? 'translate-y-[7px] rotate-45' : ''
-                            }`}
-                        />
-                        <span
-                            className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
-                                open ? 'opacity-0' : ''
-                            }`}
-                        />
-                        <span
-                            className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
-                                open ? '-translate-y-[7px] -rotate-45' : ''
-                            }`}
-                        />
-                    </button>
-                </div>
-            </div>
-
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden border-t border-black/5 bg-page lg:hidden"
-                    >
-                        <ul className="flex max-h-[calc(100svh-72px)] flex-col overflow-y-auto px-4 py-4 sm:px-6">
+                    <nav className="relative z-10 hidden lg:block" aria-label="Primary">
+                        <ul className="m-0 flex list-none items-center gap-1 p-0 xl:gap-2">
                             <li>
                                 <a
                                     href="/#book"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
+                                        light
+                                            ? 'text-ink-text/85 hover:text-ink-text'
+                                            : 'text-white/90 hover:text-white'
+                                    }`}
                                 >
                                     Book
                                 </a>
                             </li>
-                            {[
-                                { key: 'explore', label: 'Explore Qatar', items: EXPLORE_QATAR },
-                            ].map((group) => (
-                                <li key={group.key} className="border-b border-ink-text/8">
-                                    <button
-                                        type="button"
-                                        className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
-                                        onClick={() =>
-                                            setMobileAcc(mobileAcc === group.key ? null : group.key)
-                                        }
-                                        aria-expanded={mobileAcc === group.key}
-                                    >
-                                        {group.label}
-                                        <Chevron open={mobileAcc === group.key} />
-                                    </button>
-                                    <AnimatePresence initial={false}>
-                                        {mobileAcc === group.key && (
-                                            <motion.ul
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden pb-2"
-                                            >
-                                                {group.items.map((item) => (
-                                                    <li key={item.label}>
-                                                        <a
-                                                            href={item.href}
-                                                            onClick={() => setOpen(false)}
-                                                            className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
-                                                        >
-                                                            {item.label}
-                                                        </a>
-                                                    </li>
-                                                ))}
-                                            </motion.ul>
-                                        )}
-                                    </AnimatePresence>
-                                </li>
-                            ))}
+                            <NavDropdown label="Explore Qatar" items={EXPLORE_QATAR} light={light} />
                             <li>
                                 <a
                                     href="/business-solutions"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
+                                        light
+                                            ? 'text-ink-text/85 hover:text-ink-text'
+                                            : 'text-white/90 hover:text-white'
+                                    }`}
                                 >
                                     Business solutions
                                 </a>
                             </li>
-                            {[
-                                { key: 'contact', label: 'Contact us', items: contactUs },
-                            ].map((group) => (
-                                <li key={group.key} className="border-b border-ink-text/8">
-                                    <button
-                                        type="button"
-                                        className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
-                                        onClick={() =>
-                                            setMobileAcc(mobileAcc === group.key ? null : group.key)
-                                        }
-                                        aria-expanded={mobileAcc === group.key}
-                                    >
-                                        {group.label}
-                                        <Chevron open={mobileAcc === group.key} />
-                                    </button>
-                                    <AnimatePresence initial={false}>
-                                        {mobileAcc === group.key && (
-                                            <motion.ul
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden pb-2"
-                                            >
-                                                {group.items.map((item) => (
-                                                    <li key={item.label}>
-                                                        <a
-                                                            href={item.href}
-                                                            onClick={() => setOpen(false)}
-                                                            className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
-                                                        >
-                                                            {item.label}
-                                                        </a>
-                                                    </li>
-                                                ))}
-                                            </motion.ul>
-                                        )}
-                                    </AnimatePresence>
-                                </li>
-                            ))}
+                            <NavDropdown label="Contact us" items={contactUs} light={light} />
                             <li>
                                 <a
                                     href="/about-us"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    className={`font-geist inline-flex rounded-full px-2 py-1.5 text-[16px] leading-6 font-400 tracking-[0.15px] transition ${
+                                        light
+                                            ? 'text-ink-text/85 hover:text-ink-text'
+                                            : 'text-white/90 hover:text-white'
+                                    }`}
                                 >
                                     About us
                                 </a>
                             </li>
-                            {isCustomer(user) ? (
-                            <li>
-                                <Link
-                                    to="/journeys"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
-                                >
-                                    Journeys
-                                </Link>
-                            </li>
-                            ) : null}
-                            {isAuthenticated && chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
-                            <li>
-                                <p className="font-geist m-0 border-b border-ink-text/8 py-3.5 text-[16px] font-500 text-amber-900">
-                                    Status: {chauffeurStatusLabel(user)}
-                                </p>
-                            </li>
-                            ) : null}
-                            {isActiveChauffeur(user) ? (
-                            <li>
-                                <Link
-                                    to="/chauffeur"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
-                                >
-                                    Chauffeur portal
-                                </Link>
-                            </li>
-                            ) : null}
-                            <li className="mt-3 flex flex-col gap-3 pb-2">
+                            <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
+                            <li className="ml-1">
                                 {isAuthenticated ? (
                                     <Link
                                         to="/account"
-                                        onClick={() => setOpen(false)}
-                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                        data-cy="profile-button"
+                                        className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
+                                            light
+                                                ? 'nav-signin--light border-ink-text/12'
+                                                : 'nav-signin--dark border-white/25'
+                                        }`}
                                     >
                                         <UserIcon />
                                         {profileLabel}
+                                        {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-500 text-amber-900">
+                                                {chauffeurStatusLabel(user)}
+                                            </span>
+                                        ) : null}
                                     </Link>
                                 ) : (
                                     <Link
                                         to={loginHref}
-                                        onClick={() => setOpen(false)}
-                                        className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                        data-cy="sign-in-button"
+                                        className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
+                                            light
+                                                ? 'nav-signin--light border-ink-text/12'
+                                                : 'nav-signin--dark border-white/25'
+                                        }`}
                                     >
                                         <UserIcon />
                                         Sign in / Sign up
                                     </Link>
                                 )}
-                                <a
+                            </li>
+                            <AnimatePresence initial={false}>
+                                {pastHero && (
+                                    <li>
+                                        <motion.a
+                                            href="/#book"
+                                            initial={{ opacity: 0, scale: 0.92, x: 8 }}
+                                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                                            exit={{ opacity: 0, scale: 0.92, x: 8 }}
+                                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                                            className="font-geist ml-1 inline-flex rounded-full bg-wine-700 px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap text-white transition hover:bg-wine-600"
+                                        >
+                                            Book now
+                                        </motion.a>
+                                    </li>
+                                )}
+                            </AnimatePresence>
+                        </ul>
+                    </nav>
+
+                    <div className="relative z-10 flex items-center gap-2 lg:hidden">
+                        <AnimatePresence>
+                            {pastHero && !open && (
+                                <motion.a
                                     href="/#book"
-                                    onClick={() => setOpen(false)}
-                                    className="font-geist rounded-full bg-wine-700 py-3 text-center font-500 text-white"
+                                    initial={{ opacity: 0, scale: 0.92, x: 8 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.92, x: 8 }}
+                                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                                    className="font-geist rounded-full bg-wine-700 px-3.5 py-2 text-[14px] leading-5 font-500 whitespace-nowrap text-white transition hover:bg-wine-600 sm:px-4 sm:text-[15px]"
                                 >
                                     Book now
-                                </a>
-                            </li>
-                        </ul>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.header>
+                                </motion.a>
+                            )}
+                        </AnimatePresence>
+                        <Link
+                            to={isAuthenticated ? '/account' : loginHref}
+                            aria-label={isAuthenticated ? 'Open profile' : 'Sign in or sign up'}
+                            className={`nav-user font-geist flex h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[13px] font-500 whitespace-nowrap ${
+                                light ? 'nav-user--light border-ink-text/12' : 'nav-user--dark border-white/25'
+                            }`}
+                        >
+                            <UserIcon />
+                            <span>{isAuthenticated ? profileLabel : 'Sign in / Sign up'}</span>
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={() => setOpen((v) => !v)}
+                            className={`nav-burger flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border ${
+                                light ? 'nav-burger--light border-ink-text/12' : 'nav-burger--dark border-white/25'
+                            }`}
+                            aria-label="Toggle menu"
+                            aria-expanded={open}
+                        >
+                            <span
+                                className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
+                                    open ? 'translate-y-[7px] rotate-45' : ''
+                                }`}
+                            />
+                            <span
+                                className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
+                                    open ? 'opacity-0' : ''
+                                }`}
+                            />
+                            <span
+                                className={`h-px w-5 transition-all ${light ? 'bg-ink-text' : 'bg-white'} ${
+                                    open ? '-translate-y-[7px] -rotate-45' : ''
+                                }`}
+                            />
+                        </button>
+                    </div>
+                </div>
+
+                <AnimatePresence>
+                    {open && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden border-t border-black/5 bg-page lg:hidden"
+                        >
+                            <ul className="flex max-h-[calc(100svh-72px)] flex-col overflow-y-auto px-4 py-4 sm:px-6">
+                                <li>
+                                    <a
+                                        href="/#book"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    >
+                                        Book
+                                    </a>
+                                </li>
+                                {[
+                                    { key: 'explore', label: 'Explore Qatar', items: EXPLORE_QATAR },
+                                ].map((group) => (
+                                    <li key={group.key} className="border-b border-ink-text/8">
+                                        <button
+                                            type="button"
+                                            className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
+                                            onClick={() =>
+                                                setMobileAcc(mobileAcc === group.key ? null : group.key)
+                                            }
+                                            aria-expanded={mobileAcc === group.key}
+                                        >
+                                            {group.label}
+                                            <Chevron open={mobileAcc === group.key} />
+                                        </button>
+                                        <AnimatePresence initial={false}>
+                                            {mobileAcc === group.key && (
+                                                <motion.ul
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden pb-2"
+                                                >
+                                                    {group.items.map((item) => (
+                                                        <li key={item.label}>
+                                                            <a
+                                                                href={item.href}
+                                                                onClick={() => setOpen(false)}
+                                                                className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
+                                                            >
+                                                                {item.label}
+                                                            </a>
+                                                        </li>
+                                                    ))}
+                                                </motion.ul>
+                                            )}
+                                        </AnimatePresence>
+                                    </li>
+                                ))}
+                                <li>
+                                    <a
+                                        href="/business-solutions"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    >
+                                        Business solutions
+                                    </a>
+                                </li>
+                                {[
+                                    { key: 'contact', label: 'Contact us', items: contactUs },
+                                ].map((group) => (
+                                    <li key={group.key} className="border-b border-ink-text/8">
+                                        <button
+                                            type="button"
+                                            className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
+                                            onClick={() =>
+                                                setMobileAcc(mobileAcc === group.key ? null : group.key)
+                                            }
+                                            aria-expanded={mobileAcc === group.key}
+                                        >
+                                            {group.label}
+                                            <Chevron open={mobileAcc === group.key} />
+                                        </button>
+                                        <AnimatePresence initial={false}>
+                                            {mobileAcc === group.key && (
+                                                <motion.ul
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden pb-2"
+                                                >
+                                                    {group.items.map((item) => (
+                                                        <li key={item.key || item.label}>
+                                                            {isFormChannel(item) ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setOpen(false);
+                                                                        item.onSelect?.();
+                                                                    }}
+                                                                    className="font-geist block w-full py-2.5 pl-3 text-left text-[15px] text-ink-text/80"
+                                                                >
+                                                                    {item.label}
+                                                                </button>
+                                                            ) : (
+                                                                <a
+                                                                    href={item.href}
+                                                                    onClick={() => setOpen(false)}
+                                                                    className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
+                                                                >
+                                                                    {item.label}
+                                                                </a>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </motion.ul>
+                                            )}
+                                        </AnimatePresence>
+                                    </li>
+                                ))}
+                                <li>
+                                    <a
+                                        href="/about-us"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    >
+                                        About us
+                                    </a>
+                                </li>
+                                {isCustomer(user) ? (
+                                    <li>
+                                        <Link
+                                            to="/journeys"
+                                            onClick={() => setOpen(false)}
+                                            className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                        >
+                                            Journeys
+                                        </Link>
+                                    </li>
+                                ) : null}
+                                {isAuthenticated && chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                                    <li>
+                                        <p className="font-geist m-0 border-b border-ink-text/8 py-3.5 text-[16px] font-500 text-amber-900">
+                                            Status: {chauffeurStatusLabel(user)}
+                                        </p>
+                                    </li>
+                                ) : null}
+                                {isActiveChauffeur(user) ? (
+                                    <li>
+                                        <Link
+                                            to="/chauffeur"
+                                            onClick={() => setOpen(false)}
+                                            className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                        >
+                                            Chauffeur portal
+                                        </Link>
+                                    </li>
+                                ) : null}
+                                {isPartnerAdmin(user) ? (
+                                    <li>
+                                        <Link
+                                            to="/partner"
+                                            onClick={() => setOpen(false)}
+                                            className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                        >
+                                            Partner portal
+                                        </Link>
+                                    </li>
+                                ) : null}
+                                <li className="mt-3 flex flex-col gap-3 pb-2">
+                                    {isAuthenticated ? (
+                                        <Link
+                                            to="/account"
+                                            onClick={() => setOpen(false)}
+                                            className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                        >
+                                            <UserIcon />
+                                            {profileLabel}
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            to={loginHref}
+                                            onClick={() => setOpen(false)}
+                                            className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                        >
+                                            <UserIcon />
+                                            Sign in / Sign up
+                                        </Link>
+                                    )}
+                                    <a
+                                        href="/#book"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist rounded-full bg-wine-700 py-3 text-center font-500 text-white"
+                                    >
+                                        Book now
+                                    </a>
+                                </li>
+                            </ul>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.header>
+            <LeaveMessageModal open={leaveMessageOpen} onClose={() => setLeaveMessageOpen(false)} />
+        </>
     );
 }

@@ -24,6 +24,7 @@ class Chauffeur extends Model
         'current_longitude',
         'last_location_at',
         'status',
+        'gender',
     ];
 
     protected function casts(): array

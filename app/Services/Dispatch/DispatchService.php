@@ -58,9 +58,22 @@ class DispatchService
         }
 
         if (! $this->radiusMatchingEnabled()) {
-            foreach ($this->activeChauffeurs() as $chauffeur) {
-                $this->openOffer($booking, (int) $chauffeur->id);
+            $matchingIds = $this->activeChauffeurs()
+                ->filter(fn (Chauffeur $chauffeur) => $this->chauffeurMatchesGender($chauffeur, $booking))
+                ->pluck('id')
+                ->all();
+
+            foreach ($matchingIds as $chauffeurId) {
+                $this->openOffer($booking, (int) $chauffeurId);
             }
+
+            RideOffer::query()
+                ->where('booking_id', $booking->id)
+                ->whereIn('status', ['pending', 'offered'])
+                ->when($matchingIds !== [], fn ($query) => $query->whereNotIn('chauffeur_id', $matchingIds))
+                ->when($matchingIds === [], fn ($query) => $query)
+                ->get()
+                ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
 
             return;
         }
@@ -73,6 +86,7 @@ class DispatchService
         }
 
         $eligibleIds = $this->eligibleChauffeurs(
+            $booking,
             (float) $pickup->latitude,
             (float) $pickup->longitude,
         )->pluck('id')->all();
@@ -99,6 +113,18 @@ class DispatchService
 
         if (! $this->radiusMatchingEnabled()) {
             $this->offerAllOpenBookings($chauffeur);
+
+            $matchingIds = $this->openBookings()
+                ->filter(fn (Booking $booking) => $this->chauffeurMatchesGender($chauffeur, $booking))
+                ->pluck('id')
+                ->all();
+
+            RideOffer::query()
+                ->where('chauffeur_id', $chauffeur->id)
+                ->whereIn('status', ['pending', 'offered'])
+                ->when($matchingIds !== [], fn ($query) => $query->whereNotIn('booking_id', $matchingIds))
+                ->get()
+                ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
 
             return;
         }
@@ -179,29 +205,46 @@ class DispatchService
 
             $chauffeur = $chauffeur->fresh() ?? $chauffeur;
             $booking->load('pickupLocation');
+            if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+                throw ValidationException::withMessages([
+                    'offer' => ['This offer is not available for your profile.'],
+                ]);
+            }
             if ($this->radiusMatchingEnabled() && ! $this->chauffeurCanSeeBooking($chauffeur, $booking)) {
                 throw ValidationException::withMessages([
                     'offer' => ['This offer is no longer in your area.'],
                 ]);
             }
 
+            $now = now();
             $assignment = RideAssignment::query()->create([
                 'booking_id' => $booking->id,
                 'chauffeur_id' => $chauffeur->id,
                 'vehicle_id' => $locked->vehicle_id,
                 'ride_offer_id' => $locked->id,
-                'status' => 'assigned',
-                'assigned_at' => now(),
+                'status' => 'en_route',
+                'assigned_at' => $now,
+                'started_at' => $now,
             ]);
 
             $locked->forceFill([
                 'status' => 'accepted',
-                'responded_at' => now(),
+                'responded_at' => $now,
             ])->save();
 
             $booking->forceFill([
-                'status' => BookingStatus::ChauffeurAssigned,
+                'status' => BookingStatus::InProgress,
             ])->save();
+
+            RideEvent::query()->create([
+                'booking_id' => $booking->id,
+                'ride_assignment_id' => $assignment->id,
+                'chauffeur_id' => $chauffeur->id,
+                'event_type' => 'en_route',
+                'latitude' => $chauffeur->current_latitude,
+                'longitude' => $chauffeur->current_longitude,
+                'recorded_at' => $now,
+            ]);
 
             $others = RideOffer::query()
                 ->where(function ($query) use ($booking, $locked, $chauffeur) {
@@ -231,7 +274,7 @@ class DispatchService
                     ));
                 }
 
-                Broadcasts::send(new BookingUpdated((int) $booking->id, 'assigned'));
+                Broadcasts::send(new BookingUpdated((int) $booking->id, 'en_route'));
                 Broadcasts::send(new RideUpdated(
                     (int) $chauffeur->id,
                     ChauffeurRideResource::payload($assignment->fresh() ?? $assignment),
@@ -280,18 +323,25 @@ class DispatchService
                 $booking->forceFill(['status' => BookingStatus::InProgress])->save();
             }
             if ($next === 'completed') {
-                $booking->forceFill([
+                $updates = [
                     'status' => BookingStatus::Completed,
                     'completed_at' => $now,
-                ])->save();
+                ];
+                if ($booking->partner_id && $booking->partner_commission_status === 'pending') {
+                    $updates['partner_commission_status'] = 'earned';
+                }
+                $booking->forceFill($updates)->save();
                 Chauffeur::query()->whereKey($chauffeur->id)->increment('completed_rides');
             }
 
+            $freshChauffeur = $chauffeur->fresh() ?? $chauffeur;
             RideEvent::query()->create([
                 'booking_id' => $booking->id,
                 'ride_assignment_id' => $locked->id,
                 'chauffeur_id' => $chauffeur->id,
                 'event_type' => $next,
+                'latitude' => $freshChauffeur->current_latitude,
+                'longitude' => $freshChauffeur->current_longitude,
                 'recorded_at' => $now,
             ]);
 
@@ -318,54 +368,12 @@ class DispatchService
     }
 
     /**
-     * Move the trip from the chauffeur's latest coordinates. No tap required.
+     * Location updates no longer advance ride status — chauffeur taps do that.
+     * Kept as a no-op hook so the location endpoint can still call it safely.
      */
     public function applyLocationProgress(RideAssignment $assignment, Chauffeur $chauffeur, float $lat, float $lng): void
     {
-        $assignment->loadMissing(['booking.pickupLocation', 'booking.dropoffLocation', 'booking.stops.location']);
-        $booking = $assignment->booking;
-        if (! $booking) {
-            return;
-        }
-
-        $tracking = app(TrackingService::class);
-        $status = $assignment->status;
-
-        if ($status === 'assigned') {
-            $this->advanceAssignment($assignment, $chauffeur, 'en_route');
-            $assignment->refresh();
-            $status = $assignment->status;
-        }
-
-        $pickup = $booking->pickupLocation;
-        $atPickup = $tracking->withinMeters(
-            $lat,
-            $lng,
-            $pickup?->latitude !== null ? (float) $pickup->latitude : null,
-            $pickup?->longitude !== null ? (float) $pickup->longitude : null,
-        );
-
-        if ($status === 'en_route' && $atPickup) {
-            $this->advanceAssignment($assignment, $chauffeur, 'arrived');
-            $assignment->refresh();
-            $status = $assignment->status;
-        }
-
-        if ($status === 'arrived') {
-            $this->advanceAssignment($assignment, $chauffeur, 'in_progress');
-            $assignment->refresh();
-            $status = $assignment->status;
-        }
-
-        $dropoff = $tracking->dropoffPoint($booking);
-        if ($status === 'in_progress' && $tracking->withinMeters(
-            $lat,
-            $lng,
-            $dropoff?->latitude !== null ? (float) $dropoff->latitude : null,
-            $dropoff?->longitude !== null ? (float) $dropoff->longitude : null,
-        )) {
-            $this->advanceAssignment($assignment, $chauffeur, 'completed');
-        }
+        // GPS is for map / ETA only; status changes via advanceAssignment.
     }
 
     public function reject(RideOffer $offer, Chauffeur $chauffeur): void
@@ -558,6 +566,11 @@ class DispatchService
 
     private function openOffer(Booking $booking, int $chauffeurId): void
     {
+        $chauffeur = Chauffeur::query()->find($chauffeurId);
+        if (! $chauffeur || ! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+            return;
+        }
+
         $existing = RideOffer::query()
             ->where('booking_id', $booking->id)
             ->where('chauffeur_id', $chauffeurId)
@@ -636,12 +649,16 @@ class DispatchService
     /**
      * @return \Illuminate\Support\Collection<int, Chauffeur>
      */
-    private function eligibleChauffeurs(float $pickupLat, float $pickupLng)
+    private function eligibleChauffeurs(Booking $booking, float $pickupLat, float $pickupLng)
     {
         $radius = $this->radiusKm();
 
         return $this->activeChauffeurs()
-            ->filter(function (Chauffeur $chauffeur) use ($pickupLat, $pickupLng, $radius) {
+            ->filter(function (Chauffeur $chauffeur) use ($booking, $pickupLat, $pickupLng, $radius) {
+                if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+                    return false;
+                }
+
                 if (! $this->locationIsFresh($chauffeur)) {
                     return false;
                 }
@@ -683,7 +700,11 @@ class DispatchService
         $lng = (float) $chauffeur->current_longitude;
 
         return $this->openBookings()
-            ->filter(function (Booking $booking) use ($lat, $lng, $radius) {
+            ->filter(function (Booking $booking) use ($chauffeur, $lat, $lng, $radius) {
+                if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+                    return false;
+                }
+
                 $pickup = $booking->pickupLocation;
                 if ($pickup?->latitude === null || $pickup?->longitude === null) {
                     return false;
@@ -705,6 +726,9 @@ class DispatchService
     private function offerAllOpenBookings(Chauffeur $chauffeur): void
     {
         foreach ($this->openBookings() as $booking) {
+            if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+                continue;
+            }
             $this->openOffer($booking, (int) $chauffeur->id);
         }
     }
@@ -744,6 +768,10 @@ class DispatchService
 
     private function chauffeurCanSeeBooking(Chauffeur $chauffeur, Booking $booking): bool
     {
+        if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
+            return false;
+        }
+
         if ($chauffeur->status !== 'active' || ! $this->locationIsFresh($chauffeur)) {
             return false;
         }
@@ -761,6 +789,16 @@ class DispatchService
         );
 
         return $driving !== null && $driving <= $this->radiusKm();
+    }
+
+    private function chauffeurMatchesGender(Chauffeur $chauffeur, Booking $booking): bool
+    {
+        $preferred = $booking->preferred_chauffeur_gender;
+        if ($preferred === null || $preferred === '') {
+            return true;
+        }
+
+        return $chauffeur->gender === $preferred;
     }
 
     private function locationIsFresh(Chauffeur $chauffeur): bool

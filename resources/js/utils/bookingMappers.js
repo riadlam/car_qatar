@@ -115,6 +115,13 @@ export function bookingToJourney(booking) {
         assignment_status: assignmentStatus || null,
         notes: booking.customer_notes || '',
         preferred_language: booking.preferred_language || '',
+        preferred_chauffeur_gender: booking.preferred_chauffeur_gender || '',
+        preferred_chauffeur_label:
+            booking.preferred_chauffeur_gender === 'male'
+                ? 'Male chauffeur'
+                : booking.preferred_chauffeur_gender === 'female'
+                  ? 'Female chauffeur'
+                  : null,
         seat: booking.seat_addon?.slug || 'none',
         actions,
         lat: booking.pickup_location?.latitude != null ? Number(booking.pickup_location.latitude) : null,
@@ -202,8 +209,9 @@ function mapStatus(status) {
 
 function labelForStatus(status, assignmentStatus) {
     if (assignmentStatus === 'en_route') return 'On the way';
-    if (assignmentStatus === 'arrived') return 'Chauffeur arrived';
-    if (assignmentStatus === 'in_progress') return 'In progress';
+    if (assignmentStatus === 'arrived') return 'Waiting at pickup';
+    if (assignmentStatus === 'in_progress') return 'Trip in progress';
+    if (assignmentStatus === 'completed') return 'Completed';
     const map = {
         confirmed: 'Confirmed',
         pending_payment: 'Pending payment',

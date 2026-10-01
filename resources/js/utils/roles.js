@@ -2,6 +2,10 @@ export function isCustomer(user) {
     return user?.role === 'customer';
 }
 
+export function isPartnerAdmin(user) {
+    return user?.role === 'partner_admin';
+}
+
 export function isActiveChauffeur(user) {
     return user?.role === 'chauffeur' && user?.chauffeur_status === 'active';
 }

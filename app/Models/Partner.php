@@ -68,4 +68,33 @@ class Partner extends Model
     {
         return $this->hasMany(Chauffeur::class);
     }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(PartnerPayout::class);
+    }
+
+    public function earnedCommissionTotal(): float
+    {
+        return (float) $this->bookings()
+            ->where('partner_commission_status', 'earned')
+            ->sum('partner_commission_amount');
+    }
+
+    public function paidOutTotal(): float
+    {
+        return (float) $this->payouts()
+            ->where('status', 'paid')
+            ->sum('amount');
+    }
+
+    public function unpaidBalance(): float
+    {
+        return round($this->earnedCommissionTotal() - $this->paidOutTotal(), 2);
+    }
 }

@@ -24,8 +24,8 @@ class DispatchSetting extends Model
         return static::query()->firstOrCreate(
             ['id' => 1],
             [
-                'offer_radius_km' => 10,
-                'radius_matching_enabled' => false,
+                'offer_radius_km' => 15,
+                'radius_matching_enabled' => true,
             ],
         );
     }

@@ -16,7 +16,7 @@ import Skeleton from '../components/ui/Skeleton';
 const TIMELINE = [
     { id: 'waiting', label: 'Route' },
     { id: 'to_pickup', label: 'To pickup' },
-    { id: 'to_dropoff', label: 'To drop-off' },
+    { id: 'to_dropoff', label: 'Trip started' },
     { id: 'completed', label: 'Completed' },
 ];
 
@@ -30,8 +30,10 @@ function mapStep(journey) {
     if (journey.status === 'past' || journey.phase === 'completed') return 'completed';
     if (journey.trip_step === 'to_pickup' || journey.trip_step === 'to_dropoff') return journey.trip_step;
     const status = journey.assignment_status;
-    if (status === 'arrived' || status === 'in_progress') return 'to_dropoff';
-    if (status === 'assigned' || status === 'en_route' || journey.phase === 'chauffeur_assigned') return 'to_pickup';
+    if (status === 'in_progress') return 'to_dropoff';
+    if (status === 'assigned' || status === 'en_route' || status === 'arrived' || journey.phase === 'chauffeur_assigned') {
+        return 'to_pickup';
+    }
     return 'waiting';
 }
 
@@ -182,7 +184,14 @@ export default function JourneyRide({ mode = 'details' }) {
     const isCanceled = journey.status === 'cancelled' || journey.status === 'canceled';
     const steps = isCanceled ? CANCEL_TIMELINE : TIMELINE;
     const activeStep = phaseIndex(journey);
-    const stepLabel = step === 'to_pickup' ? 'Chauffeur to pickup' : step === 'to_dropoff' ? 'To drop-off' : 'Route';
+    const stepLabel =
+        step === 'to_pickup'
+            ? journey.assignment_status === 'arrived'
+                ? 'Chauffeur waiting at pickup'
+                : 'Chauffeur to pickup'
+            : step === 'to_dropoff'
+              ? 'Trip to drop-off'
+              : 'Route';
     const mapTargetLat = step === 'to_pickup' ? journey.lat : step === 'to_dropoff' ? (journey.drop_lat ?? journey.lat) : null;
     const mapTargetLng = step === 'to_pickup' ? journey.lng : step === 'to_dropoff' ? (journey.drop_lng ?? journey.lng) : null;
     const etaMins =
@@ -441,12 +450,30 @@ export default function JourneyRide({ mode = 'details' }) {
                         </div>
                     </div>
 
-                    {journey.notes ? (
+                    {journey.preferred_chauffeur_label || journey.notes ? (
                         <div className="mt-4 rounded-2xl border border-[#e8e6e1] bg-white p-4 sm:p-5">
-                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                Pickup notes
-                            </p>
-                            <p className="font-geist mt-2 m-0 text-[15px] text-ink-text">{journey.notes}</p>
+                            {journey.preferred_chauffeur_label ? (
+                                <>
+                                    <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                                        Chauffeur preference
+                                    </p>
+                                    <p className="font-geist mt-2 m-0 text-[15px] font-500 text-ink-text">
+                                        {journey.preferred_chauffeur_label}
+                                    </p>
+                                </>
+                            ) : null}
+                            {journey.notes ? (
+                                <>
+                                    <p
+                                        className={`font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase ${
+                                            journey.preferred_chauffeur_label ? 'mt-4' : ''
+                                        }`}
+                                    >
+                                        Pickup notes
+                                    </p>
+                                    <p className="font-geist mt-2 m-0 text-[15px] text-ink-text">{journey.notes}</p>
+                                </>
+                            ) : null}
                         </div>
                     ) : null}
 

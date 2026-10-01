@@ -9,6 +9,7 @@ use App\Models\BillingProfile;
 use App\Models\Booking;
 use App\Models\BookingCancellation;
 use App\Models\BookingGuest;
+use App\Models\BookingPaymentLink;
 use App\Models\BookingPriceItem;
 use App\Models\BookingStop;
 use App\Models\GulfDestination;
@@ -24,6 +25,8 @@ use App\Models\VehicleClass;
 use App\Services\Dispatch\DispatchService;
 use App\Services\Maps\MapboxDirectionsService;
 use App\Services\Maps\MapboxGeocodingService;
+use App\Services\Partners\BookingPaymentLinkService;
+use App\Services\Partners\PartnerCommissionService;
 use App\Services\Pricing\PricingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +48,8 @@ class BookingService
         private readonly MapboxDirectionsService $directions,
         private readonly MapboxGeocodingService $geocoding,
         private readonly DispatchService $dispatch,
+        private readonly PartnerCommissionService $partnerCommission,
+        private readonly BookingPaymentLinkService $paymentLinks,
     ) {}
 
     /**
@@ -57,7 +62,16 @@ class BookingService
         $service = $this->resolveServiceType($data);
         $params = $this->pricingParams($data);
 
-        return $this->pricing->priceAllClasses($service, $params);
+        $options = $this->pricing->priceAllClasses($service, $params);
+        $partner = $this->partnerCommission->resolveActivePartner($user);
+        if (! $partner) {
+            return $options;
+        }
+
+        return array_map(
+            fn (array $option) => $this->partnerCommission->apply($option, $partner),
+            $options,
+        );
     }
 
     /**
@@ -76,6 +90,9 @@ class BookingService
 
         $class = $this->resolveVehicleClass($data);
         $priced = $this->pricing->priceTrip($service, $class, $this->pricingParams($data));
+        if ($partner = $this->partnerCommission->resolveActivePartner($user)) {
+            $priced = $this->partnerCommission->apply($priced, $partner);
+        }
 
         return $this->persistQuote($user, $service, $class, $data, $priced);
     }
@@ -114,9 +131,13 @@ class BookingService
         $quotes = collect();
 
         DB::transaction(function () use ($user, $service, $data, $options, $quotes) {
+            $partner = $this->partnerCommission->resolveActivePartner($user);
             foreach ($options as $option) {
                 /** @var VehicleClass $class */
                 $class = $option['vehicle_class'];
+                if ($partner) {
+                    $option = $this->partnerCommission->apply($option, $partner);
+                }
                 $quotes->push($this->persistQuote($user, $service, $class, $data, $option));
             }
         });
@@ -223,22 +244,70 @@ class BookingService
         }
 
         $seatAddon = $this->resolveSeatAddonFromQuote($quote);
+        $partner = $this->partnerCommission->resolveActivePartner($user);
+        $isPartnerBooking = $partner !== null;
+
+        if ($isPartnerBooking) {
+            $forMyself = (bool) ($payload['for_myself'] ?? false);
+            if ($forMyself || empty($payload['guest'])) {
+                throw ValidationException::withMessages([
+                    'guest' => ['Partner bookings require guest traveler details.'],
+                ]);
+            }
+        }
 
         $billing = BillingProfile::query()->where('user_id', $user->id)->first();
-        if (! $billing) {
+        if (! $billing && ! $isPartnerBooking) {
             throw ValidationException::withMessages([
                 'billing' => ['Add billing information before booking.'],
             ]);
         }
 
+        $billingSnapshot = $billing?->snapshot() ?? [
+            'source' => 'partner',
+            'company_name' => $partner?->display_name,
+            'email' => $partner?->email,
+            'phone' => $partner?->phone,
+            'tax_number' => $partner?->tax_number,
+        ];
+
         $notes = isset($payload['customer_notes'])
             ? trim(strip_tags((string) $payload['customer_notes']))
             : '';
 
-        return DB::transaction(function () use ($user, $quote, $payload, $seatAddon, $billing, $notes) {
+        $commission = $quote->metadata['partner_commission'] ?? null;
+        if ($isPartnerBooking && ! is_array($commission)) {
+            $priced = [
+                'subtotal' => (float) $quote->subtotal,
+                'tax_amount' => (float) $quote->tax_amount,
+                'fees' => 0.0,
+                'discount' => (float) $quote->discount,
+            ];
+            $priced = $this->partnerCommission->apply($priced, $partner);
+            $commission = $priced['partner_commission'];
+            $quoteFees = $priced['fees'];
+            $quoteTotal = $priced['total'];
+        } else {
+            $quoteFees = $quote->fees;
+            $quoteTotal = $quote->total;
+        }
+
+        return DB::transaction(function () use (
+            $user,
+            $quote,
+            $payload,
+            $seatAddon,
+            $billingSnapshot,
+            $notes,
+            $partner,
+            $isPartnerBooking,
+            $commission,
+            $quoteFees,
+            $quoteTotal,
+        ) {
             User::query()->whereKey($user->id)->lockForUpdate()->first();
 
-            if ($this->hasOpenBooking($user)) {
+            if (! $isPartnerBooking && $this->hasOpenBooking($user)) {
                 throw new HttpException(409, self::OPEN_BOOKING_MESSAGE);
             }
 
@@ -276,20 +345,32 @@ class BookingService
                 'currency' => $quote->currency,
                 'customer_notes' => $notes !== '' ? $notes : null,
                 'preferred_language' => $payload['preferred_language'] ?? $user->preferred_language,
+                'preferred_chauffeur_gender' => $payload['preferred_chauffeur_gender'] ?? null,
                 'customer_reference' => $this->generateCustomerReference(),
                 'seat_addon_id' => $seatAddon?->id,
-                'billing' => $billing->snapshot(),
+                'billing' => $billingSnapshot,
             ]);
 
-            $booking->forceFill([
-                'status' => BookingStatus::Confirmed,
+            $force = [
+                'status' => $isPartnerBooking ? BookingStatus::PendingPayment : BookingStatus::Confirmed,
                 'payment_status' => PaymentStatus::Pending,
                 'subtotal' => $quote->subtotal,
                 'tax_amount' => $quote->tax_amount,
-                'fees' => $quote->fees,
+                'fees' => $quoteFees,
                 'discount' => $quote->discount,
-                'total_amount' => $quote->total,
-            ])->save();
+                'total_amount' => $quoteTotal,
+            ];
+
+            if ($isPartnerBooking && is_array($commission)) {
+                $force['partner_id'] = $partner->id;
+                $force['booked_by_user_id'] = $user->id;
+                $force['partner_commission_type'] = $commission['type'] ?? null;
+                $force['partner_commission_value'] = $commission['value'] ?? null;
+                $force['partner_commission_amount'] = $commission['amount'] ?? null;
+                $force['partner_commission_status'] = 'pending';
+            }
+
+            $booking->forceFill($force)->save();
 
             foreach ($quote->items as $item) {
                 BookingPriceItem::query()->create([
@@ -353,7 +434,16 @@ class BookingService
             $quote->forceFill([
                 'status' => QuoteStatus::Converted,
                 'user_id' => $quote->user_id ?? $user->id,
+                'fees' => $quoteFees,
+                'total' => $quoteTotal,
+                'metadata' => array_merge($quote->metadata ?? [], [
+                    'partner_commission' => $commission,
+                ]),
             ])->save();
+
+            if ($isPartnerBooking) {
+                $this->paymentLinks->mint($booking);
+            }
 
             return $booking;
         });
@@ -370,9 +460,13 @@ class BookingService
             'hourlyBooking',
             'stops.location',
             'payments',
+            'partner',
+            'paymentLinks',
         ]);
 
-        $this->dispatch->syncBooking($booking);
+        if ($booking->status === BookingStatus::Confirmed) {
+            $this->dispatch->syncBooking($booking);
+        }
 
         return $booking;
     }
@@ -404,10 +498,21 @@ class BookingService
                 'refund_amount' => 0,
             ], app(\App\Services\Tracking\TrackingService::class)->cancelSnapshot($booking)))->save();
 
-            $booking->forceFill([
+            $updates = [
                 'status' => BookingStatus::Cancelled,
                 'cancelled_at' => now(),
-            ])->save();
+            ];
+            if ($booking->partner_commission_status === 'pending') {
+                $updates['partner_commission_status'] = 'void';
+            }
+
+            $booking->forceFill($updates)->save();
+
+            BookingPaymentLink::query()
+                ->where('booking_id', $booking->id)
+                ->whereNull('consumed_at')
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
 
             return $booking->fresh([
                 'guest',
@@ -470,6 +575,7 @@ class BookingService
                 'distance_km' => $data['distance_km'] ?? $priced['distance_km'] ?? null,
                 'route_duration_minutes' => $data['route_duration_minutes'] ?? $priced['route_duration_minutes'] ?? null,
                 'route_status' => $data['route_status'] ?? null,
+                'partner_commission' => $priced['partner_commission'] ?? null,
             ],
         ]);
 

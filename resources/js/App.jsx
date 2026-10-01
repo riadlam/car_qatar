@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { isActiveChauffeur, isCustomer, isPendingChauffeur } from './utils/roles';
+import { isActiveChauffeur, isCustomer, isPartnerAdmin, isPendingChauffeur } from './utils/roles';
 import { ToastProvider } from './context/ToastContext';
 import Home from './pages/Home';
 import Chauffeurs from './pages/Chauffeurs';
@@ -22,6 +22,8 @@ import Account from './pages/Account';
 import Journeys from './pages/Journeys';
 import JourneyRide from './pages/JourneyRide';
 import ChauffeurPortal from './pages/ChauffeurPortal';
+import PartnerPortal from './pages/PartnerPortal';
+import GuestPay from './pages/GuestPay';
 import Booking from './pages/Booking';
 import Checkout from './pages/Checkout';
 import BusinessSolutions from './pages/BusinessSolutions';
@@ -158,6 +160,23 @@ export default function App() {
                     <Route path="/booking" element={<Booking />} />
                     <Route path="/booking/checkout" element={<Checkout />} />
                     <Route path="/booking/checkout/" element={<Checkout />} />
+                    <Route path="/pay/:token" element={<GuestPay />} />
+                    <Route
+                        path="/partner"
+                        element={
+                            <RoleRoute allow={isPartnerAdmin} redirectTo={() => '/account'}>
+                                <PartnerPortal />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/partner/:tab"
+                        element={
+                            <RoleRoute allow={isPartnerAdmin} redirectTo={() => '/account'}>
+                                <PartnerPortal />
+                            </RoleRoute>
+                        }
+                    />
                     <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </BrowserRouter>
