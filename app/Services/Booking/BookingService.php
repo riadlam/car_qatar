@@ -31,18 +31,9 @@ use App\Services\Pricing\PricingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class BookingService
 {
-    public const OPEN = [
-        BookingStatus::Confirmed->value,
-        BookingStatus::ChauffeurAssigned->value,
-        BookingStatus::InProgress->value,
-    ];
-
-    public const OPEN_BOOKING_MESSAGE = 'Finish or cancel your current booking before booking another.';
-
     public function __construct(
         private readonly PricingService $pricing,
         private readonly MapboxDirectionsService $directions,
@@ -197,14 +188,6 @@ class BookingService
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function hasOpenBooking(User $user): bool
-    {
-        return Booking::query()
-            ->where('user_id', $user->id)
-            ->whereIn('status', self::OPEN)
-            ->exists();
-    }
-
     public function convertQuoteToBooking(User $user, Quote $quote, array $payload): Booking
     {
         $quote->loadMissing(['items', 'stops', 'serviceType', 'vehicleClass', 'pickupLocation', 'dropoffLocation']);
@@ -306,10 +289,6 @@ class BookingService
             $quoteTotal,
         ) {
             User::query()->whereKey($user->id)->lockForUpdate()->first();
-
-            if (! $isPartnerBooking && $this->hasOpenBooking($user)) {
-                throw new HttpException(409, self::OPEN_BOOKING_MESSAGE);
-            }
 
             $quote = Quote::query()->whereKey($quote->id)->lockForUpdate()->firstOrFail();
 

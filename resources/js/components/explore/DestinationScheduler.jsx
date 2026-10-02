@@ -1,8 +1,9 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { forwardGeocodeClient } from '../../maps/useMapboxSearch';
 import Select, { components as selectComponents } from 'react-select';
 import MapboxLocationField from '../booking/MapboxLocationField';
+import { defaultPickupTime, detectCurrentPickup, todayLocal } from '../../utils/bookingDefaults';
 
 /** Same chevron as home BookingWidget */
 const Chevron = (
@@ -160,12 +161,26 @@ export default function DestinationScheduler({
     const [internalDestination, setInternalDestination] = useState(null);
     const [pickup, setPickup] = useState('');
     const [pickupCoords, setPickupCoords] = useState(null);
+    const [date, setDate] = useState(() => todayLocal());
+    const [time, setTime] = useState(() => defaultPickupTime());
     const [touched, setTouched] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const isControlled = selectedDestination !== undefined;
     const destination = isControlled ? selectedDestination : internalDestination;
+
+    useEffect(() => {
+        let cancelled = false;
+        detectCurrentPickup().then((place) => {
+            if (cancelled || !place) return;
+            setPickup((prev) => prev || place.label);
+            setPickupCoords((prev) => (prev?.lat != null ? prev : place.coords));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const setDestination = (opt) => {
         if (isControlled) {
@@ -210,12 +225,8 @@ export default function DestinationScheduler({
         e.preventDefault();
         setTouched(true);
 
-        const fd = new FormData(e.currentTarget);
-        const time = String(fd.get('pickup-time') || '');
-        const date = String(fd.get('pickup-date') || '');
         const pickupLabel = pickup.trim();
-        const today = new Date();
-        const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const todayKey = todayLocal();
 
         if (pickupCoords?.lat == null || pickupCoords?.lng == null) {
             setError('Choose a pickup location from the suggestions.');
@@ -389,6 +400,9 @@ export default function DestinationScheduler({
                             name="pickup-date"
                             type="date"
                             required
+                            value={date}
+                            min={todayLocal()}
+                            onChange={(e) => setDate(e.target.value)}
                             className={`${inputCls} cursor-pointer [color-scheme:light]`}
                             aria-label="Select a date"
                             data-cy="date-picker-input"
@@ -399,8 +413,9 @@ export default function DestinationScheduler({
                             id={`${uid}-time`}
                             name="pickup-time"
                             type="time"
-                            defaultValue="17:15"
                             required
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
                             className={`${inputCls} cursor-pointer [color-scheme:light]`}
                             aria-label="Pickup time"
                         />

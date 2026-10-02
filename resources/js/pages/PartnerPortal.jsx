@@ -190,9 +190,7 @@ export default function PartnerPortal() {
                                 <h2 className="font-fragment m-0 text-[24px] text-ink-text">Book a ride for a guest</h2>
                                 <p className="font-geist mt-3 m-0 max-w-xl text-[16px] leading-6 text-ink-text/75">
                                     Use the booking flow, enter the guest&apos;s details (not yourself), and checkout.
-                                    You&apos;ll get a secure payment link to share — the guest confirms and pays later
-                                    when card payments go live. Your partner fee is included in the total they see,
-                                    without a separate fee line.
+                                    You&apos;ll get a secure payment link to share with the guest.
                                 </p>
                                 <Link
                                     to="/booking"

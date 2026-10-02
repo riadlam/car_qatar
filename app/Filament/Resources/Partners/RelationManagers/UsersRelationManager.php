@@ -45,14 +45,6 @@ class UsersRelationManager extends RelationManager
                     ->recordSelectSearchColumns(['name', 'email'])
                     ->form(fn (AttachAction $action): array => [
                         $action->getRecordSelect(),
-                        Select::make('role')
-                            ->options([
-                                'admin' => 'Admin',
-                                'staff' => 'Staff',
-                            ])
-                            ->default('admin')
-                            ->required()
-                            ->native(false),
                         Select::make('status')
                             ->options([
                                 'active' => 'Active',
@@ -61,6 +53,10 @@ class UsersRelationManager extends RelationManager
                             ->default('active')
                             ->required()
                             ->native(false),
+                    ])
+                    ->mutateFormDataUsing(fn (array $data): array => [
+                        ...$data,
+                        'role' => 'admin',
                     ])
                     ->after(function (User $record): void {
                         if ($record->role !== UserRole::PartnerAdmin) {

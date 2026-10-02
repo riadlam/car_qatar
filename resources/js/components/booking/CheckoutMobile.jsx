@@ -9,7 +9,6 @@ import { useSavedGuests } from '../../hooks/useSavedGuests';
 import Skeleton from '../ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import ChauffeurGenderPicker from './ChauffeurGenderPicker';
 
 function formatLongDate(dateStr) {
     const d = dateStr ? new Date(`${dateStr}T12:00:00`) : new Date();
@@ -95,9 +94,7 @@ export default function CheckoutMobile({
     preferredLanguage = '',
     setPreferredLanguage,
     preferredLanguages = [],
-    preferredChauffeurGender = '',
-    setPreferredChauffeurGender,
-    genderError = '',
+    preferredChauffeurLabel = '',
     canBook,
     booking,
     onBook,
@@ -295,14 +292,12 @@ export default function CheckoutMobile({
                     Reference: Assigned when you book
                 </p>
 
-                <div className="mt-4">
-                    <ChauffeurGenderPicker
-                        value={preferredChauffeurGender}
-                        onChange={(next) => setPreferredChauffeurGender?.(next)}
-                        error={genderError}
-                        name="preferred-chauffeur-gender-mobile"
-                    />
-                </div>
+                {preferredChauffeurLabel ? (
+                    <p className="font-geist mt-3 m-0 text-[14px] text-ink-text">
+                        <span className="text-muted">Chauffeur · </span>
+                        {preferredChauffeurLabel}
+                    </p>
+                ) : null}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <button

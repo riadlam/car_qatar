@@ -1,22 +1,22 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import BillingModal, { billingSummary } from '../components/checkout/BillingModal';
 import CheckoutSidebar from '../components/booking/CheckoutSidebar';
 import CheckoutMobile from '../components/booking/CheckoutMobile';
-import ChauffeurGenderPicker from '../components/booking/ChauffeurGenderPicker';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
 import { isPartnerAdmin } from '../utils/roles';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 import { createQuotes, getQuote } from '../api/quotes';
-import { createBooking, listBookings } from '../api/bookings';
+import { createBooking } from '../api/bookings';
 import { claimBookingDraft, getBookingDraft } from '../api/bookingDrafts';
 import Skeleton from '../components/ui/Skeleton';
 import { getBillingProfile, getPaymentMethods } from '../api/checkout';
 import { getWallet } from '../api/wallet';
 import { tripParamsToQuotePayload } from '../utils/bookingMappers';
+import { chauffeurGenderLabel } from '../components/booking/ChauffeurGenderPicker';
 import {
     fallbackVehicles,
     mapVehicleClassToCard,
@@ -71,45 +71,8 @@ function LockIcon() {
     );
 }
 
-const OPEN_BOOKING_MESSAGE = 'Finish or cancel your current booking before booking another.';
-
-function OpenBookingDialog({ open, message, onClose }) {
-    const titleId = useId();
-    if (!open) return null;
-
-    return (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/40 p-4 sm:items-center" role="presentation">
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
-            >
-                <h2 id={titleId} className="font-fragment m-0 text-[24px] font-400 text-ink-text">
-                    One trip at a time
-                </h2>
-                <p className="font-geist mt-2 m-0 text-[15px] leading-6 text-muted">
-                    {message || OPEN_BOOKING_MESSAGE}
-                </p>
-                <div className="mt-5 flex flex-wrap justify-end gap-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2 text-[14px] font-500 text-ink-text"
-                    >
-                        Close
-                    </button>
-                    <Link
-                        to="/journeys"
-                        className="font-geist rounded-full bg-wine-700 px-4 py-2 text-[14px] font-500 text-white no-underline"
-                    >
-                        View journeys
-                    </Link>
-                </div>
-            </div>
-        </div>
-    );
-}
+const fieldClass =
+    'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
 
 function InfoIcon() {
     return (
@@ -292,12 +255,8 @@ export default function Checkout() {
     const [booking, setBooking] = useState(false);
     const [notes, setNotes] = useState('');
     const [preferredLanguage, setPreferredLanguage] = useState('');
-    const [preferredChauffeurGender, setPreferredChauffeurGender] = useState('');
-    const [genderError, setGenderError] = useState('');
     const [appliedOffer, setAppliedOffer] = useState('');
     const [bookError, setBookError] = useState('');
-    const [bookingBlocked, setBookingBlocked] = useState(false);
-    const [tripDialogOpen, setTripDialogOpen] = useState(false);
     const [billing, setBilling] = useState(null);
     const [wallet, setWallet] = useState(null);
     const [payWithWallet, setPayWithWallet] = useState(false);
@@ -414,37 +373,20 @@ export default function Checkout() {
         setParams(q, { replace: true });
     };
 
-    const canBook = (Boolean(billing) || isPartnerAdmin(user)) && Boolean(preferredChauffeurGender);
-    const billingLine = billingSummary(billing);
+    const preferredChauffeurGender = params.get('preferred_chauffeur_gender') || '';
+    const preferredChauffeurLabel = chauffeurGenderLabel(preferredChauffeurGender);
 
-    useEffect(() => {
-        if (!isAuthenticated) return undefined;
-        let cancelled = false;
-        listBookings()
-            .then((res) => {
-                if (cancelled || !res?.blocked) return;
-                setBookingBlocked(true);
-                setTripDialogOpen(true);
-            })
-            .catch(() => {});
-        return () => {
-            cancelled = true;
-        };
-    }, [isAuthenticated]);
+    const canBook = Boolean(billing) || isPartnerAdmin(user);
+    const billingLine = billingSummary(billing);
 
     const onBook = async () => {
         if (!billing && !isPartnerAdmin(user)) return;
         if (!preferredChauffeurGender) {
-            setGenderError('Please choose a male or female chauffeur.');
-            return;
-        }
-        if (bookingBlocked) {
-            setTripDialogOpen(true);
+            setBookError('Choose male or female chauffeur on the vehicle page, then continue.');
             return;
         }
         setBooking(true);
         setBookError('');
-        setGenderError('');
         try {
             let current = quote;
             if (quoteIsStale(current)) {
@@ -508,12 +450,6 @@ export default function Checkout() {
             }
             navigate(`/journeys/ride/${booked.id}`);
         } catch (err) {
-            if (err?.response?.status === 409) {
-                setBookingBlocked(true);
-                setTripDialogOpen(true);
-                setBookError('');
-                return;
-            }
             const msg =
                 err?.response?.data?.message ||
                 Object.values(err?.response?.data?.errors || {}).flat()[0] ||
@@ -562,12 +498,7 @@ export default function Checkout() {
                 preferredLanguage={preferredLanguage}
                 setPreferredLanguage={onPreferredLanguageChange}
                 preferredLanguages={PREFERRED_LANGUAGES}
-                preferredChauffeurGender={preferredChauffeurGender}
-                setPreferredChauffeurGender={(value) => {
-                    setPreferredChauffeurGender(value);
-                    setGenderError('');
-                }}
-                genderError={genderError}
+                preferredChauffeurLabel={preferredChauffeurLabel}
                 canBook={canBook}
                 booking={booking}
                 onBook={onBook}
@@ -759,19 +690,18 @@ export default function Checkout() {
                                     Pickup preferences
                                 </h2>
 
-                                <div className="mt-5">
-                                    <ChauffeurGenderPicker
-                                        value={preferredChauffeurGender}
-                                        onChange={(value) => {
-                                            setPreferredChauffeurGender(value);
-                                            setGenderError('');
-                                        }}
-                                        error={genderError}
-                                        name="preferred-chauffeur-gender-desktop"
-                                    />
-                                </div>
+                                {preferredChauffeurLabel ? (
+                                    <div className="mt-5 rounded-xl border border-[#e8e6e1] bg-page px-4 py-3">
+                                        <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                                            Chauffeur preference
+                                        </p>
+                                        <p className="font-geist mt-1 m-0 text-[15px] font-500 text-ink-text">
+                                            {preferredChauffeurLabel}
+                                        </p>
+                                    </div>
+                                ) : null}
 
-                                <div className="mt-6">
+                                <div className={preferredChauffeurLabel ? 'mt-6' : 'mt-5'}>
                                     <p className="font-geist m-0 text-[14px] text-muted">
                                         Preferred language{' '}
                                         <span className="text-muted/80">(optional)</span>
@@ -900,11 +830,6 @@ export default function Checkout() {
                 </SiteLayout>
             </div>
 
-            <OpenBookingDialog
-                open={tripDialogOpen}
-                message={OPEN_BOOKING_MESSAGE}
-                onClose={() => setTripDialogOpen(false)}
-            />
             <AddCardModal open={addCardOpen} onClose={() => setAddCardOpen(false)} onSave={onSaveCard} />
             <BillingModal
                 open={billingModalOpen}

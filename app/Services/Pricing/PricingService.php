@@ -55,10 +55,13 @@ class PricingService
                 ],
             ];
         } else {
-            // Simple client model: Starting fee + distance × price per km
+            // Transfer: Starting fee + distance × per km + duration × per minute
             $km = max(0, (float) ($distanceKm ?? 0));
+            $minutes = max(0, (float) ($routeMinutes ?? 0));
             $startingFee = (float) $rule->base_price;
-            $unitPrice = round($startingFee + ($km * (float) $rule->per_km), 2);
+            $perKm = (float) $rule->per_km;
+            $perMinute = (float) ($rule->per_minute ?? 0);
+            $unitPrice = round($startingFee + ($km * $perKm) + ($minutes * $perMinute), 2);
             $factor = $this->schoolTermMultiplier($service, $params);
             $amount = round($unitPrice * $factor, 2);
 
@@ -71,8 +74,9 @@ class PricingService
                 'metadata' => [
                     'distance_km' => $km,
                     'starting_fee' => $startingFee,
-                    'per_km' => (float) $rule->per_km,
-                    'duration_minutes' => $routeMinutes,
+                    'per_km' => $perKm,
+                    'per_minute' => $perMinute,
+                    'duration_minutes' => $minutes,
                     'school_term' => $params['school_term'] ?? null,
                     'term_multiplier' => $factor,
                 ],

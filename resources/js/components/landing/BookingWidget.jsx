@@ -20,8 +20,7 @@ import {
     mapServiceType,
 } from '../../utils/catalogMappers';
 import { tripSelectionToSearchParams } from '../../utils/bookingMappers';
-
-const DEFAULT_TIME = '17:15';
+import { defaultPickupTime, detectCurrentPickup, todayLocal } from '../../utils/bookingDefaults';
 
 function hasCoords(coords) {
     return coords != null && Number.isFinite(Number(coords.lat)) && Number.isFinite(Number(coords.lng));
@@ -30,13 +29,6 @@ function hasCoords(coords) {
 function placeFromPick(loc) {
     if (!hasCoords(loc)) return null;
     return { lat: Number(loc.lat), lng: Number(loc.lng) };
-}
-
-function todayLocal() {
-    const d = new Date();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${month}-${day}`;
 }
 
 function emptyLeg() {
@@ -251,11 +243,33 @@ export function BookingForm({
     const [schoolLocation, setSchoolLocation] = useState(initial?.schoolLocation || '');
     const [students, setStudents] = useState(initial?.students || studentOptions[0]?.value || '1');
     const [term, setTerm] = useState(initial?.term || termOptions[0]?.value || SCHOOL_TERMS[0].value);
-    const [date, setDate] = useState(initial?.date || '');
-    const [time, setTime] = useState(initial?.time || DEFAULT_TIME);
+    const [date, setDate] = useState(initial?.date || todayLocal());
+    const [time, setTime] = useState(initial?.time || defaultPickupTime());
     const [pickupCoords, setPickupCoords] = useState(initial?.pickupCoords || null);
     const [dropoffCoords, setDropoffCoords] = useState(initial?.dropoffCoords || null);
     const [schoolCoords, setSchoolCoords] = useState(initial?.schoolCoords || null);
+
+    useEffect(() => {
+        if (initial?.pickup || hasCoords(initial?.pickupCoords)) return undefined;
+        if (initial?.schoolLocation || hasCoords(initial?.schoolCoords)) return undefined;
+        let cancelled = false;
+        detectCurrentPickup().then((place) => {
+            if (cancelled || !place) return;
+            setPickup((prev) => prev || place.label);
+            setPickupCoords((prev) => (hasCoords(prev) ? prev : place.coords));
+            setSchoolLocation((prev) => prev || place.label);
+            setSchoolCoords((prev) => (hasCoords(prev) ? prev : place.coords));
+            setLegs((prev) => {
+                if (!prev.length || prev[0].pickup || hasCoords(prev[0].pickupCoords)) return prev;
+                return prev.map((leg, i) =>
+                    i === 0 ? { ...leg, pickup: place.label, pickupCoords: place.coords } : leg,
+                );
+            });
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [initial?.pickup, initial?.pickupCoords, initial?.schoolLocation, initial?.schoolCoords]);
 
     useEffect(() => {
         if (!gulfDestinations.length) return;
@@ -424,6 +438,7 @@ export function BookingForm({
                 id={`${uid}-date`}
                 type="date"
                 value={date}
+                min={todayLocal()}
                 onChange={(e) => setDate(e.target.value)}
                 className={`${inputCls} cursor-pointer`}
                 style={{ colorScheme: scheme }}

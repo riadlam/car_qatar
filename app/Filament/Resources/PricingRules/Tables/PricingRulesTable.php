@@ -32,6 +32,10 @@ class PricingRulesTable
                     ->label('Per km')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('per_minute')
+                    ->label('Per min')
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('hourly_price')
                     ->label('Hourly')
                     ->money(fn ($record) => $record->currency ?? 'USD')

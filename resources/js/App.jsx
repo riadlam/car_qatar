@@ -28,6 +28,7 @@ import Booking from './pages/Booking';
 import Checkout from './pages/Checkout';
 import BusinessSolutions from './pages/BusinessSolutions';
 import AboutUs from './pages/AboutUs';
+import Contact from './pages/Contact';
 import Skeleton from './components/ui/Skeleton';
 
 function GuestRoute({ children }) {
@@ -96,6 +97,8 @@ export default function App() {
                     <Route path="/help" element={<Help />} />
                     <Route path="/business-solutions" element={<BusinessSolutions />} />
                     <Route path="/about-us" element={<AboutUs />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/leave-a-message" element={<Navigate to="/contact" replace />} />
                     <Route
                         path="/login"
                         element={

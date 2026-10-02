@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from './Logo';
-import LeaveMessageModal from './LeaveMessageModal';
 import { useAuth } from '../../context/AuthContext';
 import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../../utils/roles';
 import { fetchContactChannels } from '../../api/catalog';
@@ -16,6 +15,7 @@ const LIGHT_TOP_PATHS = [
     '/strategic-partnerships',
     '/business-solutions',
     '/about-us',
+    '/contact',
     '/help',
     '/account',
     '/journeys',
@@ -34,7 +34,7 @@ const EXPLORE_QATAR = [
 const CONTACT_US_FALLBACK = [
     { key: 'call_us', label: 'Call us', href: 'tel:+97440000000', type: 'phone' },
     { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000', type: 'whatsapp' },
-    { key: 'leave_message', label: 'Leave a message', href: '#leave-message', type: 'form' },
+    { key: 'leave_message', label: 'Leave a message', href: '/contact', type: 'link' },
     { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com', type: 'email' },
 ];
 
@@ -184,7 +184,6 @@ export default function Navbar() {
     const [pastHero, setPastHero] = useState(false);
     const [open, setOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
-    const [leaveMessageOpen, setLeaveMessageOpen] = useState(false);
     const [contactUs, setContactUs] = useState([]);
     const isBooking = location.pathname.startsWith('/booking');
     const isChauffeurPortal = location.pathname.startsWith('/chauffeur');
@@ -199,24 +198,18 @@ export default function Navbar() {
         user?.name?.split?.(' ')?.[0] ||
         'Profile';
 
-    const openLeaveMessage = useCallback(() => {
-        setOpen(false);
-        setLeaveMessageOpen(true);
-    }, []);
-
     const mapChannels = useCallback(
         (channels) =>
             channels.map((c) => {
-                const type = c.type || (c.key === 'leave_message' ? 'form' : 'link');
+                const isLeaveMessage = c.key === 'leave_message' || c.type === 'form';
                 return {
                     key: c.key,
                     label: c.label,
-                    href: c.href || '#',
-                    type,
-                    onSelect: type === 'form' ? openLeaveMessage : undefined,
+                    href: isLeaveMessage ? '/contact' : c.href || '#',
+                    type: isLeaveMessage ? 'link' : c.type || 'link',
                 };
             }),
-        [openLeaveMessage],
+        [],
     );
 
     useEffect(() => {
@@ -648,7 +641,6 @@ export default function Navbar() {
                     )}
                 </AnimatePresence>
             </motion.header>
-            <LeaveMessageModal open={leaveMessageOpen} onClose={() => setLeaveMessageOpen(false)} />
         </>
     );
 }

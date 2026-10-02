@@ -54,10 +54,6 @@ class BookingController extends Controller
 
         $bookings = $query->paginate(15);
 
-        $blocked = $user->role === \App\Enums\UserRole::PartnerAdmin
-            ? false
-            : $this->bookings->hasOpenBooking($user);
-
         return response()->json([
             'data' => BookingResource::collection($bookings->getCollection())->resolve(),
             'meta' => [
@@ -66,8 +62,8 @@ class BookingController extends Controller
                 'per_page' => $bookings->perPage(),
                 'total' => $bookings->total(),
             ],
-            'blocked' => $blocked,
-            'message' => $blocked ? BookingService::OPEN_BOOKING_MESSAGE : null,
+            'blocked' => false,
+            'message' => null,
         ]);
     }
 

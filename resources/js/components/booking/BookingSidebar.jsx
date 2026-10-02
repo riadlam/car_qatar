@@ -9,6 +9,7 @@ import { useSavedGuests } from '../../hooks/useSavedGuests';
 import Skeleton from '../ui/Skeleton';
 import AddGuestModal, { guestDisplayName } from './AddGuestModal';
 import BookingMap from './BookingMap';
+import ChauffeurGenderPicker from './ChauffeurGenderPicker';
 import RouteMap from './RouteMap';
 import { IconChevronDown, IconPassengers, IconPerson } from './icons';
 
@@ -28,12 +29,16 @@ export default function BookingSidebar({
     const { isAuthenticated, setReturnTo } = useAuth();
     const { guests, loading: guestsLoading, addGuest } = useSavedGuests();
     const navigate = useNavigate();
-    const [params] = useSearchParams();
+    const [params, setParams] = useSearchParams();
     const [forGuest, setForGuest] = useState(false);
     const [guestOpen, setGuestOpen] = useState(false);
     const [selectedGuestId, setSelectedGuestId] = useState(null);
     const [addGuestOpen, setAddGuestOpen] = useState(false);
     const [continuing, setContinuing] = useState(false);
+    const [preferredChauffeurGender, setPreferredChauffeurGender] = useState(
+        () => params.get('preferred_chauffeur_gender') || '',
+    );
+    const [genderError, setGenderError] = useState('');
 
     useEffect(() => {
         if (!selectedGuestId) return;
@@ -46,6 +51,15 @@ export default function BookingSidebar({
         () => guests.find((g) => g.id === selectedGuestId) || null,
         [guests, selectedGuestId],
     );
+
+    const onGenderChange = (value) => {
+        setPreferredChauffeurGender(value);
+        setGenderError('');
+        const next = new URLSearchParams(params);
+        if (value) next.set('preferred_chauffeur_gender', value);
+        else next.delete('preferred_chauffeur_gender');
+        setParams(next, { replace: true });
+    };
 
     const buildCheckoutQuery = () => {
         const q = new URLSearchParams(params);
@@ -62,10 +76,19 @@ export default function BookingSidebar({
         } else {
             q.delete('guest');
         }
+        if (preferredChauffeurGender) {
+            q.set('preferred_chauffeur_gender', preferredChauffeurGender);
+        } else {
+            q.delete('preferred_chauffeur_gender');
+        }
         return q;
     };
 
     const selectVehicle = async () => {
+        if (!preferredChauffeurGender) {
+            setGenderError('Please choose a male or female chauffeur.');
+            return;
+        }
         if (forGuest && !selectedGuest && isAuthenticated) {
             setGuestOpen(true);
             return;
@@ -287,6 +310,14 @@ export default function BookingSidebar({
 
                 <div className="mt-auto pt-5">
                     <hr className="mb-4 border-0 border-t border-[#e8e6e1]" />
+                    <div className="mb-4">
+                        <ChauffeurGenderPicker
+                            value={preferredChauffeurGender}
+                            onChange={onGenderChange}
+                            error={genderError}
+                            name="preferred-chauffeur-gender-booking"
+                        />
+                    </div>
                     <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="font-geist m-0 inline-flex items-center gap-2 text-[14px] font-500 text-ink-text">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-wine-700">

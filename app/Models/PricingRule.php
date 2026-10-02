@@ -33,7 +33,6 @@ class PricingRule extends Model
         static::saving(function (PricingRule $rule): void {
             // Keep retired columns in sync so leftover data cannot affect anything.
             $rule->minimum_price = $rule->base_price;
-            $rule->per_minute = 0;
         });
     }
 
