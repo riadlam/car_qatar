@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
@@ -179,12 +179,27 @@ function NavDropdown({ label, items, light, align = 'start' }) {
 
 export default function Navbar() {
     const location = useLocation();
-    const { isAuthenticated, user } = useAuth();
+    const navigate = useNavigate();
+    const { isAuthenticated, user, logout } = useAuth();
     const [scrolled, setScrolled] = useState(false);
     const [pastHero, setPastHero] = useState(false);
     const [open, setOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
     const [contactUs, setContactUs] = useState([]);
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    const onLogout = async () => {
+        setLoggingOut(true);
+        setOpen(false);
+        try {
+            await logout();
+            navigate('/login', { replace: true });
+        } catch {
+            navigate('/login', { replace: true });
+        } finally {
+            setLoggingOut(false);
+        }
+    };
     const isBooking = location.pathname.startsWith('/booking');
     const isChauffeurPortal = location.pathname.startsWith('/chauffeur');
     const lightTop =
@@ -334,25 +349,39 @@ export default function Navbar() {
                                 </a>
                             </li>
                             <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
-                            <li className="ml-1">
+                            <li className="ml-1 flex items-center gap-2">
                                 {isAuthenticated ? (
-                                    <Link
-                                        to="/account"
-                                        data-cy="profile-button"
-                                        className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
-                                            light
-                                                ? 'nav-signin--light border-ink-text/12'
-                                                : 'nav-signin--dark border-white/25'
-                                        }`}
-                                    >
-                                        <UserIcon />
-                                        {profileLabel}
-                                        {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
-                                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-500 text-amber-900">
-                                                {chauffeurStatusLabel(user)}
-                                            </span>
-                                        ) : null}
-                                    </Link>
+                                    <>
+                                        <Link
+                                            to="/account"
+                                            data-cy="profile-button"
+                                            className={`nav-signin font-geist inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap transition ${
+                                                light
+                                                    ? 'nav-signin--light border-ink-text/12'
+                                                    : 'nav-signin--dark border-white/25'
+                                            }`}
+                                        >
+                                            <UserIcon />
+                                            {profileLabel}
+                                            {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-500 text-amber-900">
+                                                    {chauffeurStatusLabel(user)}
+                                                </span>
+                                            ) : null}
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            onClick={onLogout}
+                                            disabled={loggingOut}
+                                            className={`font-geist inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 py-2 text-[15px] leading-6 font-500 whitespace-nowrap transition disabled:opacity-60 ${
+                                                light
+                                                    ? 'border-ink-text/12 text-ink-text hover:bg-ink-text/5'
+                                                    : 'border-white/25 text-white hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {loggingOut ? 'Signing out…' : 'Log out'}
+                                        </button>
+                                    </>
                                 ) : (
                                     <Link
                                         to={loginHref}
@@ -610,14 +639,24 @@ export default function Navbar() {
                                 ) : null}
                                 <li className="mt-3 flex flex-col gap-3 pb-2">
                                     {isAuthenticated ? (
-                                        <Link
-                                            to="/account"
-                                            onClick={() => setOpen(false)}
-                                            className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
-                                        >
-                                            <UserIcon />
-                                            {profileLabel}
-                                        </Link>
+                                        <>
+                                            <Link
+                                                to="/account"
+                                                onClick={() => setOpen(false)}
+                                                className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
+                                            >
+                                                <UserIcon />
+                                                {profileLabel}
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={onLogout}
+                                                disabled={loggingOut}
+                                                className="font-geist flex cursor-pointer items-center justify-center rounded-full border border-ink-text/15 py-3 text-ink-text disabled:opacity-60"
+                                            >
+                                                {loggingOut ? 'Signing out…' : 'Log out'}
+                                            </button>
+                                        </>
                                     ) : (
                                         <Link
                                             to={loginHref}

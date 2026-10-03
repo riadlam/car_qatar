@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import { ChauffeurOfferCard, ChauffeurRideCard, RideHistorySection } from '../components/chauffeur/ChauffeurCards';
 import ChauffeurBottomNav from '../components/chauffeur/ChauffeurBottomNav';
@@ -130,7 +130,7 @@ function EmptyState({ title, body }) {
     );
 }
 
-function ProfilePanel({ profile, error, rides }) {
+function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
     if (error && !profile) {
         return <p className="font-geist m-0 text-[15px] text-muted">{error}</p>;
     }
@@ -165,10 +165,22 @@ function ProfilePanel({ profile, error, rides }) {
                                 </p>
                             </div>
                         </div>
-                        <span className="font-geist inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-500 text-white">
-                            <span className="h-2 w-2 rounded-full bg-white" />
-                            {profile.status_label || 'Active'}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-geist inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-500 text-white">
+                                <span className="h-2 w-2 rounded-full bg-white" />
+                                {profile.status_label || 'Active'}
+                            </span>
+                            {onLogout ? (
+                                <button
+                                    type="button"
+                                    onClick={onLogout}
+                                    disabled={loggingOut}
+                                    className="font-geist inline-flex cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[13px] font-500 text-ink-text transition hover:bg-page disabled:opacity-60"
+                                >
+                                    {loggingOut ? 'Signing out…' : 'Log out'}
+                                </button>
+                            ) : null}
+                        </div>
                     </div>
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -266,8 +278,22 @@ function assignmentToRide(row) {
  */
 export default function ChauffeurPortal() {
     const { tab: tabParam } = useParams();
-    const { user } = useAuth();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
     const baseId = useId();
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    const onLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await logout();
+            navigate('/login', { replace: true });
+        } catch {
+            navigate('/login', { replace: true });
+        } finally {
+            setLoggingOut(false);
+        }
+    };
     const [query, setQuery] = useState('');
     const [offers, setOffers] = useState([]);
     const [offersMeta, setOffersMeta] = useState(null);
@@ -572,7 +598,16 @@ export default function ChauffeurPortal() {
                             >
                                 <FilterIcon />
                             </button>
-                        ) : null}
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                disabled={loggingOut}
+                                className="font-geist absolute right-0 cursor-pointer rounded-full border border-[#d8d8dc] bg-white px-3 py-2 text-[13px] font-500 text-ink-text shadow-sm disabled:opacity-60"
+                            >
+                                {loggingOut ? '…' : 'Log out'}
+                            </button>
+                        )}
                     </div>
 
                     <OffersFilterBar
@@ -589,7 +624,7 @@ export default function ChauffeurPortal() {
                     <div className="hidden flex-col gap-4 lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-8">
                         <div>
                             <p className="font-geist m-0 text-[12px] font-500 tracking-[0.08em] text-wine-700 uppercase">
-                                Partner portal
+                                Chauffeur portal
                             </p>
                             <h1 className="font-fragment m-0 mt-1 text-[40px] leading-[48px] font-400 tracking-[0.25px] text-ink-text">
                                 Chauffeur
@@ -599,6 +634,15 @@ export default function ChauffeurPortal() {
                             </p>
                         </div>
 
+                        <div className="flex flex-wrap items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onLogout}
+                            disabled={loggingOut}
+                            className="font-geist inline-flex cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:bg-page disabled:opacity-60"
+                        >
+                            {loggingOut ? 'Signing out…' : 'Log out'}
+                        </button>
                         {activeTab.id === 'profile' ? (
                             <div className="rounded-2xl border border-[#e8e6e1] bg-white px-4 py-3 text-right">
                                 <p className="font-geist m-0 text-[12px] text-muted">This week</p>
@@ -644,6 +688,7 @@ export default function ChauffeurPortal() {
                                 </div>
                             </form>
                         )}
+                        </div>
                     </div>
 
                     <div className="mt-4 lg:mt-10">
@@ -695,7 +740,13 @@ export default function ChauffeurPortal() {
                             className="w-full pt-3 lg:pt-6"
                         >
                             {activeTab.id === 'profile' ? (
-                                <ProfilePanel profile={profile} error={profileError} rides={rides} />
+                                <ProfilePanel
+                                    profile={profile}
+                                    error={profileError}
+                                    rides={rides}
+                                    onLogout={onLogout}
+                                    loggingOut={loggingOut}
+                                />
                             ) : activeTab.id === 'current' ? (
                                 !ridesReady ? (
                                     <Skeleton variant="live" />

@@ -144,6 +144,7 @@ export default function Account() {
         deleteAccount,
         refreshUser,
         setReturnTo,
+        logout,
     } = useAuth();
 
     const [edit, setEdit] = useState(null);
@@ -154,6 +155,19 @@ export default function Account() {
     const [cardError, setCardError] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [saving, setSaving] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    const onLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await logout();
+            navigate('/login', { replace: true });
+        } catch {
+            navigate('/login', { replace: true });
+        } finally {
+            setLoggingOut(false);
+        }
+    };
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
@@ -288,6 +302,14 @@ export default function Account() {
                                 Partner portal
                             </Link>
                         ) : null}
+                        <button
+                            type="button"
+                            onClick={onLogout}
+                            disabled={loggingOut}
+                            className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30 disabled:opacity-60"
+                        >
+                            {loggingOut ? 'Signing out…' : 'Log out'}
+                        </button>
                     </div>
 
                     <div className="mt-10 border-t border-[#ececec]">

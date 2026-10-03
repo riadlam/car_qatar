@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import Skeleton from '../components/ui/Skeleton';
+import { useAuth } from '../context/AuthContext';
 import {
     fetchPartnerBookings,
     fetchPartnerEarnings,
@@ -31,6 +32,8 @@ function statusLabel(status) {
 
 export default function PartnerPortal() {
     const { tab } = useParams();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const active = TABS.find((t) => t.id === tab) || TABS[0];
     const [me, setMe] = useState(null);
     const [wallet, setWallet] = useState(null);
@@ -40,6 +43,19 @@ export default function PartnerPortal() {
     const [error, setError] = useState('');
     const [linkBusy, setLinkBusy] = useState(null);
     const [copied, setCopied] = useState(null);
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    const onLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await logout();
+            navigate('/login', { replace: true });
+        } catch {
+            navigate('/login', { replace: true });
+        } finally {
+            setLoggingOut(false);
+        }
+    };
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -103,12 +119,22 @@ export default function PartnerPortal() {
                             {me?.display_name || 'Your partnership'}
                         </h1>
                     </div>
-                    <Link
-                        to="/booking"
-                        className="font-geist inline-flex items-center justify-center rounded-full bg-wine-700 px-5 py-2.5 text-[15px] font-500 text-white transition hover:bg-wine-600"
-                    >
-                        Book for a guest
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={onLogout}
+                            disabled={loggingOut}
+                            className="font-geist inline-flex cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-5 py-2.5 text-[15px] font-500 text-ink-text transition hover:bg-[#f7f7f8] disabled:opacity-60"
+                        >
+                            {loggingOut ? 'Signing out…' : 'Log out'}
+                        </button>
+                        <Link
+                            to="/booking"
+                            className="font-geist inline-flex items-center justify-center rounded-full bg-wine-700 px-5 py-2.5 text-[15px] font-500 text-white transition hover:bg-wine-600"
+                        >
+                            Book for a guest
+                        </Link>
+                    </div>
                 </div>
 
                 <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-ink-text/10 pb-px" aria-label="Partner sections">
