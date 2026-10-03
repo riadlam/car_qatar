@@ -32,7 +32,7 @@ export async function fetchMapConfig() {
     if (configPromise) return configPromise;
 
     configPromise = api
-        .get('/map-config')
+        .get('/map-config', { timeout: 8000 })
         .then(({ data }) => {
             cachedConfig = { ...DEFAULT_CONFIG, ...(data.data || data || {}) };
             const token = String(cachedConfig.access_token || '');

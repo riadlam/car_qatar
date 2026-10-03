@@ -54,15 +54,33 @@ export function AuthProvider({ children }) {
             return;
         }
 
+        let cancelled = false;
+        const hardTimeout = window.setTimeout(() => {
+            if (cancelled) return;
+            clearSession();
+            setLoading(false);
+        }, 12000);
+
         authApi
             .me()
             .then((data) => {
+                if (cancelled) return;
                 persistUser(data.user);
             })
             .catch(() => {
+                if (cancelled) return;
                 clearSession();
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (cancelled) return;
+                window.clearTimeout(hardTimeout);
+                setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(hardTimeout);
+        };
     }, [clearSession, persistUser]);
 
     const setReturnTo = useCallback((path) => {
