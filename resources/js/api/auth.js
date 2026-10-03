@@ -23,6 +23,15 @@ export async function login(payload) {
     return unwrapUser(data);
 }
 
+export async function exchangeGoogleCode(code) {
+    const { data } = await api.post('/auth/google/exchange', {
+        code,
+        device_name: 'web',
+    });
+
+    return unwrapUser(data);
+}
+
 export async function logout() {
     const { data } = await api.post('/auth/logout');
 

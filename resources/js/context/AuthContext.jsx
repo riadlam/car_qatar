@@ -92,6 +92,15 @@ export function AuthProvider({ children }) {
         [persistSession],
     );
 
+    const completeGoogleLogin = useCallback(
+        async (code) => {
+            const data = await authApi.exchangeGoogleCode(code);
+            persistSession(data.user, data.token);
+            return data.user;
+        },
+        [persistSession],
+    );
+
     const register = useCallback(
         async (payload) => {
             const data = await authApi.register(payload);
@@ -197,6 +206,7 @@ export function AuthProvider({ children }) {
             loading,
             isAuthenticated: Boolean(user),
             login,
+            completeGoogleLogin,
             register,
             logout,
             completeProfile,
@@ -214,6 +224,7 @@ export function AuthProvider({ children }) {
             user,
             loading,
             login,
+            completeGoogleLogin,
             register,
             logout,
             completeProfile,

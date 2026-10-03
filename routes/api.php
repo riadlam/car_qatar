@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\MapConfigController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\BillingProfileController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\BookingDraftController;
@@ -42,6 +43,8 @@ Route::prefix('auth')->group(function () {
         ->middleware('throttle:10,1');
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:10,1');
+    Route::post('/google/exchange', [GoogleAuthController::class, 'exchange'])
+        ->middleware('throttle:20,1');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);

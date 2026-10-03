@@ -21,6 +21,13 @@ export default function Login() {
     useEffect(() => {
         const from = searchParams.get('from');
         if (from) setReturnTo(from);
+
+        const oauthError = searchParams.get('error');
+        if (oauthError === 'google' || oauthError === 'google_email') {
+            setError('Google sign-in was cancelled or failed. Please try again.');
+        } else if (oauthError === 'chauffeur_declined') {
+            setError('Your chauffeur application was not approved.');
+        }
     }, [searchParams, setReturnTo]);
 
     useEffect(() => {
@@ -218,16 +225,14 @@ export default function Login() {
 
                     <button
                         type="button"
-                        disabled
-                        title="Google sign-in coming soon"
-                        className="font-geist inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-3 rounded-full border border-[#d8d8dc] bg-white px-6 py-3 text-[16px] font-500 text-ink-text opacity-60"
+                        onClick={() => {
+                            window.location.href = '/auth/google';
+                        }}
+                        className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-[#d8d8dc] bg-white px-6 py-3 text-[16px] font-500 text-ink-text transition hover:bg-[#f7f7f8]"
                     >
                         <GoogleIcon />
                         Continue with Google
                     </button>
-                    <p className="font-geist mt-3 m-0 text-center text-[13px] text-muted">
-                        Google sign-in is not available yet.
-                    </p>
                 </div>
             </div>
         </main>

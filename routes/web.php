@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,4 +13,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/{any?}', 'app')->where('any', '^(?!admin(?:/|$)|livewire(?:/|$)|filament(?:/|$)).*$');
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+    ->middleware('throttle:20,1');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+    ->middleware('throttle:20,1');
+
+Route::view('/{any?}', 'app')->where('any', '^(?!admin(?:/|$)|livewire(?:/|$)|filament(?:/|$)|auth/google(?:/|$)).*$');

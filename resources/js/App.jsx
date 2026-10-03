@@ -17,6 +17,7 @@ import Restaurants from './pages/Restaurants';
 import Help from './pages/Help';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import OAuthCallback from './pages/OAuthCallback';
 import CompleteProfile from './pages/CompleteProfile';
 import Account from './pages/Account';
 import Journeys from './pages/Journeys';
@@ -107,6 +108,7 @@ export default function App() {
                             </GuestRoute>
                         }
                     />
+                    <Route path="/oauth/callback" element={<OAuthCallback />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/complete-profile" element={<CompleteProfile />} />
                     <Route path="/account" element={<Account />} />
