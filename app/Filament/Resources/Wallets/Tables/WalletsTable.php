@@ -60,10 +60,14 @@ class WalletsTable
                     ->icon('heroicon-o-plus-circle')
                     ->form([
                         Select::make('user_id')
-                            ->label('Customer or partner')
+                            ->label('Customer, partner, or chauffeur')
                             ->options(
                                 fn () => User::query()
-                                    ->whereIn('role', [UserRole::Customer->value, UserRole::PartnerAdmin->value])
+                                    ->whereIn('role', [
+                                        UserRole::Customer->value,
+                                        UserRole::PartnerAdmin->value,
+                                        UserRole::Chauffeur->value,
+                                    ])
                                     ->orderBy('name')
                                     ->get()
                                     ->mapWithKeys(fn (User $u) => [

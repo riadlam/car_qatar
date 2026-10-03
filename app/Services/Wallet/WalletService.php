@@ -57,9 +57,9 @@ class WalletService
             ]);
         }
 
-        if (! in_array($target->role, [UserRole::Customer, UserRole::PartnerAdmin], true)) {
+        if (! in_array($target->role, [UserRole::Customer, UserRole::PartnerAdmin, UserRole::Chauffeur], true)) {
             throw ValidationException::withMessages([
-                'user_id' => ['Wallets are only for customers and partners.'],
+                'user_id' => ['Wallets are only for customers, partners, and chauffeurs.'],
             ]);
         }
 

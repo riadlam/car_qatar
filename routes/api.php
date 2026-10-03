@@ -99,6 +99,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/billing-profile', [BillingProfileController::class, 'upsert']);
 
     Route::get('/wallet', [WalletController::class, 'show']);
+    Route::get('/wallet/transactions', [WalletController::class, 'transactions'])
+        ->middleware('throttle:60,1');
     Route::post('/bookings/{booking}/pay-with-wallet', [WalletController::class, 'payBooking'])
         ->middleware(['customer.or.partner', 'throttle:10,1']);
 

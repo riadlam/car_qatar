@@ -6,8 +6,8 @@ import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } f
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
-import { getWallet } from '../api/wallet';
 import Skeleton from '../components/ui/Skeleton';
+import WalletHistory from '../components/wallet/WalletHistory';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 
@@ -151,7 +151,6 @@ export default function Account() {
     const [draft, setDraft] = useState({});
     const [cardOpen, setCardOpen] = useState(false);
     const [cards, setCards] = useState([]);
-    const [wallet, setWallet] = useState(null);
     const [cardError, setCardError] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [saving, setSaving] = useState(false);
@@ -199,15 +198,6 @@ export default function Account() {
             .catch(() => {
                 if (!cancelled) setCards([]);
             });
-        if (isCustomer(user) || isPartnerAdmin(user)) {
-            getWallet()
-                .then((data) => {
-                    if (!cancelled) setWallet(data);
-                })
-                .catch(() => {
-                    if (!cancelled) setWallet(null);
-                });
-        }
         return () => {
             cancelled = true;
         };
@@ -403,50 +393,15 @@ export default function Account() {
                             />
                         </Section>
 
-                        {(isCustomer(user) || isPartnerAdmin(user)) && wallet ? (
+                        {(isCustomer(user) || isPartnerAdmin(user) || isActiveChauffeur(user)) ? (
                             <Section title="Wallet">
-                                <div className="rounded-xl border border-[#e8e8ea] bg-[#fafafa] px-4 py-5">
-                                    <p className="font-geist m-0 text-[13px] font-500 tracking-[0.04em] text-muted uppercase">
-                                        Available balance
-                                    </p>
-                                    <p className="font-fragment mt-2 m-0 text-[32px] leading-10 text-ink-text">
-                                        {wallet.currency} {Number(wallet.balance).toFixed(2)}
-                                    </p>
-                                    <p className="font-geist mt-2 m-0 text-[14px] text-muted">
-                                        Use your wallet at checkout when the balance covers the trip total.
-                                        Only AL MAJD admin can add funds.
-                                    </p>
-                                </div>
-                                {(wallet.transactions || []).length > 0 ? (
-                                    <ul className="mt-4 m-0 list-none space-y-2 p-0">
-                                        {wallet.transactions.slice(0, 8).map((tx) => (
-                                            <li
-                                                key={tx.id}
-                                                className="flex items-center justify-between gap-3 border-b border-[#f3f3f4] py-3 last:border-b-0"
-                                            >
-                                                <div>
-                                                    <p className="font-geist m-0 text-[14px] font-500 text-ink-text">
-                                                        {tx.type === 'credit' ? 'Credit' : 'Debit'}
-                                                        {tx.note ? ` · ${tx.note}` : ''}
-                                                    </p>
-                                                    <p className="font-geist mt-0.5 m-0 text-[12px] text-muted">
-                                                        {tx.created_at
-                                                            ? new Date(tx.created_at).toLocaleString()
-                                                            : ''}
-                                                    </p>
-                                                </div>
-                                                <p
-                                                    className={`font-geist m-0 text-[14px] font-500 ${
-                                                        tx.type === 'credit' ? 'text-wine-700' : 'text-ink-text'
-                                                    }`}
-                                                >
-                                                    {tx.type === 'credit' ? '+' : '−'}
-                                                    {wallet.currency} {Number(tx.amount).toFixed(2)}
-                                                </p>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : null}
+                                <WalletHistory
+                                    helperText={
+                                        isActiveChauffeur(user)
+                                            ? 'Funds added by AL MAJD appear here. Only admin can add balance.'
+                                            : 'Use your wallet at checkout when the balance covers the trip total. Only AL MAJD admin can add funds.'
+                                    }
+                                />
                             </Section>
                         ) : null}
 

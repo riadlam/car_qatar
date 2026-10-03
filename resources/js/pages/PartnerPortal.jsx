@@ -10,11 +10,13 @@ import {
     refreshPartnerPaymentLink,
 } from '../api/partner';
 import { getWallet } from '../api/wallet';
+import WalletHistory from '../components/wallet/WalletHistory';
 
 const TABS = [
     { id: 'overview', label: 'Overview', path: '/partner' },
     { id: 'book', label: 'Book a ride', path: '/partner/book' },
     { id: 'rides', label: 'Rides', path: '/partner/rides' },
+    { id: 'wallet', label: 'Wallet', path: '/partner/wallet' },
     { id: 'earnings', label: 'Earnings', path: '/partner/earnings' },
 ];
 
@@ -177,6 +179,12 @@ export default function PartnerPortal() {
                                     <p className="font-geist mt-1 m-0 text-[13px] text-muted">
                                         Use at checkout when balance covers the trip
                                     </p>
+                                    <Link
+                                        to="/partner/wallet"
+                                        className="font-geist mt-3 inline-flex text-[13px] font-500 text-wine-700 underline-offset-2 hover:underline"
+                                    >
+                                        View wallet history
+                                    </Link>
                                 </div>
                                 <div className="rounded-2xl border border-[#e8e8ea] bg-white p-5">
                                     <p className="font-geist m-0 text-[13px] text-muted uppercase">Earned</p>
@@ -286,6 +294,12 @@ export default function PartnerPortal() {
                                         </article>
                                     ))
                                 )}
+                            </div>
+                        )}
+
+                        {active.id === 'wallet' && (
+                            <div className="rounded-2xl border border-[#e8e8ea] bg-white p-5 sm:p-6">
+                                <WalletHistory helperText="Funds added by AL MAJD and trip payments from this wallet. Partner commission earnings are tracked separately under Earnings." />
                             </div>
                         )}
 

@@ -19,6 +19,7 @@ import {
 import { subscribePrivate } from '../echo';
 import useChauffeurLocation from '../hooks/useChauffeurLocation';
 import useChauffeurOfferPresence from '../hooks/useChauffeurOfferPresence';
+import WalletHistory from '../components/wallet/WalletHistory';
 
 const TABS = [
     {
@@ -248,6 +249,19 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                     )}
                 </section>
             </div>
+
+            <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
+                <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text">Wallet</h3>
+                <p className="font-geist mt-1 m-0 text-[14px] text-muted">
+                    Balance and history of funds added by AL MAJD.
+                </p>
+                <div className="mt-4">
+                    <WalletHistory
+                        showBalance
+                        helperText="Only AL MAJD admin can add funds to your wallet."
+                    />
+                </div>
+            </section>
 
             <RideHistorySection rides={rides} currency={profile.currency} />
         </div>
