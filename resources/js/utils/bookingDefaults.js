@@ -31,9 +31,9 @@ export function defaultPickupTime(leadMinutes = 20) {
  */
 export function detectCurrentPickup(options = {}) {
     const {
-        timeout = 12000,
-        maximumAge = 60000,
-        enableHighAccuracy = true,
+        timeout = 4000,
+        maximumAge = 120000,
+        enableHighAccuracy = false,
     } = options;
 
     return new Promise((resolve) => {
@@ -42,26 +42,44 @@ export function detectCurrentPickup(options = {}) {
             return;
         }
 
+        let settled = false;
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+        };
+
+        // Hard cap so a stuck GPS permission prompt cannot hang the UX.
+        const watchdog = window.setTimeout(() => finish(null), timeout + 500);
+
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 try {
                     const lat = Number(pos.coords.latitude);
                     const lng = Number(pos.coords.longitude);
                     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                        resolve(null);
+                        finish(null);
                         return;
                     }
-                    const place = await reverseGeocodeClient(lng, lat);
-                    resolve({
+                    const place = await Promise.race([
+                        reverseGeocodeClient(lng, lat),
+                        new Promise((r) => window.setTimeout(() => r(null), 3500)),
+                    ]);
+                    finish({
                         label: place?.label || place?.name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
                         coords: { lat, lng },
                         place_id: place?.place_id || null,
                     });
                 } catch {
-                    resolve(null);
+                    finish(null);
+                } finally {
+                    window.clearTimeout(watchdog);
                 }
             },
-            () => resolve(null),
+            () => {
+                window.clearTimeout(watchdog);
+                finish(null);
+            },
             { enableHighAccuracy, timeout, maximumAge },
         );
     });

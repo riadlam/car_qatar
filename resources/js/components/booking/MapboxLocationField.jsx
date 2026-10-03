@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import MapLocationModal from './MapLocationModal';
 import { getSearchScope } from '../../maps/searchScopes';
 import { useMapboxSearch } from '../../maps/useMapboxSearch';
 import Skeleton from '../ui/Skeleton';
+
+/** Mapbox GL modal is heavy — load only when the pin picker opens. */
+const MapLocationModal = lazy(() => import('./MapLocationModal'));
 
 const PinIcon = (
     <svg
@@ -294,30 +296,34 @@ export default function MapboxLocationField({
                     document.body,
                 )}
 
-            <MapLocationModal
-                open={pickerOpen}
-                label={label}
-                initialValue={value}
-                initialPlace={
-                    Number.isFinite(Number(coords?.lat)) && Number.isFinite(Number(coords?.lng))
-                        ? {
-                              label: value,
-                              lat: Number(coords.lat),
-                              lng: Number(coords.lng),
-                              place_id: coords.place_id,
-                              name: coords.name,
-                          }
-                        : null
-                }
-                searchScope={searchScope}
-                onClose={() => setPickerOpen(false)}
-                onSelect={(loc) => {
-                    onChange(loc.label);
-                    onPick?.(loc);
-                    setPickerOpen(false);
-                    closeMenu();
-                }}
-            />
+            {pickerOpen ? (
+                <Suspense fallback={null}>
+                    <MapLocationModal
+                        open={pickerOpen}
+                        label={label}
+                        initialValue={value}
+                        initialPlace={
+                            Number.isFinite(Number(coords?.lat)) && Number.isFinite(Number(coords?.lng))
+                                ? {
+                                      label: value,
+                                      lat: Number(coords.lat),
+                                      lng: Number(coords.lng),
+                                      place_id: coords.place_id,
+                                      name: coords.name,
+                                  }
+                                : null
+                        }
+                        searchScope={searchScope}
+                        onClose={() => setPickerOpen(false)}
+                        onSelect={(loc) => {
+                            onChange(loc.label);
+                            onPick?.(loc);
+                            setPickerOpen(false);
+                            closeMenu();
+                        }}
+                    />
+                </Suspense>
+            ) : null}
         </div>
     );
 }

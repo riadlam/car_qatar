@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { IMG } from './motion';
 import BookingWidget from './BookingWidget';
 import { useHeroAnim } from './useSectionAnim';
@@ -5,8 +6,23 @@ import { useHeroAnim } from './useSectionAnim';
 /** Sampled from the hero photo bottom — mobile extension colour (Blacklane-style) */
 const HERO_EXTEND = '#5b5754';
 
+function useIsDesktopHero() {
+    const [isDesktop, setIsDesktop] = useState(null);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(min-width: 1024px)');
+        const apply = () => setIsDesktop(mq.matches);
+        apply();
+        mq.addEventListener('change', apply);
+        return () => mq.removeEventListener('change', apply);
+    }, []);
+
+    return isDesktop;
+}
+
 export default function Hero() {
     const rootRef = useHeroAnim();
+    const isDesktop = useIsDesktopHero();
 
     return (
         <section id="top" ref={rootRef} aria-label="Hero section" className="relative w-full">
@@ -25,6 +41,7 @@ export default function Hero() {
                         src={IMG.hero}
                         alt=""
                         className="absolute inset-0 h-full w-full object-cover object-[center_25%]"
+                        fetchPriority="high"
                     />
                     {/* Nav readability */}
                     <div
@@ -54,7 +71,7 @@ export default function Hero() {
                     </h1>
 
                     <div data-anim="hero-widget" className="w-full max-w-lg">
-                        <BookingWidget variant="mobile" />
+                        {isDesktop === false ? <BookingWidget variant="mobile" /> : null}
                     </div>
                 </div>
             </div>
@@ -76,7 +93,7 @@ export default function Hero() {
                         Your chauffeur awaits.
                     </h1>
                     <div data-anim="hero-widget" className="w-full max-w-[1120px]">
-                        <BookingWidget variant="desktop" />
+                        {isDesktop === true ? <BookingWidget variant="desktop" /> : null}
                     </div>
                 </div>
             </div>
