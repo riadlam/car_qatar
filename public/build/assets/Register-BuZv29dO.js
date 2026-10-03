@@ -1,1 +1,0 @@
-import{j as t}from"./bootstrap-CuFGpVS_.js";import{N as r}from"./main-DYUzXGnn.js";import"./mapbox-gl-DECHpMMN.js";/* empty css            */function m(){return t.jsx(r,{to:"/login",replace:!0})}export{m as default};

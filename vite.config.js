@@ -21,17 +21,6 @@ export default defineConfig(({ mode }) => {
             react(),
             tailwindcss(),
         ],
-        build: {
-            rollupOptions: {
-                output: {
-                    manualChunks(id) {
-                        if (id.includes('node_modules/mapbox-gl')) {
-                            return 'mapbox-gl';
-                        }
-                    },
-                },
-            },
-        },
         server: {
             // Listen on all interfaces so the LAN IP can reach Vite
             host: '0.0.0.0',
