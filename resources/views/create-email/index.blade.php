@@ -16,13 +16,12 @@
     </div>
 
     @if (session('created'))
-        @php($created = session('created'))
         <div class="ok">
             <strong>Mailbox ready</strong>
-            <p style="margin: 0.55rem 0 0;">Address: <code>{{ $created['email'] }}</code></p>
-            <p style="margin: 0.35rem 0 0;">Password: <code>{{ $created['password'] }}</code></p>
+            <p style="margin: 0.55rem 0 0;">Address: <code>{{ session('created.email') }}</code></p>
+            <p style="margin: 0.35rem 0 0;">Password: <code>{{ session('created.password') }}</code></p>
             <p style="margin: 0.8rem 0 0;">
-                <a class="btn btn-primary" href="{{ $created['webmail_url'] }}" target="_blank" rel="noopener noreferrer">Open webmail</a>
+                <a class="btn btn-primary" href="{{ session('created.webmail_url') }}" target="_blank" rel="noopener noreferrer">Open webmail</a>
             </p>
             <p class="muted" style="margin: 0.7rem 0 0; font-size: 0.85rem;">Copy the password now — it won’t be shown again.</p>
         </div>
@@ -91,11 +90,7 @@
 </div>
 
 <script>
-    const words = @json([
-        'octanium','vellum','nimbus','cobalt','harbor','lumen','sable','quartz','meridian','cascade',
-        'ember','frost','glyph','helix','ivory','jasper','kestrel','lattice','marble','nebula','onyx',
-        'prism','quasar','ripple','solstice','timber','umbra','vortex'
-    ]);
+    const words = ["octanium","vellum","nimbus","cobalt","harbor","lumen","sable","quartz","meridian","cascade","ember","frost","glyph","helix","ivory","jasper","kestrel","lattice","marble","nebula","onyx","prism","quasar","ripple","solstice","timber","umbra","vortex"];
     const rand = (n) => Math.random().toString(36).slice(2, 2 + n);
     document.getElementById('gen-user')?.addEventListener('click', () => {
         const word = words[Math.floor(Math.random() * words.length)];

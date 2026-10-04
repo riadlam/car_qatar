@@ -2,6 +2,7 @@
 
 namespace App\Services\Cpanel;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -183,7 +184,8 @@ class CpanelEmailService
                 'Authorization' => 'cpanel '.$user.':'.$token,
             ])
             ->acceptJson()
-            ->timeout(30)
+            ->connectTimeout(8)
+            ->timeout(20)
             ->withOptions([
                 'verify' => $verify,
             ]);
