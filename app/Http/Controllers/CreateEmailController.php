@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Cpanel\CpanelEmailService;
+use App\Support\MailboxPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -89,20 +90,30 @@ class CreateEmailController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'username' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
-            'password' => ['required', 'string', 'min:8', 'max:128'],
+            'username' => ['required', 'string', 'min:3', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
+            'password' => ['required', 'string', 'min:10', 'max:128'],
+        ], [
+            'username.regex' => 'Username may only contain letters, numbers, and . _ + -',
+            'username.min' => 'Username must be at least 3 characters.',
+            'password.min' => 'Password must be at least 10 characters.',
         ]);
+
+        if ($error = MailboxPassword::validate($data['password'], $data['username'])) {
+            return back()
+                ->withInput($request->all() + ['_modal' => 'create'])
+                ->withErrors(['password' => $error]);
+        }
 
         try {
             $created = $this->emails->createAccount($data['username'], $data['password']);
         } catch (RuntimeException $e) {
             return back()
-                ->withInput(array_merge($request->except('password'), ['_modal' => 'create']))
-                ->withErrors(['username' => $e->getMessage()]);
+                ->withInput($request->all() + ['_modal' => 'create'])
+                ->withErrors(['password' => $e->getMessage()]);
         } catch (Throwable) {
             return back()
-                ->withInput(array_merge($request->except('password'), ['_modal' => 'create']))
-                ->withErrors(['username' => 'Could not create the mailbox. Try again.']);
+                ->withInput($request->all() + ['_modal' => 'create'])
+                ->withErrors(['password' => 'Could not create the mailbox. Try again.']);
         }
 
         return redirect()
@@ -118,19 +129,27 @@ class CreateEmailController extends Controller
     public function updatePassword(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'username' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
-            'password' => ['required', 'string', 'min:8', 'max:128'],
+            'username' => ['required', 'string', 'min:1', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
+            'password' => ['required', 'string', 'min:10', 'max:128'],
+        ], [
+            'password.min' => 'Password must be at least 10 characters.',
         ]);
+
+        if ($error = MailboxPassword::validate($data['password'], $data['username'])) {
+            return back()
+                ->withInput($request->all() + ['_modal' => 'password'])
+                ->withErrors(['password' => $error]);
+        }
 
         try {
             $updated = $this->emails->changePassword($data['username'], $data['password']);
         } catch (RuntimeException $e) {
             return back()
-                ->withInput(array_merge($request->except('password'), ['_modal' => 'password']))
+                ->withInput($request->all() + ['_modal' => 'password'])
                 ->withErrors(['password' => $e->getMessage()]);
         } catch (Throwable) {
             return back()
-                ->withInput(array_merge($request->except('password'), ['_modal' => 'password']))
+                ->withInput($request->all() + ['_modal' => 'password'])
                 ->withErrors(['password' => 'Could not update the password. Try again.']);
         }
 

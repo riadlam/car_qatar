@@ -203,6 +203,32 @@
             padding: 0.1rem 0.35rem;
         }
         body.modal-open { overflow: hidden; }
+        .hint {
+            margin: 0.45rem 0 0;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+        .req-list {
+            margin: 0.55rem 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 0.25rem;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+        .req-list li::before {
+            content: "• ";
+            color: #b0aaa2;
+        }
+        .req-list li.is-ok { color: var(--ok); }
+        .req-list li.is-ok::before { content: "✓ "; }
+        .field-error {
+            margin: 0.45rem 0 0;
+            font-size: 0.85rem;
+            color: var(--err);
+        }
     </style>
 </head>
 <body>

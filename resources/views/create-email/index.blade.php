@@ -77,19 +77,29 @@
             <div class="error">{{ $errors->first() }}</div>
         @endif
 
-        <form method="post" action="{{ route('create-email.store') }}" id="create-form">
+        <form method="post" action="{{ route('create-email.store') }}" id="create-form" novalidate>
             @csrf
             <input type="hidden" name="_modal" value="create">
             <div class="field">
                 <label for="username">Username</label>
                 <div class="row">
-                    <input id="username" type="text" name="username" value="{{ old('username', $suggestedLocal) }}" required autocomplete="off" pattern="[A-Za-z0-9._+\-]+">
+                    <input id="username" type="text" name="username" value="{{ old('username', $suggestedLocal) }}" required autocomplete="off" pattern="[A-Za-z0-9._+\-]{3,64}" minlength="3" maxlength="64">
                     <span class="suffix">{{ '@'.$domain }}</span>
                 </div>
+                <p class="hint">At least 3 characters. Letters, numbers, and . _ + - only.</p>
             </div>
             <div class="field">
                 <label for="password">Password</label>
-                <input id="password" type="text" name="password" value="{{ old('password', $suggestedPassword) }}" required minlength="8" autocomplete="new-password">
+                <input id="password" type="text" name="password" value="{{ old('password', $suggestedPassword) }}" required minlength="10" maxlength="128" autocomplete="new-password">
+                <ul class="req-list" data-req-for="password" data-user-for="username">
+                    <li data-req="length">At least 10 characters</li>
+                    <li data-req="lower">One lowercase letter</li>
+                    <li data-req="upper">One uppercase letter</li>
+                    <li data-req="digit">One number</li>
+                    <li data-req="symbol">One symbol (! @ # $ %)</li>
+                    <li data-req="username">Does not contain the username</li>
+                </ul>
+                <p class="field-error" data-form-error hidden></p>
             </div>
             <div class="actions">
                 <button class="btn btn-ghost" type="button" id="gen-user">Suggest username</button>
@@ -115,7 +125,7 @@
             <div class="error">{{ $errors->first() }}</div>
         @endif
 
-        <form method="post" action="{{ route('create-email.password') }}" id="password-form">
+        <form method="post" action="{{ route('create-email.password') }}" id="password-form" novalidate>
             @csrf
             <input type="hidden" name="_modal" value="password">
             <div class="field">
@@ -127,7 +137,16 @@
             </div>
             <div class="field">
                 <label for="pw-password">New password</label>
-                <input id="pw-password" type="text" name="password" value="{{ old('password', $suggestedPassword) }}" required minlength="8" autocomplete="new-password">
+                <input id="pw-password" type="text" name="password" value="{{ old('password', $suggestedPassword) }}" required minlength="10" maxlength="128" autocomplete="new-password">
+                <ul class="req-list" data-req-for="pw-password" data-user-for="pw-username">
+                    <li data-req="length">At least 10 characters</li>
+                    <li data-req="lower">One lowercase letter</li>
+                    <li data-req="upper">One uppercase letter</li>
+                    <li data-req="digit">One number</li>
+                    <li data-req="symbol">One symbol (! @ # $ %)</li>
+                    <li data-req="username">Does not contain the username</li>
+                </ul>
+                <p class="field-error" data-form-error hidden></p>
             </div>
             <div class="actions">
                 <button class="btn btn-ghost" type="button" id="gen-pw-pass">Generate password</button>
@@ -164,10 +183,88 @@
     const words = ["vellum","nimbus","cobalt","harbor","lumen","sable","quartz","meridian","cascade","ember","frost","glyph","helix","ivory","jasper","kestrel","lattice","marble","nebula","onyx","prism","quasar","ripple","solstice","timber","umbra","vortex"];
     const rand = (n) => Math.random().toString(36).slice(2, 2 + n);
     const genPassword = () => {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
-        let out = '';
-        for (let i = 0; i < 16; i++) out += chars[Math.floor(Math.random() * chars.length)];
-        return out;
+        const lower = 'abcdefghijkmnopqrstuvwxyz';
+        const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const digits = '23456789';
+        const symbols = '!@#$%*?';
+        const all = lower + upper + digits + symbols;
+        const pick = (set) => set[Math.floor(Math.random() * set.length)];
+        const chars = [pick(lower), pick(upper), pick(digits), pick(symbols)];
+        while (chars.length < 16) chars.push(pick(all));
+        for (let i = chars.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+        }
+        return chars.join('');
+    };
+
+    const passwordIssues = (password, username) => {
+        const issues = [];
+        if (password.length < 10) issues.push('Password must be at least 10 characters.');
+        if (!/[a-z]/.test(password)) issues.push('Password must include a lowercase letter.');
+        if (!/[A-Z]/.test(password)) issues.push('Password must include an uppercase letter.');
+        if (!/[0-9]/.test(password)) issues.push('Password must include a number.');
+        if (!/[^A-Za-z0-9]/.test(password)) issues.push('Password must include a symbol (for example ! @ # $ %).');
+        if (username && password.toLowerCase().includes(username.toLowerCase())) {
+            issues.push('Password must not contain the username.');
+        }
+        return issues;
+    };
+
+    const paintRequirements = (list) => {
+        if (!list) return;
+        const pass = document.getElementById(list.dataset.reqFor);
+        const user = document.getElementById(list.dataset.userFor);
+        if (!pass) return;
+        const value = pass.value || '';
+        const username = (user?.value || '').toLowerCase();
+        list.querySelectorAll('[data-req]').forEach((li) => {
+            const key = li.dataset.req;
+            let ok = false;
+            if (key === 'length') ok = value.length >= 10;
+            if (key === 'lower') ok = /[a-z]/.test(value);
+            if (key === 'upper') ok = /[A-Z]/.test(value);
+            if (key === 'digit') ok = /[0-9]/.test(value);
+            if (key === 'symbol') ok = /[^A-Za-z0-9]/.test(value);
+            if (key === 'username') ok = !username || !value.toLowerCase().includes(username);
+            li.classList.toggle('is-ok', ok);
+        });
+    };
+
+    const bindPasswordForm = (form) => {
+        const pass = form.querySelector('input[name="password"]');
+        const user = form.querySelector('input[name="username"]');
+        const list = form.querySelector('.req-list');
+        const errorEl = form.querySelector('[data-form-error]');
+        const refresh = () => paintRequirements(list);
+        pass?.addEventListener('input', refresh);
+        user?.addEventListener('input', refresh);
+        refresh();
+
+        form.addEventListener('submit', (e) => {
+            const username = (user?.value || '').trim();
+            const password = (pass?.value || '').trim();
+            const issues = [];
+            if (!/^[A-Za-z0-9._+-]{1,64}$/.test(username) || (form.id === 'create-form' && username.length < 3)) {
+                issues.push(form.id === 'create-form'
+                    ? 'Username must be at least 3 characters and use only letters, numbers, and . _ + -'
+                    : 'Mailbox username is invalid.');
+            }
+            issues.push(...passwordIssues(password, username));
+            if (issues.length) {
+                e.preventDefault();
+                if (errorEl) {
+                    errorEl.hidden = false;
+                    errorEl.textContent = issues[0];
+                }
+                refresh();
+                return;
+            }
+            if (errorEl) {
+                errorEl.hidden = true;
+                errorEl.textContent = '';
+            }
+        });
     };
 
     const openModal = (id) => {
@@ -193,6 +290,7 @@
                 const sub = document.getElementById('password-subtitle');
                 if (sub) sub.textContent = full ? `Set a new password for ${full}.` : 'Set a new password for this mailbox.';
                 document.getElementById('pw-password').value = genPassword();
+                paintRequirements(document.querySelector('#password-form .req-list'));
                 openModal('modal-password');
                 return;
             }
@@ -218,12 +316,18 @@
     document.getElementById('gen-user')?.addEventListener('click', () => {
         const word = words[Math.floor(Math.random() * words.length)];
         document.getElementById('username').value = word + rand(3);
+        paintRequirements(document.querySelector('#create-form .req-list'));
     });
     document.getElementById('gen-pass')?.addEventListener('click', () => {
         document.getElementById('password').value = genPassword();
+        paintRequirements(document.querySelector('#create-form .req-list'));
     });
     document.getElementById('gen-pw-pass')?.addEventListener('click', () => {
         document.getElementById('pw-password').value = genPassword();
+        paintRequirements(document.querySelector('#password-form .req-list'));
     });
+
+    bindPasswordForm(document.getElementById('create-form'));
+    bindPasswordForm(document.getElementById('password-form'));
 </script>
 @endsection

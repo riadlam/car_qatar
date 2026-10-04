@@ -2,6 +2,7 @@
 
 namespace App\Services\Cpanel;
 
+use App\Support\MailboxPassword;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -109,8 +110,8 @@ class CpanelEmailService
         if ($local === '') {
             throw new RuntimeException('Username is required.');
         }
-        if (strlen($password) < 8) {
-            throw new RuntimeException('Password must be at least 8 characters.');
+        if ($error = MailboxPassword::validate($password, $local)) {
+            throw new RuntimeException($error);
         }
 
         $this->uapi('Email', 'add_pop', [
@@ -141,8 +142,8 @@ class CpanelEmailService
         if ($local === '') {
             throw new RuntimeException('Mailbox is required.');
         }
-        if (strlen($password) < 8) {
-            throw new RuntimeException('Password must be at least 8 characters.');
+        if ($error = MailboxPassword::validate($password, $local)) {
+            throw new RuntimeException($error);
         }
 
         $this->uapi('Email', 'passwd_pop', [
@@ -174,9 +175,7 @@ class CpanelEmailService
 
     public function generatePassword(int $length = 16): string
     {
-        $length = max(12, min(32, $length));
-
-        return Str::password($length, symbols: true);
+        return MailboxPassword::generate($length);
     }
 
     public function normalizeLocalPart(string $localPart): string
@@ -251,15 +250,23 @@ class CpanelEmailService
             throw new RuntimeException('Unable to reach the mail service. Try again later.');
         }
 
+        $json = $response->json();
+        if (is_array($json) && empty($json['ok'])) {
+            $message = trim((string) ($json['error'] ?? ''));
+            if ($message === 'Unknown action') {
+                throw new RuntimeException('Password change is not enabled on the mail bridge yet. Update mail-bridge.php on the mail host.');
+            }
+            if ($message !== '') {
+                throw new RuntimeException($this->sanitizeMailError($message));
+            }
+        }
+
         if (! $response->successful()) {
             throw new RuntimeException('Unable to reach the mail service. Try again later.');
         }
 
-        $json = $response->json();
         if (! is_array($json) || empty($json['ok'])) {
-            $message = is_array($json) ? (string) ($json['error'] ?? '') : '';
-            $message = trim($message) !== '' ? $message : 'Unable to reach the mail service. Try again later.';
-            throw new RuntimeException($message);
+            throw new RuntimeException('Unable to reach the mail service. Try again later.');
         }
 
         $payload = $json['payload'] ?? null;
@@ -285,11 +292,22 @@ class CpanelEmailService
         if ((int) $status !== 1) {
             $message = is_array($errors) ? implode(' ', array_filter($errors)) : (string) $errors;
             $message = trim($message) !== '' ? $message : 'Mail account request failed.';
-            $message = preg_replace('/cpanel|whm|server|hosting/i', 'mail service', $message) ?: $message;
-            throw new RuntimeException($message);
+            throw new RuntimeException($this->sanitizeMailError($message));
         }
 
         return $json;
+    }
+
+    private function sanitizeMailError(string $message): string
+    {
+        $message = preg_replace('/cpanel|whm|server|hosting|127\.0\.0\.1|:2083|octenium|quantum/i', 'mail service', $message) ?: $message;
+        $message = trim($message);
+
+        if ($message === '' || strcasecmp($message, 'Mail service request failed') === 0 || strcasecmp($message, 'failed') === 0) {
+            return 'The mail service rejected this request. Check the username/password and try again.';
+        }
+
+        return $message;
     }
 
     private function client(): PendingRequest

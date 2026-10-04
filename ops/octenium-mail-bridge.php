@@ -59,9 +59,24 @@ try {
         $email = preg_replace('/@.*$/', '', $email) ?: '';
         $email = preg_replace('/[^a-z0-9._+-]/', '', $email) ?: '';
 
-        if ($email === '' || strlen($password) < 8) {
+        if ($email === '') {
             http_response_code(422);
-            echo json_encode(['ok' => false, 'error' => 'Invalid username or password']);
+            echo json_encode(['ok' => false, 'error' => 'Username is required.']);
+            exit;
+        }
+        if (strlen($password) < 10
+            || ! preg_match('/[a-z]/', $password)
+            || ! preg_match('/[A-Z]/', $password)
+            || ! preg_match('/[0-9]/', $password)
+            || ! preg_match('/[^A-Za-z0-9]/', $password)
+        ) {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'Password must be at least 10 characters and include uppercase, lowercase, a number, and a symbol.']);
+            exit;
+        }
+        if (str_contains(strtolower($password), $email)) {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'Password must not contain the username.']);
             exit;
         }
 
@@ -83,9 +98,13 @@ try {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'Unknown action']);
 } catch (Throwable $e) {
-    http_response_code(502);
-    // Keep message generic — do not leak host/provider details to callers.
-    echo json_encode(['ok' => false, 'error' => 'Mail service request failed']);
+    $message = trim((string) $e->getMessage());
+    $message = preg_replace('/cpanel|whm|server|hosting|127\.0\.0\.1|:2083|octenium|quantum/i', 'mail service', $message) ?: $message;
+    if ($message === '' || preg_match('/curl|ssl|http\s*\d+/i', $message)) {
+        $message = 'The mail service rejected this request. Check the username/password and try again.';
+    }
+    http_response_code(422);
+    echo json_encode(['ok' => false, 'error' => $message]);
 }
 
 /**
