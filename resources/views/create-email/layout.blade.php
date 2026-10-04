@@ -16,6 +16,7 @@
             --wine-hover: #7a0a2c;
             --ok: #0f6b3a;
             --err: #9b1c1c;
+            --overlay: rgba(20, 16, 14, 0.45);
         }
         * { box-sizing: border-box; }
         body {
@@ -66,6 +67,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0.35rem;
         }
         .btn-primary { background: var(--wine); color: #fff; }
         .btn-primary:hover { background: var(--wine-hover); }
@@ -74,6 +76,7 @@
             color: var(--ink);
             border: 1px solid var(--line);
         }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .field { margin-bottom: 1rem; }
         .field label {
             display: block;
@@ -124,7 +127,7 @@
             padding: 1rem;
             margin-bottom: 1rem;
         }
-        .ok code {
+        .ok code, .modal code {
             display: inline-block;
             background: rgba(255,255,255,0.7);
             padding: 0.15rem 0.4rem;
@@ -143,12 +146,11 @@
             font-size: 0.95rem;
         }
         th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .grid {
-            display: grid;
-            gap: 1rem;
-        }
-        @media (min-width: 860px) {
-            .grid { grid-template-columns: 1.1fr 0.9fr; align-items: start; }
+        .row-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: flex-end;
         }
         .login-wrap {
             min-height: 100vh;
@@ -157,6 +159,50 @@
             padding: 1.5rem;
         }
         .login-card { width: min(420px, 100%); }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 40;
+        }
+        .modal-backdrop.is-open { display: flex; }
+        .modal {
+            width: min(480px, 100%);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 1.35rem 1.4rem 1.45rem;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+            max-height: calc(100vh - 2rem);
+            overflow: auto;
+        }
+        .modal h2 {
+            margin: 0 0 0.35rem;
+            font-size: 1.45rem;
+            font-weight: 400;
+        }
+        .modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .modal-close {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 0.1rem 0.35rem;
+        }
+        body.modal-open { overflow: hidden; }
     </style>
 </head>
 <body>

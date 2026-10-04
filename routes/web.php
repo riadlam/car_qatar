@@ -34,6 +34,9 @@ Route::prefix('create_email')->group(function () {
         Route::post('/', [CreateEmailController::class, 'store'])
             ->middleware('throttle:10,1')
             ->name('create-email.store');
+        Route::post('/password', [CreateEmailController::class, 'updatePassword'])
+            ->middleware('throttle:10,1')
+            ->name('create-email.password');
     });
 });
 

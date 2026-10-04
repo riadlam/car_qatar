@@ -65,13 +65,14 @@ class CpanelEmailService
             if (! is_array($row)) {
                 continue;
             }
+            $login = strtolower(trim((string) ($row['login'] ?? '')));
+            if ($login === 'main account') {
+                continue;
+            }
+
             $email = (string) ($row['email'] ?? $row['login'] ?? '');
             if ($email === '' || ! str_contains($email, '@')) {
-                $user = (string) ($row['user'] ?? $row['login'] ?? '');
-                if ($user === '') {
-                    continue;
-                }
-                $email = str_contains($user, '@') ? $user : $user.'@'.$domain;
+                continue;
             }
 
             [$local, $acctDomain] = array_pad(explode('@', $email, 2), 2, $domain);
@@ -79,9 +80,14 @@ class CpanelEmailService
                 continue;
             }
 
+            $local = strtolower(trim($local));
+            if ($local === '') {
+                continue;
+            }
+
             $accounts[] = [
                 'local' => $local,
-                'email' => strtolower($local.'@'.$domain),
+                'email' => $local.'@'.$domain,
                 'domain' => $domain,
             ];
         }
@@ -123,12 +129,47 @@ class CpanelEmailService
         ];
     }
 
-    public function generateAnonymousLocalPart(): string
+    /**
+     * @return array{email: string, password: string, webmail_url: string}
+     */
+    public function changePassword(string $localPart, string $password): array
+    {
+        $domain = $this->domain();
+        $local = $this->normalizeLocalPart($localPart);
+        $password = trim($password);
+
+        if ($local === '') {
+            throw new RuntimeException('Mailbox is required.');
+        }
+        if (strlen($password) < 8) {
+            throw new RuntimeException('Password must be at least 8 characters.');
+        }
+
+        $this->uapi('Email', 'passwd_pop', [
+            'email' => $local,
+            'password' => $password,
+            'domain' => $domain,
+        ]);
+
+        return [
+            'email' => $local.'@'.$domain,
+            'password' => $password,
+            'webmail_url' => $this->webmailUrl(),
+        ];
+    }
+
+    public function generateSuggestedLocalPart(): string
     {
         $word = self::ANON_WORDS[array_rand(self::ANON_WORDS)];
         $suffix = Str::lower(Str::random(3));
 
         return $word.$suffix;
+    }
+
+    /** @deprecated Use generateSuggestedLocalPart() */
+    public function generateAnonymousLocalPart(): string
+    {
+        return $this->generateSuggestedLocalPart();
     }
 
     public function generatePassword(int $length = 16): string
@@ -183,6 +224,7 @@ class CpanelEmailService
         $action = match ("{$module}::{$function}") {
             'Email::list_pops' => 'list_pops',
             'Email::add_pop' => 'add_pop',
+            'Email::passwd_pop' => 'passwd_pop',
             default => null,
         };
 
@@ -191,7 +233,7 @@ class CpanelEmailService
         }
 
         $body = ['action' => $action];
-        if ($action === 'add_pop') {
+        if ($action === 'add_pop' || $action === 'passwd_pop') {
             $body['email'] = (string) ($params['email'] ?? '');
             $body['password'] = (string) ($params['password'] ?? '');
         }

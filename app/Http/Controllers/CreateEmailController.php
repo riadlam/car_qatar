@@ -80,8 +80,9 @@ class CreateEmailController extends Controller
             'listError' => $listError,
             'domain' => $this->emails->domain(),
             'webmailUrl' => $this->emails->webmailUrl(),
-            'suggestedLocal' => $this->emails->generateAnonymousLocalPart(),
+            'suggestedLocal' => $this->emails->generateSuggestedLocalPart(),
             'suggestedPassword' => $this->emails->generatePassword(),
+            'openModal' => old('_modal', session('open_modal')),
         ]);
     }
 
@@ -96,20 +97,50 @@ class CreateEmailController extends Controller
             $created = $this->emails->createAccount($data['username'], $data['password']);
         } catch (RuntimeException $e) {
             return back()
-                ->withInput($request->except('password'))
+                ->withInput(array_merge($request->except('password'), ['_modal' => 'create']))
                 ->withErrors(['username' => $e->getMessage()]);
         } catch (Throwable) {
             return back()
-                ->withInput($request->except('password'))
+                ->withInput(array_merge($request->except('password'), ['_modal' => 'create']))
                 ->withErrors(['username' => 'Could not create the mailbox. Try again.']);
         }
 
         return redirect()
             ->route('create-email.index')
-            ->with('created', [
+            ->with('flash_result', [
+                'title' => 'Email ready',
                 'email' => $created['email'],
                 'password' => $created['password'],
                 'webmail_url' => $created['webmail_url'],
+            ]);
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'username' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
+            'password' => ['required', 'string', 'min:8', 'max:128'],
+        ]);
+
+        try {
+            $updated = $this->emails->changePassword($data['username'], $data['password']);
+        } catch (RuntimeException $e) {
+            return back()
+                ->withInput(array_merge($request->except('password'), ['_modal' => 'password']))
+                ->withErrors(['password' => $e->getMessage()]);
+        } catch (Throwable) {
+            return back()
+                ->withInput(array_merge($request->except('password'), ['_modal' => 'password']))
+                ->withErrors(['password' => 'Could not update the password. Try again.']);
+        }
+
+        return redirect()
+            ->route('create-email.index')
+            ->with('flash_result', [
+                'title' => 'Password updated',
+                'email' => $updated['email'],
+                'password' => $updated['password'],
+                'webmail_url' => $updated['webmail_url'],
             ]);
     }
 }

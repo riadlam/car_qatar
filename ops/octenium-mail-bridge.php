@@ -53,7 +53,7 @@ try {
         exit;
     }
 
-    if ($action === 'add_pop') {
+    if ($action === 'add_pop' || $action === 'passwd_pop') {
         $email = strtolower(trim((string) ($body['email'] ?? '')));
         $password = (string) ($body['password'] ?? '');
         $email = preg_replace('/@.*$/', '', $email) ?: '';
@@ -65,12 +65,17 @@ try {
             exit;
         }
 
-        $payload = uapi('Email', 'add_pop', [
+        $function = $action === 'add_pop' ? 'add_pop' : 'passwd_pop';
+        $params = [
             'email' => $email,
             'password' => $password,
             'domain' => EMAIL_DOMAIN,
-            'quota' => 0,
-        ]);
+        ];
+        if ($action === 'add_pop') {
+            $params['quota'] = 0;
+        }
+
+        $payload = uapi('Email', $function, $params);
         echo json_encode(['ok' => true, 'payload' => $payload]);
         exit;
     }

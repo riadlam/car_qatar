@@ -54,7 +54,7 @@ return [
         'bridge_url' => rtrim((string) env('CPANEL_BRIDGE_URL', ''), '/'),
         'bridge_secret' => env('CPANEL_BRIDGE_SECRET'),
         'email_domain' => env('CPANEL_EMAIL_DOMAIN', 'almajdluxurytransport.com'),
-        'webmail_url' => rtrim((string) env('CPANEL_WEBMAIL_URL', 'https://almajdluxurytransport.com:2096'), '/'),
+        'webmail_url' => rtrim((string) env('CPANEL_WEBMAIL_URL', 'https://webmail.almajdluxurytransport.com'), '/'),
         'verify_ssl' => filter_var(env('CPANEL_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
