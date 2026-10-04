@@ -30,9 +30,19 @@ class CpanelEmailService
 
     public function isConfigured(): bool
     {
+        if ($this->usesBridge()) {
+            return filled(config('services.cpanel.bridge_url'))
+                && filled(config('services.cpanel.bridge_secret'));
+        }
+
         return filled(config('services.cpanel.host'))
             && filled(config('services.cpanel.user'))
             && filled(config('services.cpanel.api_token'));
+    }
+
+    public function usesBridge(): bool
+    {
+        return filled(config('services.cpanel.bridge_url'));
     }
 
     /**
@@ -147,6 +157,10 @@ class CpanelEmailService
             throw new RuntimeException('Email service is not configured.');
         }
 
+        if ($this->usesBridge()) {
+            return $this->bridgeCall($module, $function, $params);
+        }
+
         try {
             $response = $this->client()->get("/execute/{$module}/{$function}", $params);
         } catch (Throwable) {
@@ -157,7 +171,68 @@ class CpanelEmailService
             throw new RuntimeException('Unable to reach the mail service. Try again later.');
         }
 
+        return $this->assertUapiOk($response->json());
+    }
+
+    /**
+     * @param  array<string, scalar|null>  $params
+     * @return array<string, mixed>
+     */
+    private function bridgeCall(string $module, string $function, array $params = []): array
+    {
+        $action = match ("{$module}::{$function}") {
+            'Email::list_pops' => 'list_pops',
+            'Email::add_pop' => 'add_pop',
+            default => null,
+        };
+
+        if ($action === null) {
+            throw new RuntimeException('Mail action is not supported.');
+        }
+
+        $body = ['action' => $action];
+        if ($action === 'add_pop') {
+            $body['email'] = (string) ($params['email'] ?? '');
+            $body['password'] = (string) ($params['password'] ?? '');
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'X-Bridge-Secret' => (string) config('services.cpanel.bridge_secret'),
+                'Accept' => 'application/json',
+            ])
+                ->acceptJson()
+                ->connectTimeout(8)
+                ->timeout(25)
+                ->post((string) config('services.cpanel.bridge_url'), $body);
+        } catch (Throwable) {
+            throw new RuntimeException('Unable to reach the mail service. Try again later.');
+        }
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Unable to reach the mail service. Try again later.');
+        }
+
         $json = $response->json();
+        if (! is_array($json) || empty($json['ok'])) {
+            $message = is_array($json) ? (string) ($json['error'] ?? '') : '';
+            $message = trim($message) !== '' ? $message : 'Unable to reach the mail service. Try again later.';
+            throw new RuntimeException($message);
+        }
+
+        $payload = $json['payload'] ?? null;
+        if (! is_array($payload)) {
+            throw new RuntimeException('Unexpected mail service response.');
+        }
+
+        return $this->assertUapiOk($payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function assertUapiOk(mixed $json): array
+    {
         if (! is_array($json)) {
             throw new RuntimeException('Unexpected mail service response.');
         }
@@ -168,7 +243,6 @@ class CpanelEmailService
         if ((int) $status !== 1) {
             $message = is_array($errors) ? implode(' ', array_filter($errors)) : (string) $errors;
             $message = trim($message) !== '' ? $message : 'Mail account request failed.';
-            // Never leak host/provider wording from raw cPanel errors when possible.
             $message = preg_replace('/cpanel|whm|server|hosting/i', 'mail service', $message) ?: $message;
             throw new RuntimeException($message);
         }

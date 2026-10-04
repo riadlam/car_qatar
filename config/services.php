@@ -50,6 +50,9 @@ return [
         'host' => rtrim((string) env('CPANEL_HOST', ''), '/'),
         'user' => env('CPANEL_USER'),
         'api_token' => env('CPANEL_API_TOKEN'),
+        // Optional HTTPS bridge on Octenium (use when VPS cannot reach :2083).
+        'bridge_url' => rtrim((string) env('CPANEL_BRIDGE_URL', ''), '/'),
+        'bridge_secret' => env('CPANEL_BRIDGE_SECRET'),
         'email_domain' => env('CPANEL_EMAIL_DOMAIN', 'almajdluxurytransport.com'),
         'webmail_url' => rtrim((string) env('CPANEL_WEBMAIL_URL', 'https://almajdluxurytransport.com:2096'), '/'),
         'verify_ssl' => filter_var(env('CPANEL_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
