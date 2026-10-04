@@ -46,4 +46,18 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/auth/google/callback'),
     ],
 
+    'cpanel' => [
+        'host' => rtrim((string) env('CPANEL_HOST', ''), '/'),
+        'user' => env('CPANEL_USER'),
+        'api_token' => env('CPANEL_API_TOKEN'),
+        'email_domain' => env('CPANEL_EMAIL_DOMAIN', 'almajdluxurytransport.com'),
+        'webmail_url' => rtrim((string) env('CPANEL_WEBMAIL_URL', 'https://almajdluxurytransport.com:2096'), '/'),
+        'verify_ssl' => filter_var(env('CPANEL_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    'create_email_gate' => [
+        'email' => env('CREATE_EMAIL_GATE_EMAIL'),
+        'password' => env('CREATE_EMAIL_GATE_PASSWORD'),
+    ],
+
 ];

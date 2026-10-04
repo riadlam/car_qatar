@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureActiveChauffeur;
 use App\Http\Middleware\EnsureActivePartner;
+use App\Http\Middleware\EnsureCreateEmailGate;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureCustomerOrPartner;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer.or.partner' => EnsureCustomerOrPartner::class,
             'chauffeur.active' => EnsureActiveChauffeur::class,
             'partner.active' => EnsureActivePartner::class,
+            'create.email.gate' => EnsureCreateEmailGate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
