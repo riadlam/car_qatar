@@ -2,11 +2,11 @@
 
 namespace App\Services\Cpanel;
 
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class CpanelEmailService
 {
@@ -147,7 +147,11 @@ class CpanelEmailService
             throw new RuntimeException('Email service is not configured.');
         }
 
-        $response = $this->client()->get("/execute/{$module}/{$function}", $params);
+        try {
+            $response = $this->client()->get("/execute/{$module}/{$function}", $params);
+        } catch (Throwable) {
+            throw new RuntimeException('Unable to reach the mail service. Try again later.');
+        }
 
         if (! $response->successful()) {
             throw new RuntimeException('Unable to reach the mail service. Try again later.');

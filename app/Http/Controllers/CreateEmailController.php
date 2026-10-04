@@ -71,8 +71,8 @@ class CreateEmailController extends Controller
             } else {
                 $accounts = $this->emails->listAccounts();
             }
-        } catch (Throwable $e) {
-            $listError = $e->getMessage();
+        } catch (Throwable) {
+            $listError = 'Unable to reach the mail service. Try again later.';
         }
 
         return view('create-email.index', [
