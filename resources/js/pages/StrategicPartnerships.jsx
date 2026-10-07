@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import CardCarousel from '../components/corporations/CardCarousel';
 import CalloutBanner from '../components/corporations/CalloutBanner';
@@ -5,64 +7,35 @@ import SeoSplit from '../components/corporations/SeoSplit';
 import Benefits from '../components/strategicPartnerships/Benefits';
 import { SP_IMG, PARTNERS_HREF } from '../components/strategicPartnerships/assets';
 
-const PARTNER_CARDS = [
-    {
-        title: 'Aviation',
-        body: 'Deliver market-leading chauffeur service for your First and Business Class guests.',
-        img: SP_IMG.aviation,
-        bullets: [
-            'Rely on a trusted partner for top commercial airlines',
-            'Serve your high-value airline guests globally',
-            'Work with tailored solutions for complimentary, ancillary, and crew services',
-        ],
-    },
-    {
-        title: 'Cruise',
-        body: "Elevate your guests' experience with a chauffeured transfer.",
-        img: SP_IMG.cruise,
-        bullets: [
-            'Deliver your guests a seamless door-to-door experience',
-            'Take advantage of our local expertise with port and airport pickups',
-            'Fully white-label complimentary ride booking solution available',
-        ],
-    },
-    {
-        title: 'Financial services',
-        body: 'Offer added-value benefits to your high net worth cardmembers.',
-        img: SP_IMG.financial,
-        bullets: [
-            'Complimentary transfer booking for air travel',
-            'Enhanced offerings for cardmember-paid services',
-            'Support team experienced serving high-value customers in the financial sector',
-        ],
-    },
-    {
-        title: 'Hotel',
-        body: 'Extend hospitality and provide exceptional travel experiences beyond the hotel doors.',
-        img: SP_IMG.hotel,
-        bullets: [
-            'Treat your high-value guests to complimentary airport transfers',
-            'Offer guests city excursions and tours using our by-the-hour service',
-            'Rely on our global experience in serving travelers worldwide',
-        ],
-    },
-];
-
 function Hero() {
+    const { t } = useTranslation('marketing');
+
     return (
         <div
             id="top"
             className="relative mx-auto flex w-full min-w-[320px] flex-col bg-page pt-[72px] lg:pt-[88px]"
         >
             <section className="box-border mx-auto w-full max-w-[1170px] px-4 sm:px-6">
-                <h1 className="font-fragment m-0 my-5 p-0 text-[32px] leading-10 font-400 tracking-[0.15px] text-ink-text md:text-[40px] md:leading-[48px] lg:text-[44px] lg:leading-[56px]">
-                    Partnership Opportunities with AL MAJD
+                <p className="font-geist m-0 mt-5 text-[14px] leading-5 font-500 tracking-[0.15px] text-wine-700 uppercase">
+                    {t('strategicPartnerships.eyebrow')}
+                </p>
+                <h1 className="font-fragment m-0 my-4 p-0 text-[32px] leading-10 font-400 tracking-[0.15px] text-ink-text md:text-[40px] md:leading-[48px] lg:text-[44px] lg:leading-[56px]">
+                    {t('strategicPartnerships.title')}
                 </h1>
+                <p className="font-geist m-0 mb-5 max-w-[720px] text-[16px] leading-7 text-ink-text/75 md:text-[17px]">
+                    {t('strategicPartnerships.subtitle')}
+                </p>
+                <a
+                    href="#get-in-touch"
+                    className="font-geist mb-5 inline-flex min-h-12 items-center justify-center rounded-full bg-wine-700 px-8 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                >
+                    {t('strategicPartnerships.cta')}
+                </a>
             </section>
             <div className="relative z-0 w-full overflow-hidden">
                 <img
                     src={SP_IMG.hero}
-                    alt="An AL MAJD chauffeur sits in the driver's seat of a limousine, smiling and looking over his shoulder into the back seat."
+                    alt={t('strategicPartnerships.heroAlt')}
                     loading="eager"
                     className="block h-[264px] w-full object-cover object-center md:h-[370px] min-[1200px]:h-[400px] min-[1440px]:h-[550px]"
                 />
@@ -72,32 +45,39 @@ function Hero() {
 }
 
 function Breadcrumb() {
+    const { t } = useTranslation('marketing');
+
     return (
-        <nav aria-label="Breadcrumb" className="bg-page px-6 py-4 text-center lg:px-12">
+        <nav aria-label={t('common.breadcrumb')} className="bg-page px-6 py-4 text-center lg:px-12">
             <ol className="font-geist m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 text-[14px] leading-5 text-muted">
                 <li>
                     <a href="/" className="text-ink-text transition hover:text-wine-700">
-                        Home
+                        {t('common.home')}
                     </a>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li aria-current="page">Partnership Opportunities with AL MAJD</li>
+                <li aria-current="page">{t('strategicPartnerships.breadcrumbCurrent')}</li>
             </ol>
         </nav>
     );
 }
 
 function Awards() {
-    const awards = [
-        { src: SP_IMG.awardLux, alt: 'LUX Life Leaders in Luxury Awards' },
-        { src: SP_IMG.awardTravel, alt: 'Business Travel Awards Europe 2024' },
-        { src: SP_IMG.awardWorld, alt: 'World Travel Awards Winner' },
-    ];
+    const { t } = useTranslation('marketing');
+    const awards = useMemo(
+        () => [
+            { src: SP_IMG.awardLux, alt: t('common.awardLux') },
+            { src: SP_IMG.awardTravel, alt: t('common.awardTravel') },
+            { src: SP_IMG.awardWorld, alt: t('common.awardWorld') },
+        ],
+        [t],
+    );
+
     return (
         <section className="bg-page px-6 py-12 text-center lg:px-12 lg:py-16">
             <div className="mx-auto max-w-[1170px]">
                 <p className="font-geist m-0 mb-8 text-[16px] leading-6 font-500 tracking-[0.15px] text-ink-text lg:text-[18px]">
-                    Award-winning chauffeur service
+                    {t('common.awardWinning')}
                 </p>
                 <div className="flex flex-col items-center justify-center gap-8 lg:flex-row lg:gap-0">
                     {awards.map((a, i) => (
@@ -118,39 +98,56 @@ function Awards() {
 }
 
 export default function StrategicPartnerships() {
+    const { t } = useTranslation('marketing');
+
+    const partnerCards = useMemo(
+        () =>
+            ['aviation', 'cruise', 'financial', 'hotel'].map((key) => ({
+                title: t(`strategicPartnerships.partners.${key}.title`),
+                body: t(`strategicPartnerships.partners.${key}.body`),
+                img: SP_IMG[key],
+                bullets: [
+                    t(`strategicPartnerships.partners.${key}.b1`),
+                    t(`strategicPartnerships.partners.${key}.b2`),
+                    t(`strategicPartnerships.partners.${key}.b3`),
+                ],
+            })),
+        [t],
+    );
+
     return (
         <SiteLayout>
             <Hero />
             <Breadcrumb />
-            <CardCarousel title="Become an AL MAJD partner" cards={PARTNER_CARDS} />
+            <CardCarousel title={t('strategicPartnerships.carouselTitle')} cards={partnerCards} />
             <Benefits />
             <SeoSplit
                 imageOn="left"
-                title="Explore our API integrations"
-                body="From instant bookings to streamlined cancellations, our cutting-edge integrations with global booking platforms make corporate travel effortless. Sync, scale, and simplify—without missing a beat."
+                title={t('strategicPartnerships.seo.api.title')}
+                body={t('strategicPartnerships.seo.api.body')}
                 bullets={[
                     {
-                        lead: 'Global GDS integration:',
-                        text: 'Book and manage trips via Sabre, Amadeus, and Travelport with full functionality.',
+                        lead: t('strategicPartnerships.seo.api.gdsLead'),
+                        text: t('strategicPartnerships.seo.api.gdsText'),
                     },
                     {
-                        lead: 'Top OBT compatibility:',
-                        text: 'Leverage tools like SAP Concur and Navan for real-time bookings, directly integrated into your existing workflows.',
+                        lead: t('strategicPartnerships.seo.api.obtLead'),
+                        text: t('strategicPartnerships.seo.api.obtText'),
                     },
                     {
-                        lead: 'Instant access, real-time updates:',
-                        text: 'Live pricing, availability, and trip details keep you in control and your clients on track, no matter the destination.',
+                        lead: t('strategicPartnerships.seo.api.realtimeLead'),
+                        text: t('strategicPartnerships.seo.api.realtimeText'),
                     },
                 ]}
                 image={SP_IMG.seoApi}
-                alt="A slow-capture of a cityscape at sunset."
-                cta={{ label: 'Learn more', href: '/business' }}
+                alt={t('strategicPartnerships.seo.api.alt')}
+                cta={{ label: t('strategicPartnerships.seo.api.cta'), href: '/business' }}
             />
             <Awards />
             <CalloutBanner
-                title="Join as a chauffeur partner today."
-                body="Own or manage premium vehicles? Let's talk."
-                cta="Become a chauffeur partner"
+                title={t('strategicPartnerships.callout.title')}
+                body={t('strategicPartnerships.callout.body')}
+                cta={t('strategicPartnerships.callout.cta')}
                 href={PARTNERS_HREF}
             />
         </SiteLayout>

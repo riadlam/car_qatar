@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import CardCarousel from '../components/corporations/CardCarousel';
 import CtaStrip from '../components/corporations/CtaStrip';
@@ -53,17 +54,18 @@ const BEACH_CARDS = [
 ];
 
 function HeroScheduler({ stacked = false, explore }) {
+    const { t } = useTranslation('marketing');
     return (
         <DestinationScheduler
             destinations={explore.destinations}
             selectedDestination={explore.selectedDestination}
             onDestinationChange={explore.setSelectedDestination}
-            destinationLabel="Beach / resort"
-            destinationPlaceholder="Search beaches & resorts in Qatar…"
-            pickupPlaceholder="Address, airport, hotel, ..."
+            destinationLabel={t('explore.beaches.destLabel')}
+            destinationPlaceholder={t('explore.beaches.destPlaceholder')}
+            pickupPlaceholder={t('explore.scheduler.pickupPlaceholder')}
             service="one_way"
-            title="Schedule your beach transfer"
-            subtitle="Pick a Qatar beach or resort, set pickup time, and view chauffeur options."
+            title={t('explore.beaches.scheduleTitle')}
+            subtitle={t('explore.beaches.scheduleSubtitle')}
             stacked={stacked}
         />
     );
@@ -86,11 +88,14 @@ function useIsPhone() {
 }
 
 function Hero({ explore }) {
+    const { t } = useTranslation('marketing');
     const isPhone = useIsPhone();
+    const heroTitle = t('explore.beaches.title');
+    const heroSubtitle = t('explore.beaches.subtitle');
 
     if (isPhone) {
         return (
-            <section id="top" className="bg-white" aria-label="Beaches and resorts in Qatar">
+            <section id="top" className="bg-white" aria-label={heroTitle}>
                 <div
                     className="relative flex min-h-[100svh] flex-col justify-center rounded-b-[16px] bg-cover bg-center px-3 py-4 pt-[72px]"
                     style={{
@@ -111,10 +116,10 @@ function Hero({ explore }) {
                     <div className="relative z-10 flex w-full -translate-y-[4%] flex-col items-center gap-3 sm:max-w-xl sm:self-center sm:gap-4">
                         <div className="w-full px-1 text-center">
                             <h1 className="font-fragment m-0 text-[32px] leading-9 font-400 tracking-[0.25px] text-white sm:text-[40px] sm:leading-[48px]">
-                                Beaches and resorts
+                                {heroTitle}
                             </h1>
                             <p className="font-geist mt-1.5 m-0 text-[15px] leading-6 font-500 tracking-[0.15px] text-white/90 sm:text-[18px] sm:leading-7">
-                                Chauffeur transfers to Qatar&apos;s shores and resorts.
+                                {heroSubtitle}
                             </p>
                         </div>
 
@@ -128,7 +133,7 @@ function Hero({ explore }) {
     }
 
     return (
-        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label="Beaches and resorts in Qatar">
+        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label={heroTitle}>
             <div className="relative">
                 <div
                     className="relative flex min-h-[90svh] flex-col rounded-b-[16px] bg-cover bg-center pt-[120px] lg:min-h-[92svh] lg:pt-[132px]"
@@ -150,11 +155,10 @@ function Hero({ explore }) {
                     <div className="relative z-[1] mt-auto flex w-full flex-col items-center px-6 pb-32 text-center lg:pb-36">
                         <div className="mx-auto flex w-full max-w-[900px] flex-col items-center gap-3 lg:gap-4">
                             <h1 className="font-fragment m-0 text-[56px] leading-[64px] font-400 tracking-[0.25px] text-white lg:text-[72px] lg:leading-[80px]">
-                                Beaches and resorts
+                                {heroTitle}
                             </h1>
                             <p className="font-geist m-0 text-[24px] leading-8 font-500 tracking-[0.15px] text-white lg:text-[30px] lg:leading-10">
-                                Hotel to shoreline — chauffeured day trips across Qatar&apos;s beaches
-                                and island resorts.
+                                {heroSubtitle}
                             </p>
                         </div>
                     </div>
@@ -169,26 +173,28 @@ function Hero({ explore }) {
 }
 
 function Breadcrumb() {
+    const { t } = useTranslation('marketing');
     return (
-        <nav aria-label="Breadcrumb" className="bg-page px-6 py-4 text-center lg:px-12">
+        <nav aria-label={t('common.breadcrumb')} className="bg-page px-6 py-4 text-center lg:px-12">
             <ol className="font-geist m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 text-[14px] leading-5 text-muted">
                 <li>
                     <a href="/" className="text-ink-text transition hover:text-wine-700">
-                        Home
+                        {t('common.home')}
                     </a>
                 </li>
                 <li aria-hidden="true">/</li>
                 <li>
-                    <span className="text-ink-text">Explore Qatar</span>
+                    <span className="text-ink-text">{t('explore.qatar')}</span>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li aria-current="page">Beaches and resorts</li>
+                <li aria-current="page">{t('explore.beaches.title')}</li>
             </ol>
         </nav>
     );
 }
 
 export default function Beaches() {
+    const { t } = useTranslation('marketing');
     const explore = useExploreCategory('beach', BEACH_CARDS, BEACH_DESTINATIONS);
 
     return (
@@ -196,58 +202,58 @@ export default function Beaches() {
             <Hero explore={explore} />
             <Breadcrumb />
             <CardCarousel
-                title="Shores and resorts we drive to daily"
+                title={t('explore.beaches.carouselTitle')}
                 cards={explore.cards}
                 onCardClick={explore.onCardClick}
             />
             <CalloutBanner
-                title="Skip the parking — keep the sea view"
-                body="Curb-side drop-off at beaches and resorts, then a calm ride back when you’re ready."
-                cta="Schedule a transfer"
+                title={t('explore.beaches.calloutSee.title')}
+                body={t('explore.beaches.calloutSee.body')}
+                cta={t('explore.beaches.calloutSee.cta')}
                 href="#schedule"
             />
             <SeoSplit
                 imageOn="right"
-                title="Arrive at the sand, not the car park"
-                body="From Katara Beach to Sealine and Banana Island, we time your transfer so you step out ready — towels optional, logistics handled."
+                title={t('explore.beaches.seoArrive.title')}
+                body={t('explore.beaches.seoArrive.body')}
                 bullets={[
-                    'Beach and resort entrance drop-offs across Qatar',
-                    'Hotel-to-beach and beach-to-hotel transfers',
-                    'Hamad Airport links for same-day coastal trips',
+                    t('explore.beaches.seoArrive.b1'),
+                    t('explore.beaches.seoArrive.b2'),
+                    t('explore.beaches.seoArrive.b3'),
                 ]}
                 image={BEACH_IMG.seoBeach}
-                alt="Beach destination in Qatar"
+                alt={t('explore.beaches.seoArrive.alt')}
             />
             <SeoSplit
                 imageOn="left"
-                title="Resort day, one chauffeur"
-                body="Planning Sealine then a West Bay dinner? Use by-the-hour service and keep the same vehicle for a seamless coastal day."
+                title={t('explore.beaches.seoHourly.title')}
+                body={t('explore.beaches.seoHourly.body')}
                 bullets={[
-                    'By-the-hour beach and resort itineraries',
-                    'Flexible wait-and-return options',
-                    'Local chauffeurs who know Mesaieed, Lusail, and Pearl access',
+                    t('explore.beaches.seoHourly.b1'),
+                    t('explore.beaches.seoHourly.b2'),
+                    t('explore.beaches.seoHourly.b3'),
                 ]}
                 image={BEACH_IMG.seoTransfer}
-                alt="Resort transfer in Qatar"
-                cta={{ label: 'Book by the hour', href: '/?service=by_hour#book' }}
+                alt={t('explore.beaches.seoHourly.alt')}
+                cta={{ label: t('common.bookByTheHour'), href: '/?service=by_hour#book' }}
             />
             <SeoSplit
                 imageOn="right"
-                title="Island and lagoon escapes without the logistics"
-                body="Premium fleet and clear pricing before you confirm — built for guests who want Qatar’s shoreline, not the route planning."
+                title={t('explore.beaches.seoMeet.title')}
+                body={t('explore.beaches.seoMeet.body')}
                 bullets={[
-                    'Punctual morning and sunset runs',
-                    'Complimentary waiting time on transfers',
-                    'Discreet service for families and VIP resort stays',
+                    t('explore.beaches.seoMeet.b1'),
+                    t('explore.beaches.seoMeet.b2'),
+                    t('explore.beaches.seoMeet.b3'),
                 ]}
                 image={BEACH_IMG.seoResort}
-                alt="Coastal resort day in Qatar"
+                alt={t('explore.beaches.seoMeet.alt')}
             />
-            <CtaStrip label="Schedule your beach transfer" href="#schedule" />
+            <CtaStrip label={t('explore.beaches.ctaStrip')} href="#schedule" />
             <CalloutBanner
-                title="Ready when you are"
-                body="Choose a beach or resort above, or start from the homepage booking widget for any trip type."
-                cta="Back to booking"
+                title={t('common.readyWhen')}
+                body={t('explore.beaches.ready.body')}
+                cta={t('common.backToBooking')}
                 href={BOOK_HREF}
             />
             <ScrollTop />

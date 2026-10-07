@@ -32,7 +32,7 @@ class StoreBookingRequest extends FormRequest
             // No card, PayPal, or Stripe charge until a payment processor is connected.
             'payment_method_id' => ['prohibited'],
             'customer_notes' => ['nullable', 'string', 'max:2000'],
-            'preferred_language' => ['nullable', 'string', Rule::in(['eng', 'ind', 'fr', 'phil', 'esp', 'jor', 'ita', 'ar'])],
+            'preferred_language' => ['nullable', 'string', Rule::in(['en', 'ar'])],
             'preferred_chauffeur_gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'for_myself' => ['nullable', 'boolean'],
             'guest' => ['nullable', 'array'],

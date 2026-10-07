@@ -1,0 +1,61 @@
+{
+  "title": "Journeys",
+  "subtitle": "Track upcoming rides, past trips, and cancellations in one place.",
+  "search": {
+    "aria": "Search",
+    "placeholder": "Search by booking number, location, or name",
+    "inputAria": "Search by booking number, location, or name"
+  },
+  "tabs": {
+    "aria": "Ride list filter",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "cancelled": "Canceled"
+  },
+  "empty": {
+    "upcomingTitle": "No upcoming bookings yet",
+    "upcomingBody": "Your bookings will appear here once you schedule a journey.",
+    "pastTitle": "No past bookings yet",
+    "pastBody": "Completed journeys will show up here.",
+    "cancelledTitle": "No canceled bookings",
+    "cancelledBody": "Canceled journeys will appear in this list.",
+    "loadErrorTitle": "Could not load journeys",
+    "bookJourney": "Book a journey"
+  },
+  "count": {
+    "one": "{{count}} Booking",
+    "other": "{{count}} Bookings",
+    "matching": " matching “{{query}}”"
+  },
+  "errors": {
+    "load": "Could not load your journeys."
+  },
+  "card": {
+    "bookingNumber": "Booking {{number}}",
+    "pickup": "Pick-up",
+    "dropoff": "Drop-off",
+    "chauffeur": "Chauffeur",
+    "vehicle": "Vehicle",
+    "flight": "Flight",
+    "notes": "Notes",
+    "viewDetails": "View details",
+    "cancel": "Cancel booking",
+    "cancelling": "Cancelling…",
+    "status": {
+      "upcoming": "Upcoming",
+      "past": "Completed",
+      "cancelled": "Canceled",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "inProgress": "In progress"
+    }
+  },
+  "detail": {
+    "title": "Journey details",
+    "back": "Back to journeys",
+    "timeline": "Timeline",
+    "passenger": "Passenger",
+    "share": "Share details",
+    "support": "Contact support"
+  }
+}

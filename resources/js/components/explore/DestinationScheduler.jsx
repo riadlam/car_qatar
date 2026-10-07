@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { forwardGeocodeClient } from '../../maps/useMapboxSearch';
 import Select, { components as selectComponents } from 'react-select';
 import MapboxLocationField from '../booking/MapboxLocationField';
@@ -146,9 +147,9 @@ function OptionWithArea(props) {
  */
 export default function DestinationScheduler({
     destinations = [],
-    destinationLabel = 'Drop-off location',
-    destinationPlaceholder = 'Choose a destination',
-    pickupPlaceholder = 'Address, airport, hotel, ...',
+    destinationLabel,
+    destinationPlaceholder,
+    pickupPlaceholder,
     service = 'tourist_trip',
     title,
     subtitle,
@@ -156,6 +157,7 @@ export default function DestinationScheduler({
     selectedDestination = undefined,
     onDestinationChange,
 }) {
+    const { t } = useTranslation('marketing');
     const navigate = useNavigate();
     const uid = useId();
     const [internalDestination, setInternalDestination] = useState(null);
@@ -166,6 +168,11 @@ export default function DestinationScheduler({
     const [touched, setTouched] = useState(false);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    const destLabel = destinationLabel ?? t('explore.scheduler.dropoffDefault');
+    const destPlaceholder = destinationPlaceholder ?? t('explore.scheduler.chooseDestDefault');
+    // pickupPlaceholder reserved for MapboxLocationField when it accepts a prop
+    void pickupPlaceholder;
 
     const isControlled = selectedDestination !== undefined;
     const destination = isControlled ? selectedDestination : internalDestination;
@@ -229,23 +236,23 @@ export default function DestinationScheduler({
         const todayKey = todayLocal();
 
         if (pickupCoords?.lat == null || pickupCoords?.lng == null) {
-            setError('Choose a pickup location from the suggestions.');
+            setError(t('explore.scheduler.choosePickup'));
             return;
         }
         if (!selectValue) {
-            setError('Please choose a destination.');
+            setError(t('explore.scheduler.chooseDestination'));
             return;
         }
         if (!date) {
-            setError('Choose a date.');
+            setError(t('explore.scheduler.chooseDate'));
             return;
         }
         if (date < todayKey) {
-            setError('Choose a date that is today or later.');
+            setError(t('explore.scheduler.chooseDateToday'));
             return;
         }
         if (!time) {
-            setError('Choose a pickup time.');
+            setError(t('explore.scheduler.chooseTime'));
             return;
         }
 
@@ -276,7 +283,7 @@ export default function DestinationScheduler({
             setSubmitting(false);
         }
         if (dropLat == null || dropLng == null) {
-            setError('This destination has no map location yet.');
+            setError(t('explore.scheduler.noMap'));
             return;
         }
 
@@ -338,7 +345,7 @@ export default function DestinationScheduler({
                     <MapboxLocationField
                         id={`${uid}-pickup`}
                         name="pickup-location"
-                        label="Pickup location"
+                        label={t('explore.scheduler.pickup')}
                         value={pickup}
                         coords={pickupCoords}
                         onChange={(v) => {
@@ -351,7 +358,7 @@ export default function DestinationScheduler({
                         required
                     />
 
-                    <Field id={`${uid}-destination`} label={destinationLabel} endAdornment={Chevron}>
+                    <Field id={`${uid}-destination`} label={destLabel} endAdornment={Chevron}>
                         <Select
                             inputId={`${uid}-destination`}
                             instanceId={`${uid}-dest-select`}
@@ -361,7 +368,7 @@ export default function DestinationScheduler({
                                 setDestination(opt);
                                 setTouched(true);
                             }}
-                            placeholder={destinationPlaceholder}
+                            placeholder={destPlaceholder}
                             isClearable
                             isSearchable
                             menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
@@ -370,8 +377,8 @@ export default function DestinationScheduler({
                             components={{ Option: OptionWithArea }}
                             classNamePrefix="almajd-select"
                             className="w-full min-w-0"
-                            aria-label={destinationLabel}
-                            noOptionsMessage={() => 'No matches in Qatar'}
+                            aria-label={destLabel}
+                            noOptionsMessage={() => t('explore.scheduler.noMatches')}
                         />
                     </Field>
                 </div>
@@ -394,7 +401,7 @@ export default function DestinationScheduler({
                             : 'flex-col gap-4 sm:flex-row sm:gap-3 lg:w-[439px] lg:max-w-[38%]'
                     }`}
                 >
-                    <Field id={`${uid}-date`} label="Date" endAdornment={Chevron}>
+                    <Field id={`${uid}-date`} label={t('explore.scheduler.date')} endAdornment={Chevron}>
                         <input
                             id={`${uid}-date`}
                             name="pickup-date"
@@ -404,11 +411,11 @@ export default function DestinationScheduler({
                             min={todayLocal()}
                             onChange={(e) => setDate(e.target.value)}
                             className={`${inputCls} cursor-pointer [color-scheme:light]`}
-                            aria-label="Select a date"
+                            aria-label={t('explore.scheduler.selectDate')}
                             data-cy="date-picker-input"
                         />
                     </Field>
-                    <Field id={`${uid}-time`} label="Pickup time" endAdornment={Chevron}>
+                    <Field id={`${uid}-time`} label={t('explore.scheduler.pickupTime')} endAdornment={Chevron}>
                         <input
                             id={`${uid}-time`}
                             name="pickup-time"
@@ -417,7 +424,7 @@ export default function DestinationScheduler({
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
                             className={`${inputCls} cursor-pointer [color-scheme:light]`}
-                            aria-label="Pickup time"
+                            aria-label={t('explore.scheduler.pickupTime')}
                         />
                     </Field>
                 </div>
@@ -440,14 +447,14 @@ export default function DestinationScheduler({
                         disabled={submitting}
                         className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] leading-6 font-500 tracking-[0.15px] whitespace-nowrap text-white transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-70 lg:min-h-10 lg:min-w-[9.5rem] lg:py-2"
                     >
-                        {submitting ? 'Finding destination…' : 'View options'}
+                        {submitting ? t('explore.scheduler.finding') : t('explore.scheduler.viewOptions')}
                     </button>
                 </div>
             </form>
 
             {error || (touched && !selectValue) ? (
                 <p className="font-geist mt-3 m-0 text-[13px] text-wine-500" role="alert">
-                    {error || 'Please choose a destination.'}
+                    {error || t('explore.scheduler.chooseDestination')}
                 </p>
             ) : null}
         </div>

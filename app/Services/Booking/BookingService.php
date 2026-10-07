@@ -75,7 +75,7 @@ class BookingService
 
         if (empty($data['vehicle_class_id']) && empty($data['vehicle_class'])) {
             throw ValidationException::withMessages([
-                'vehicle_class_id' => ['A vehicle class is required to create a single quote.'],
+                'vehicle_class_id' => [__('api.booking.vehicle_class_required')],
             ]);
         }
 
@@ -100,7 +100,7 @@ class BookingService
 
         if ($options === []) {
             throw ValidationException::withMessages([
-                'service_type' => ['No priced vehicle classes available for this service.'],
+                'service_type' => [__('api.booking.no_priced_classes')],
             ]);
         }
 
@@ -198,31 +198,31 @@ class BookingService
 
         if ($quote->status !== QuoteStatus::Priced) {
             throw ValidationException::withMessages([
-                'quote_id' => ['Quote must be in priced status to convert.'],
+                'quote_id' => [__('api.booking.quote_not_priced')],
             ]);
         }
 
         if ($quote->expires_at && $quote->expires_at->isPast()) {
             throw ValidationException::withMessages([
-                'quote_id' => ['This quote has expired. Refresh the price and try again.'],
+                'quote_id' => [__('api.booking.quote_expired')],
             ]);
         }
 
         if ($quote->user_id !== null && (int) $quote->user_id !== (int) $user->id) {
             throw ValidationException::withMessages([
-                'quote_id' => ['This quote does not belong to you.'],
+                'quote_id' => [__('api.booking.quote_not_yours')],
             ]);
         }
 
         if (! $quote->vehicle_class_id) {
             throw ValidationException::withMessages([
-                'quote_id' => ['Quote is missing a vehicle class.'],
+                'quote_id' => [__('api.booking.quote_missing_class')],
             ]);
         }
 
         if (! $quote->pickup_at) {
             throw ValidationException::withMessages([
-                'quote_id' => ['Quote is missing a pickup time.'],
+                'quote_id' => [__('api.booking.quote_missing_pickup')],
             ]);
         }
 
@@ -234,7 +234,7 @@ class BookingService
             $forMyself = (bool) ($payload['for_myself'] ?? false);
             if ($forMyself || empty($payload['guest'])) {
                 throw ValidationException::withMessages([
-                    'guest' => ['Partner bookings require guest traveler details.'],
+                    'guest' => [__('api.booking.partner_guest_required')],
                 ]);
             }
         }
@@ -242,7 +242,7 @@ class BookingService
         $billing = BillingProfile::query()->where('user_id', $user->id)->first();
         if (! $billing && ! $isPartnerBooking) {
             throw ValidationException::withMessages([
-                'billing' => ['Add billing information before booking.'],
+                'billing' => [__('api.booking.billing_required')],
             ]);
         }
 
@@ -294,19 +294,19 @@ class BookingService
 
             if ($quote->status !== QuoteStatus::Priced) {
                 throw ValidationException::withMessages([
-                    'quote_id' => ['Quote must be in priced status to convert.'],
+                    'quote_id' => [__('api.booking.quote_not_priced')],
                 ]);
             }
 
             if ($quote->expires_at && $quote->expires_at->isPast()) {
                 throw ValidationException::withMessages([
-                    'quote_id' => ['This quote has expired. Refresh the price and try again.'],
+                    'quote_id' => [__('api.booking.quote_expired')],
                 ]);
             }
 
             if ($quote->user_id !== null && (int) $quote->user_id !== (int) $user->id) {
                 throw ValidationException::withMessages([
-                    'quote_id' => ['This quote does not belong to you.'],
+                    'quote_id' => [__('api.booking.quote_not_yours')],
                 ]);
             }
 
@@ -454,13 +454,13 @@ class BookingService
     {
         if ($booking->status === BookingStatus::Cancelled) {
             throw ValidationException::withMessages([
-                'booking' => ['Booking is already cancelled.'],
+                'booking' => [__('api.booking.already_cancelled')],
             ]);
         }
 
         if (in_array($booking->status, [BookingStatus::Completed], true)) {
             throw ValidationException::withMessages([
-                'booking' => ['Completed bookings cannot be cancelled.'],
+                'booking' => [__('api.booking.completed_cannot_cancel')],
             ]);
         }
 
@@ -631,7 +631,7 @@ class BookingService
 
         if (! $service) {
             throw ValidationException::withMessages([
-                'service_type' => ['Unknown or inactive service type.'],
+                'service_type' => [__('api.booking.unknown_service')],
             ]);
         }
 
@@ -655,7 +655,7 @@ class BookingService
 
         if (! $class) {
             throw ValidationException::withMessages([
-                'vehicle_class_id' => ['Unknown or inactive vehicle class.'],
+                'vehicle_class_id' => [__('api.booking.unknown_vehicle_class')],
             ]);
         }
 
@@ -941,7 +941,7 @@ class BookingService
         $pickup = $quote->pickupLocation;
         if (! $pickup) {
             throw ValidationException::withMessages([
-                'quote_id' => ['This quote has expired and cannot be refreshed.'],
+                'quote_id' => [__('api.booking.quote_cannot_refresh')],
             ]);
         }
 

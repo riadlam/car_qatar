@@ -23,6 +23,7 @@ class UpdateProfileRequest extends FormRequest
         $isCompany = $accountType === 'company';
 
         return [
+            'role' => ['prohibited'],
             'account_type' => ['sometimes', 'string', Rule::in(['individual', 'company'])],
             'title' => ['sometimes', 'nullable', 'string', Rule::in(['Mr.', 'Mrs.', 'Ms.', 'Mx.'])],
             'first_name' => [$isIndividual && $this->has('first_name') ? 'required' : 'sometimes', 'nullable', 'string', 'max:255'],
@@ -30,9 +31,9 @@ class UpdateProfileRequest extends FormRequest
             'company_name' => [$isCompany && ($this->has('company_name') || $this->has('company')) ? 'required' : 'sometimes', 'nullable', 'string', 'max:255'],
             'company' => ['sometimes', 'nullable', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'min:8', 'max:30'],
-            'preferred_language' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'preferred_language' => ['sometimes', 'nullable', 'string', Rule::in(['en', 'ar'])],
             'street_address' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'language' => ['sometimes', 'string', Rule::in(['en', 'fr', 'ar', 'de'])],
+            'language' => ['sometimes', 'string', Rule::in(['en', 'ar'])],
             'marketing_emails' => ['sometimes', 'boolean'],
             'booking_notifications' => ['sometimes', 'string', Rule::in(['email_sms', 'email', 'sms', 'off'])],
         ];

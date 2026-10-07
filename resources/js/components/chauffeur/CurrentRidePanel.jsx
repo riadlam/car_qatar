@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import TripLiveMap from '../journeys/TripLiveMap';
 import { cancelChauffeurRide, updateChauffeurRideStatus } from '../../api/bookings';
 import CancelReasonModal from '../journeys/CancelReasonModal';
@@ -60,11 +61,11 @@ function metersBetween(lat1, lng1, lat2, lng2) {
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
-function ctaLabel(nextStatus) {
-    if (nextStatus === 'arrived') return 'Arrived — waiting for client';
-    if (nextStatus === 'in_progress') return 'Start trip';
-    if (nextStatus === 'completed') return 'Arrived at drop-off';
-    if (nextStatus === 'en_route') return 'On the way';
+function ctaLabel(nextStatus, t) {
+    if (nextStatus === 'arrived') return t('current.arrivedWaiting');
+    if (nextStatus === 'in_progress') return t('current.startTrip');
+    if (nextStatus === 'completed') return t('current.arrivedDropoff');
+    if (nextStatus === 'en_route') return t('current.enRoute');
     return null;
 }
 
@@ -74,6 +75,7 @@ function ctaLabel(nextStatus) {
  * Status advances only when the chauffeur taps the primary CTA.
  */
 export default function CurrentRidePanel({ ride, onUpdated }) {
+    const { t } = useTranslation('chauffeur');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [cancelOpen, setCancelOpen] = useState(false);
@@ -84,10 +86,8 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-wine-50 text-wine-700">
                     <NavIcon />
                 </div>
-                <p className="font-fragment mt-5 m-0 text-[22px] text-ink-text">No ride in progress</p>
-                <p className="font-geist mt-2 m-0 max-w-md text-[15px] text-muted">
-                    When you accept an offer, the trip and passenger details will appear here.
-                </p>
+                <p className="font-fragment mt-5 m-0 text-[22px] text-ink-text">{t('current.emptyTitle')}</p>
+                <p className="font-geist mt-2 m-0 max-w-md text-[15px] text-muted">{t('current.emptyBody')}</p>
             </div>
         );
     }
@@ -102,7 +102,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
     const atPickup = ride.status === 'arrived';
     const tripStarted = ride.status === 'in_progress';
     const nextStatus = ride.next_status || null;
-    const primaryLabel = ctaLabel(nextStatus);
+    const primaryLabel = ctaLabel(nextStatus, t);
 
     const nearPickup =
         hasCar &&
@@ -114,9 +114,9 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
         metersBetween(ride.car_lat, ride.car_lng, ride.drop_lat, ride.drop_lng) <= ARRIVAL_HINT_METERS;
 
     let proximityHint = null;
-    if (nextStatus === 'arrived' && nearPickup) proximityHint = 'You’re at the pickup';
-    if (nextStatus === 'completed' && nearDropoff) proximityHint = 'You’re at the drop-off';
-    if (nextStatus === 'in_progress' && nearPickup) proximityHint = 'Passenger ready? Start when you’re both set';
+    if (nextStatus === 'arrived' && nearPickup) proximityHint = t('current.atPickup');
+    if (nextStatus === 'completed' && nearDropoff) proximityHint = t('current.atDropoff');
+    if (nextStatus === 'in_progress' && nearPickup) proximityHint = t('current.passengerReady');
 
     const mapsUrl = finite(ride.lat) && finite(ride.lng) && finite(targetLat) && finite(targetLng)
         ? `https://www.google.com/maps/dir/?api=1&origin=${hasCar ? ride.car_lat : ride.lat},${hasCar ? ride.car_lng : ride.lng}&destination=${targetLat},${targetLng}&travelmode=driving`
@@ -134,7 +134,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
             setError(
                 err?.response?.data?.message ||
                     err?.response?.data?.errors?.status?.[0] ||
-                    'Could not update this trip step.',
+                    t('current.updateError'),
             );
         } finally {
             setBusy(false);
@@ -150,12 +150,19 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
             setCancelOpen(false);
             onUpdated?.(updated);
         } catch (err) {
-            setError(err?.response?.data?.message || err?.response?.data?.errors?.ride?.[0] || 'Could not cancel this trip.');
+            setError(err?.response?.data?.message || err?.response?.data?.errors?.ride?.[0] || t('current.cancelError'));
             throw err;
         } finally {
             setBusy(false);
         }
     };
+
+    const bookingLine = [
+        ride.booking_id ? t('current.booking', { id: ride.booking_id }) : '',
+        ride.booking_number || '',
+    ]
+        .filter(Boolean)
+        .join(ride.booking_id && ride.booking_number ? ' · ' : '');
 
     return (
         <>
@@ -182,10 +189,10 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                 <div className="absolute inset-x-3 top-3 z-[5] flex max-w-lg items-center justify-between gap-3 rounded-xl border border-white/70 bg-white/95 px-3 py-2.5 shadow-md backdrop-blur sm:inset-x-4">
                     <div className="min-w-0">
                         <p className="font-geist m-0 text-[11px] font-600 tracking-wide text-wine-700 uppercase">
-                            {ride.status_label || 'Assigned'}
+                            {ride.status_label || t('current.assigned')}
                         </p>
                         <p className="font-geist m-0 mt-0.5 truncate text-[14px] font-500 text-ink-text">
-                            {eta != null ? `${eta} min` : 'ETA unavailable'}
+                            {eta != null ? t('current.etaMinutes', { count: eta }) : t('current.etaUnavailable')}
                         </p>
                     </div>
                     <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -211,18 +218,15 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                Current ride
+                                {t('title.current')}
                             </p>
                             <h2 className="font-fragment mt-1 m-0 text-[24px] font-400 text-ink-text">
                                 {ride.mode_label}
                             </h2>
-                            <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                                {ride.booking_id ? `Booking ${ride.booking_id}` : ''}
-                                {ride.booking_number ? `${ride.booking_id ? ' · ' : ''}${ride.booking_number}` : ''}
-                            </p>
+                            <p className="font-geist mt-1 m-0 text-[14px] text-muted">{bookingLine}</p>
                         </div>
                         <div className="text-right">
-                            <p className="font-geist m-0 text-[12px] text-muted uppercase">Payout</p>
+                            <p className="font-geist m-0 text-[12px] text-muted uppercase">{t('offers.payout')}</p>
                             <p className="font-geist m-0 text-[22px] font-600 tabular-nums text-ink-text">
                                 {formatPayout(ride.payout, ride.currency)}
                             </p>
@@ -240,10 +244,10 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                             <div className="min-w-0 pb-4">
                                 <p className="font-geist m-0 text-[12px] text-muted">
                                     {pickupDone
-                                        ? 'Pickup · done'
+                                        ? t('current.pickupDone')
                                         : atPickup
-                                          ? 'Pickup · waiting'
-                                          : 'Pickup'}
+                                          ? t('current.pickupWaiting')
+                                          : t('current.pickup')}
                                 </p>
                                 <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{ride.pickup}</p>
                             </div>
@@ -255,12 +259,12 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                             <div className="min-w-0">
                                 <p className="font-geist m-0 text-[12px] text-wine-700 font-500">
                                     {tripStarted && eta != null
-                                        ? `Drop-off · ${eta} min`
+                                        ? t('current.dropoffEta', { count: eta })
                                         : tripStarted
-                                          ? 'Drop-off · trip started'
+                                          ? t('current.dropoffStarted')
                                           : ride.status === 'completed'
-                                            ? 'Drop-off · done'
-                                            : 'Drop-off'}
+                                            ? t('current.dropoffDone')
+                                            : t('current.dropoff')}
                                 </p>
                                 <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{ride.dropoff}</p>
                             </div>
@@ -284,14 +288,16 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                                         : 'bg-wine-700 hover:bg-wine-600'
                                 }`}
                             >
-                                {busy ? 'Updating…' : primaryLabel}
+                                {busy ? t('current.updating') : primaryLabel}
                             </button>
                         </div>
                     ) : null}
                 </section>
 
                 <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
-                    <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">Passenger</p>
+                    <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                        {t('offers.passenger')}
+                    </p>
                     <div className="mt-3 flex items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-page text-[15px] font-600 text-ink-text">
                             {initials(ride.passenger_name)}
@@ -313,7 +319,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                                 className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#d8d8dc] bg-white px-4 text-[14px] font-500 text-ink-text transition hover:border-wine-700"
                             >
                                 <NavIcon />
-                                Navigate
+                                {t('actions.navigate')}
                             </a>
                         ) : null}
                         {ride.passenger_phone ? (
@@ -322,7 +328,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                                 className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#d8d8dc] bg-white px-4 text-[14px] font-500 text-ink-text transition hover:border-wine-700"
                             >
                                 <PhoneIcon />
-                                Call passenger
+                                {t('actions.callPassenger')}
                             </a>
                         ) : null}
                         <button
@@ -331,7 +337,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                             onClick={() => setCancelOpen(true)}
                             className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 text-[14px] font-500 text-ink-text transition hover:border-wine-700 disabled:cursor-wait disabled:opacity-60"
                         >
-                            Cancel
+                            {t('actions.cancel')}
                         </button>
                     </div>
                     {error ? <p className="font-geist mt-3 m-0 text-[13px] text-wine-700">{error}</p> : null}
@@ -340,7 +346,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
                 {vehicleLine ? (
                     <section className="rounded-2xl border border-[#e8e6e1] bg-page px-5 py-4">
                         <p className="font-geist m-0 text-[13px] leading-5 text-muted">
-                            <span className="font-500 text-ink-text">Vehicle</span>
+                            <span className="font-500 text-ink-text">{t('profile.vehicle')}</span>
                             {' · '}
                             {vehicleLine}
                         </p>
@@ -350,7 +356,7 @@ export default function CurrentRidePanel({ ride, onUpdated }) {
         </div>
         <CancelReasonModal
             open={cancelOpen}
-            title="Cancel this trip"
+            title={t('current.cancelModalTitle')}
             busy={busy}
             onClose={() => {
                 if (!busy) setCancelOpen(false);

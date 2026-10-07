@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +9,12 @@ import Skeleton from '../components/ui/Skeleton';
 import Logo from '../components/landing/Logo';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 
-const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Mx.'];
+const TITLES = [
+    { value: 'Mr.', key: 'mr' },
+    { value: 'Mrs.', key: 'mrs' },
+    { value: 'Ms.', key: 'ms' },
+    { value: 'Mx.', key: 'mx' },
+];
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -17,6 +23,8 @@ const fieldClass =
  * Step 2 — Account type + profile details, then redirect to previous page.
  */
 export default function CompleteProfile() {
+    const { t } = useTranslation('auth');
+    const { t: tCommon } = useTranslation('common');
     const navigate = useNavigate();
     const { getPendingEmail, completeProfile, consumeReturnTo, isAuthenticated, loading } = useAuth();
     const { showToast } = useToast();
@@ -56,7 +64,7 @@ export default function CompleteProfile() {
             const first = Object.values(errors).flat()[0];
             if (first) return first;
         }
-        return err?.response?.data?.message || 'Unable to create your account. Please try again.';
+        return err?.response?.data?.message || t('completeProfile.errors.generic');
     };
 
     const onSubmit = async (e) => {
@@ -64,24 +72,24 @@ export default function CompleteProfile() {
         setError('');
 
         if (!form.phone || form.phone.replace(/\D/g, '').length < 8) {
-            setError('Please enter a valid mobile number.');
+            setError(t('completeProfile.errors.phone'));
             return;
         }
         if (form.password.length < 8) {
-            setError('Password must be at least 8 characters.');
+            setError(t('completeProfile.errors.passwordLength'));
             return;
         }
         if (form.password !== form.passwordConfirm) {
-            setError('Passwords do not match.');
+            setError(t('completeProfile.errors.passwordMatch'));
             return;
         }
         if (accountType === 'individual') {
             if (!form.firstName.trim() || !form.lastName.trim()) {
-                setError('Please enter your first and last name.');
+                setError(t('completeProfile.errors.nameRequired'));
                 return;
             }
         } else if (!form.companyName.trim()) {
-            setError('Please enter your company name.');
+            setError(t('completeProfile.errors.companyRequired'));
             return;
         }
 
@@ -99,11 +107,14 @@ export default function CompleteProfile() {
                 password: form.password,
                 passwordConfirm: form.passwordConfirm,
             });
-            const first = nextUser?.first_name || nextUser?.name?.split?.(' ')?.[0];
+            const greeting =
+                accountType === 'company'
+                    ? nextUser?.company_name || nextUser?.company || nextUser?.name
+                    : nextUser?.first_name || nextUser?.name?.split?.(' ')?.[0];
             showToast(
-                first
-                    ? `Congratulations, ${first}! Your account is ready.`
-                    : 'Congratulations! Your account is ready.',
+                greeting
+                    ? t('completeProfile.toast.readyNamed', { name: greeting })
+                    : t('completeProfile.toast.ready'),
             );
             navigate(consumeReturnTo(), { replace: true });
         } catch (err) {
@@ -119,10 +130,15 @@ export default function CompleteProfile() {
 
     if (!email) return null;
 
+    const accountTabs = [
+        { id: 'individual', label: t('completeProfile.individual') },
+        { id: 'company', label: t('completeProfile.company') },
+    ];
+
     return (
         <main className="flex min-h-screen flex-col bg-white text-ink-text">
             <header className="flex items-center justify-between px-6 py-5 lg:px-12">
-                <Link to="/" aria-label="AL MAJD home">
+                <Link to="/" aria-label={t('completeProfile.homeAria')}>
                     <Logo compact inverted />
                 </Link>
                 <button
@@ -130,31 +146,29 @@ export default function CompleteProfile() {
                     onClick={() => navigate('/login')}
                     className="font-geist cursor-pointer text-[14px] font-500 text-muted transition hover:text-ink-text"
                 >
-                    Back
+                    {t('completeProfile.back')}
                 </button>
             </header>
 
             <div className="flex flex-1 items-start justify-center px-6 pt-8 pb-16 sm:pt-12">
                 <div className="w-full max-w-[480px]">
                     <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                        Create your account
+                        {t('completeProfile.title')}
                     </h1>
                     <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
-                        Choose how you want to sign up, then fill in your details.
+                        {t('completeProfile.subtitle')}
                     </p>
                     <p className="font-geist mt-2 m-0 text-[14px] text-ink-text/70">
-                        Email <span className="font-500 text-ink-text">{email}</span>
+                        {t('completeProfile.emailLabel')}{' '}
+                        <span className="font-500 text-ink-text">{email}</span>
                     </p>
 
                     <div
                         role="tablist"
-                        aria-label="Account type"
+                        aria-label={t('completeProfile.accountTypeAria')}
                         className="mt-8 grid grid-cols-2 gap-1 rounded-full border border-[#e0ddd6] bg-[#f7f6f3] p-1"
                     >
-                        {[
-                            { id: 'individual', label: 'Individual' },
-                            { id: 'company', label: 'Company' },
-                        ].map((tab) => {
+                        {accountTabs.map((tab) => {
                             const on = accountType === tab.id;
                             return (
                                 <button
@@ -178,12 +192,18 @@ export default function CompleteProfile() {
                         })}
                     </div>
 
+                    {accountType === 'company' ? (
+                        <p className="font-geist mt-3 m-0 text-[13px] leading-5 text-muted">
+                            {t('completeProfile.companyHint')}
+                        </p>
+                    ) : null}
+
                     <form onSubmit={onSubmit} className="mt-8 space-y-5">
                         {accountType !== 'company' ? (
                             <>
                                 <label className="block">
                                     <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                        Title
+                                        {t('completeProfile.fields.title')}
                                     </span>
                                     <select
                                         required
@@ -191,9 +211,9 @@ export default function CompleteProfile() {
                                         onChange={(e) => setForm({ ...form, title: e.target.value })}
                                         className={fieldClass}
                                     >
-                                        {TITLES.map((t) => (
-                                            <option key={t} value={t}>
-                                                {t}
+                                        {TITLES.map((item) => (
+                                            <option key={item.value} value={item.value}>
+                                                {t(`completeProfile.titles.${item.key}`)}
                                             </option>
                                         ))}
                                     </select>
@@ -201,7 +221,7 @@ export default function CompleteProfile() {
 
                                 <label className="block">
                                     <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                        First name
+                                        {t('completeProfile.fields.firstName')}
                                     </span>
                                     <input
                                         type="text"
@@ -217,7 +237,7 @@ export default function CompleteProfile() {
 
                                 <label className="block">
                                     <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                        Last name
+                                        {t('completeProfile.fields.lastName')}
                                     </span>
                                     <input
                                         type="text"
@@ -234,7 +254,7 @@ export default function CompleteProfile() {
                         ) : (
                             <label className="block">
                                 <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                    Company name
+                                    {t('completeProfile.fields.companyName')}
                                 </span>
                                 <input
                                     type="text"
@@ -245,19 +265,21 @@ export default function CompleteProfile() {
                                         setForm({ ...form, companyName: e.target.value })
                                     }
                                     className={fieldClass}
-                                    placeholder="Your company"
+                                    placeholder={t('completeProfile.fields.companyPlaceholder')}
                                 />
                             </label>
                         )}
 
                         <fieldset className="m-0 border-0 p-0">
                             <legend className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Preferred language{' '}
-                                <span className="font-400 text-muted">(optional)</span>
+                                {t('completeProfile.fields.preferredLanguage')}{' '}
+                                <span className="font-400 text-muted">
+                                    {t('completeProfile.fields.optional')}
+                                </span>
                             </legend>
                             <div
                                 role="radiogroup"
-                                aria-label="Preferred language"
+                                aria-label={t('completeProfile.fields.preferredLanguageAria')}
                                 className="flex flex-wrap gap-2"
                             >
                                 <label
@@ -276,14 +298,14 @@ export default function CompleteProfile() {
                                             setForm({ ...form, preferredLanguage: '' })
                                         }
                                     />
-                                    No preference
+                                    {t('completeProfile.fields.noPreference')}
                                 </label>
                                 {PREFERRED_LANGUAGES.map((lang) => {
                                     const on = form.preferredLanguage === lang.id;
                                     return (
                                         <label
                                             key={lang.id}
-                                            title={lang.name}
+                                            title={tCommon(`lang.${lang.id}`)}
                                             className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[13px] transition sm:text-[14px] ${
                                                 on
                                                     ? 'border-wine-700 bg-wine-50 text-wine-800 shadow-[0_0_0_1px_#5b0520]'
@@ -302,7 +324,7 @@ export default function CompleteProfile() {
                                                     })
                                                 }
                                             />
-                                            {lang.label}
+                                            {tCommon(`lang.${lang.id}`)}
                                         </label>
                                     );
                                 })}
@@ -311,7 +333,7 @@ export default function CompleteProfile() {
 
                         <fieldset className="m-0 border-0 p-0">
                             <legend className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Mobile number
+                                {t('completeProfile.fields.mobile')}
                             </legend>
                             <PhoneInput
                                 defaultCountry="qa"
@@ -326,13 +348,13 @@ export default function CompleteProfile() {
                                 }}
                             />
                             <p className="font-geist mt-2 m-0 text-[13px] leading-5 text-muted">
-                                We will use this number to contact you about your ride.
+                                {t('completeProfile.fields.mobileHint')}
                             </p>
                         </fieldset>
 
                         <label className="block">
                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Email
+                                {t('completeProfile.fields.email')}
                             </span>
                             <input
                                 type="email"
@@ -344,7 +366,7 @@ export default function CompleteProfile() {
 
                         <label className="block">
                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Password
+                                {t('completeProfile.fields.password')}
                             </span>
                             <input
                                 type="password"
@@ -354,13 +376,13 @@ export default function CompleteProfile() {
                                 value={form.password}
                                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                                 className={fieldClass}
-                                placeholder="At least 8 characters"
+                                placeholder={t('completeProfile.fields.passwordPlaceholder')}
                             />
                         </label>
 
                         <label className="block">
                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Confirm password
+                                {t('completeProfile.fields.confirmPassword')}
                             </span>
                             <input
                                 type="password"
@@ -386,7 +408,7 @@ export default function CompleteProfile() {
                             disabled={submitting}
                             className="font-geist mt-2 inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                         >
-                            {submitting ? 'Sending…' : 'Create account'}
+                            {submitting ? t('completeProfile.sending') : t('completeProfile.submit')}
                         </button>
                     </form>
                 </div>

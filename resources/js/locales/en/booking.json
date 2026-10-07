@@ -1,0 +1,285 @@
+{
+  "services": {
+    "oneWay": "One way",
+    "multiStops": "Multi-stops",
+    "byHour": "By the hour",
+    "cityTour": "City tour",
+    "arabGulf": "Arab gulf trips",
+    "school": "School chauffeured",
+    "aria": "Trip type selection",
+    "service": "Service"
+  },
+  "fields": {
+    "pickupLocation": "Pick up location",
+    "pickupLocationN": "Pick up location {{n}}",
+    "pickupN": "Pick up {{n}}",
+    "dropoffLocation": "Drop off location",
+    "dropoffLocationN": "Drop off location {{n}}",
+    "dropoffN": "Drop off {{n}}",
+    "pickupDate": "Pick up date",
+    "pickupTime": "Pick up time",
+    "dateAria": "Select a date",
+    "timeAria": "Pickup time",
+    "duration": "Duration",
+    "passengers": "Number of passengers",
+    "destination": "Destination",
+    "schoolLocation": "School / university location",
+    "students": "Number of students",
+    "term": "Duration"
+  },
+  "actions": {
+    "viewOptions": "View options",
+    "addStop": "Add stop",
+    "remove": "Remove",
+    "search": "Search"
+  },
+  "duration": {
+    "hour": "{{count}} hour",
+    "hours": "{{count}} hours",
+    "fullDay": "Full day"
+  },
+  "terms": {
+    "oneSemester": "One semester (half year)",
+    "twoSemesters": "Two semesters (school year)"
+  },
+  "gulf": {
+    "dubai": "Dubai",
+    "abuDhabi": "Abu Dhabi",
+    "riyadh": "Riyadh",
+    "dammam": "Dammam",
+    "alAhsa": "Al-Ahsa",
+    "muscat": "Muscat",
+    "salalah": "Salalah",
+    "kuwaitCity": "Kuwait City"
+  },
+  "validation": {
+    "pickupDate": "Choose a pick-up date.",
+    "pickupDateFuture": "Choose a pick-up date that is today or later.",
+    "pickupTime": "Choose a pick-up time.",
+    "addStop": "Add at least one stop.",
+    "pickupN": "Choose pick-up {{n}} from the suggestions.",
+    "dropoffN": "Choose drop-off {{n}} from the suggestions.",
+    "pickupSuggest": "Choose a pick-up location from the suggestions.",
+    "dropoffSuggest": "Choose a drop-off location from the suggestions.",
+    "duration": "Choose a duration.",
+    "passengers": "Choose the number of passengers.",
+    "destination": "Choose a destination.",
+    "destinationMap": "This destination has no map location yet.",
+    "schoolSuggest": "Choose a school location from the suggestions.",
+    "students": "Choose the number of students.",
+    "term": "Choose a school term."
+  },
+  "page": {
+    "title": "Book your ride",
+    "subtitle": "Choose your service, route, and vehicle.",
+    "selectVehicle": "Select a vehicle",
+    "continue": "Continue",
+    "editTrip": "Edit trip",
+    "addGuest": "Add guest",
+    "forMyself": "For myself",
+    "chauffeurGender": "Preferred chauffeur",
+    "male": "Male chauffeur",
+    "female": "Female chauffeur",
+    "anyGender": "No preference"
+  },
+  "checkout": {
+    "title": "Confirm your reservation",
+    "backAria": "Go back to previous page",
+    "sessionExpired": {
+      "title": "Booking session expired",
+      "body": "This booking session expired. Please start again from booking.",
+      "restart": "Start a new booking"
+    },
+    "payment": {
+      "title": "Payment preferences",
+      "walletPaid": "This booking will be paid from your wallet balance. The amount is verified on the server.",
+      "cardOrWallet": "You can save a card now, or pay with wallet if your balance covers the total.",
+      "payWithWallet": "Pay with wallet",
+      "balance": "Balance: {{currency}} {{amount}}",
+      "notEnough": " — not enough for this trip",
+      "covers": " — covers {{currency}} {{amount}}",
+      "noCards": "You haven't added any payment methods yet.",
+      "cardsAria": "Payment cards",
+      "addCard": "Add card",
+      "exp": "Exp {{expiry}}"
+    },
+    "billing": {
+      "title": "Billing information",
+      "partnerOptional": "Optional for partners — guest pays via the payment link.",
+      "addBefore": "Add a billing address before you book.",
+      "edit": "Edit billing information",
+      "add": "Add billing information"
+    },
+    "reference": {
+      "label": "Reference code",
+      "assigned": "Assigned when you book",
+      "help": "A unique reference is created on the server and appears on your journey."
+    },
+    "security": {
+      "tls": "Our servers are encrypted with TLS/SSL to ensure security and privacy.",
+      "noCharge": "Online payment is not available yet. Nothing is charged when you book."
+    },
+    "pickupPrefs": {
+      "title": "Pickup preferences",
+      "chauffeurPreference": "Chauffeur preference",
+      "preferredLanguage": "Preferred language",
+      "optional": "(optional)",
+      "languageHelp": "Language you'd like your chauffeur to speak with you.",
+      "languageAria": "Preferred chauffeur language",
+      "noPreference": "No preference",
+      "additionalDetails": "Additional details (optional)",
+      "notesPlaceholder": "Special instructions for your journey",
+      "notesHelp": "Additional wait time or distance requests may incur additional charges."
+    },
+    "sidebar": {
+      "total": "Total",
+      "confirm": "Confirm booking",
+      "confirming": "Confirming…",
+      "passenger": "Passenger",
+      "trip": "Trip details",
+      "vehicle": "Vehicle"
+    },
+    "errors": {
+      "genderRequired": "Choose male or female chauffeur on the vehicle page, then continue.",
+      "quoteFailed": "Unable to create a price quote for this trip.",
+      "guestRequired": "Partner bookings require a guest traveler. Add a guest before confirming.",
+      "bookFailed": "Booking failed. Please try again."
+    },
+    "defaults": {
+      "pickup": "Pickup",
+      "forMyself": "For myself"
+    }
+  },
+  "guestPay": {
+    "title": "Complete payment",
+    "subtitle": "Pay securely for your AL MAJD journey.",
+    "pay": "Pay now",
+    "paid": "Payment received",
+    "expired": "This payment link is no longer valid."
+  },
+  "sidebar": {
+    "bookMyself": "Book for myself",
+    "bookMyselfHint": "Book with your account information",
+    "bookGuest": "Book for a guest",
+    "selectGuest": "Select or add a guest",
+    "savedGuests": "Saved guests",
+    "noGuests": "No saved guests yet. Add one below.",
+    "signInGuests": "Sign in to load and save guests.",
+    "addNewGuest": "Add new guest",
+    "allFees": "All fees included",
+    "minutes": "{{count}} min",
+    "continueCheckout": "Continue to checkout",
+    "saving": "Saving…",
+    "priceUnavailable": "Price unavailable",
+    "loadingPrice": "Loading price…",
+    "genderRequired": "Please choose a male or female chauffeur.",
+    "signInToSaveGuests": "Sign in to save guests.",
+    "priceExTax": "Price excluding tax",
+    "estimatedTax": "Estimated tax",
+    "termsApply": "Terms & conditions apply"
+  },
+  "chauffeur": {
+    "onlyGender": "Only chauffeurs of the gender you choose will see and take this booking.",
+    "aria": "Preferred chauffeur gender",
+    "maleHint": "Assign a male chauffeur for this trip",
+    "femaleHint": "Assign a female chauffeur for this trip",
+    "prefix": "Chauffeur · "
+  },
+  "mobile": {
+    "hourly": "Hourly",
+    "applyPromotion": "Apply promotion",
+    "changeTripAria": "Change date and trip details",
+    "whoTravelling": "Who is travelling?",
+    "whoTravellingHint": "Book for yourself or choose a guest",
+    "paymentMethod": "Payment method",
+    "offerCode": "Offer code",
+    "apply": "Apply",
+    "selectDate": "Select date"
+  },
+  "map": {
+    "selectLabel": "Select {{label}}",
+    "searchPlace": "Search for a place",
+    "schoolsOnly": "Showing schools and universities in Qatar only.",
+    "useMyLocation": "Use my location",
+    "noLocation": "No location selected yet",
+    "confirm": "Confirm location",
+    "addressLookupUnavailable": "Address lookup unavailable — coordinates will be used.",
+    "mapsUnavailable": "Maps unavailable — add the Mapbox public token on the server.",
+    "couldNotLoadPlace": "Could not load that place — try another or tap the map.",
+    "needsSecure": "Location needs a secure page (localhost or HTTPS). Search or tap the map instead.",
+    "geoUnavailable": "Location is not available in this browser. Search or tap the map instead.",
+    "askingLocation": "Asking for your location…",
+    "permissionDenied": "Location permission was denied. Search or tap the map instead.",
+    "couldNotRead": "Could not read your location. Search or tap the map instead."
+  },
+  "header": {
+    "homepage": "Go to Homepage",
+    "editThisTrip": "Edit this trip",
+    "closeEditor": "Close trip editor",
+    "toggleMenu": "Toggle menu",
+    "ourServices": "Our services",
+    "cityToCity": "City-to-City rides",
+    "chauffeurHailing": "Chauffeur hailing",
+    "airportTransfers": "Airport transfers",
+    "hourlyHire": "Hourly hire",
+    "chauffeurService": "Chauffeur service",
+    "limousineService": "Limousine service",
+    "signInUp": "Sign in / Sign up",
+    "profile": "Profile",
+    "date": "Date",
+    "time": "Time",
+    "school": "School"
+  },
+  "guest": {
+    "addTitle": "Add new guest",
+    "intro": "Enter your guests' information and treat them to a premium service. We will keep them informed of their journey throughout the process. Don't worry, we will not share any payment or invoice information with them.",
+    "title": "Title",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email address",
+    "phone": "Guest's mobile number",
+    "phoneHelp": "Your guest will receive their journey notifications and support with this mobile number.",
+    "firstPlaceholder": "Guest's first name",
+    "lastPlaceholder": "Guest's last name",
+    "emailPlaceholder": "Guest's email address",
+    "phonePlaceholder": "Guest's mobile number",
+    "add": "Add guest",
+    "saving": "Saving…",
+    "closeDialog": "Close dialog",
+    "errName": "Please enter the guest's first and last name.",
+    "errEmail": "Please enter a valid guest email address.",
+    "errPhone": "Please enter a valid guest mobile number.",
+    "errSave": "Unable to save guest. Please try again."
+  },
+  "tripEditor": {
+    "update": "Update",
+    "updateTrip": "Update trip"
+  },
+  "billingModal": {
+    "help": "This address is stored on your account and copied onto each booking.",
+    "company": "Company (optional)",
+    "street": "Street and number",
+    "zip": "ZIP",
+    "city": "City",
+    "country": "Country",
+    "required": "Street, ZIP, city, and country are required.",
+    "saveFailed": "Could not save billing details."
+  },
+  "addCard": {
+    "title": "Add payment method",
+    "number": "Card number",
+    "name": "Name on card",
+    "namePlaceholder": "Name as shown on card",
+    "namePreview": "YOUR NAME",
+    "expiry": "Expiry",
+    "cvc": "CVC",
+    "privacy": "We validate the card and store only the brand and last four digits. The full number and CVC are not kept.",
+    "saveCard": "Save card",
+    "errNumber": "Enter a valid card number.",
+    "errName": "Cardholder name is required.",
+    "errExpiryFormat": "Use expiry format MM/YY.",
+    "errExpiryMonth": "Enter a valid expiry month.",
+    "errCvc": "Enter a valid CVC.",
+    "errSave": "Could not save this card."
+  }
+}

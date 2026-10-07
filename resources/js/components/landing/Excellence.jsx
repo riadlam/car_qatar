@@ -1,28 +1,34 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSectionAnim } from './useSectionAnim';
 import iconWorldwide from './icons/excellence-worldwide.svg?raw';
 import iconVehicles from './icons/excellence-vehicles.svg?raw';
 import iconSafe from './icons/excellence-safe.svg?raw';
 
-const PILLARS = [
-    {
-        title: 'Available worldwide',
-        copy: 'Expert local chauffeurs in 500+ cities',
-        icon: iconWorldwide,
-    },
-    {
-        title: 'High-end vehicles',
-        copy: 'Only the best recent models',
-        icon: iconVehicles,
-    },
-    {
-        title: 'Safe travels',
-        copy: 'Trained professionals and reliable pickups',
-        icon: iconSafe,
-    },
-];
-
 export default function Excellence() {
+    const { t } = useTranslation('landing');
     const rootRef = useSectionAnim();
+
+    const pillars = useMemo(
+        () => [
+            {
+                title: t('excellence.worldwide.title'),
+                copy: t('excellence.worldwide.copy'),
+                icon: iconWorldwide,
+            },
+            {
+                title: t('excellence.vehicles.title'),
+                copy: t('excellence.vehicles.copy'),
+                icon: iconVehicles,
+            },
+            {
+                title: t('excellence.safe.title'),
+                copy: t('excellence.safe.copy'),
+                icon: iconSafe,
+            },
+        ],
+        [t],
+    );
 
     return (
         <section
@@ -37,18 +43,18 @@ export default function Excellence() {
                         data-anim="title"
                         className="font-fragment mx-auto mb-4 max-w-[800px] text-[1.75rem] leading-9 font-400 tracking-[0.25px] text-ink-text sm:mb-6 sm:text-[2.75rem] sm:leading-[3.25rem] lg:text-[5rem] lg:leading-[6rem]"
                     >
-                        Expect excellence.
+                        {t('excellence.headline')}
                     </h2>
                     <h3
                         data-anim="subtitle"
                         className="font-geist m-0 mx-auto max-w-[34rem] text-[1.125rem] leading-7 font-500 tracking-[0.15px] text-ink-text sm:text-[1.375rem] sm:leading-8 lg:max-w-none lg:text-[1.75rem] lg:leading-9 lg:tracking-[0.25px]"
                     >
-                        Leave the car refreshed and ready for what&apos;s next.
+                        {t('excellence.subhead')}
                     </h3>
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-                    {PILLARS.map((p) => (
+                    {pillars.map((p) => (
                         <div
                             key={p.title}
                             data-anim="item"
@@ -61,7 +67,6 @@ export default function Excellence() {
                                 <p className="font-geist m-0 flex-1 text-[16px] leading-6 font-400 tracking-[0.15px] text-ink-text sm:text-[18px] sm:leading-[26px] sm:tracking-[0.25px]">
                                     {p.copy}
                                 </p>
-                                {/* Crisp icons — no blur/filter; aspect ratio preserved */}
                                 <div
                                     className="excellence-icon mt-1 flex w-full items-end justify-center overflow-visible lg:mt-8 [&_svg]:h-auto [&_svg]:w-[200px] [&_svg]:max-w-full"
                                     dangerouslySetInnerHTML={{ __html: p.icon }}

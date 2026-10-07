@@ -33,15 +33,24 @@ class ChauffeurForm
                         Placeholder::make('applicant_phone')
                             ->label('Phone')
                             ->content(fn ($record) => $record?->user?->phone ?: '—'),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                                'suspended' => 'Suspended',
+                                'declined' => 'Declined',
+                            ])
                             ->required()
-                            ->default('pending'),
+                            ->default('pending')
+                            ->native(false),
                         Select::make('gender')
                             ->options([
                                 'male' => 'Male',
                                 'female' => 'Female',
                             ])
-                            ->required(),
+                            ->required()
+                            ->native(false),
                     ]),
                 Section::make('License')
                     ->columns(2)
@@ -53,32 +62,38 @@ class ChauffeurForm
                         DatePicker::make('license_expires_at'),
                     ]),
                 Section::make('Performance')
+                    ->description('Updated by the system from completed rides and ratings.')
                     ->columns(2)
                     ->schema([
                         TextInput::make('rating')
-                            ->required()
                             ->numeric()
-                            ->default(0.0),
+                            ->disabled()
+                            ->dehydrated(false),
                         TextInput::make('ratings_count')
-                            ->required()
                             ->numeric()
-                            ->default(0),
+                            ->disabled()
+                            ->dehydrated(false),
                         TextInput::make('completed_rides')
-                            ->required()
                             ->numeric()
-                            ->default(0),
+                            ->disabled()
+                            ->dehydrated(false),
                     ]),
                 Section::make('Location')
+                    ->description('Live GPS from the chauffeur app — read-only.')
                     ->columns(2)
                     ->collapsed()
                     ->schema([
                         TextInput::make('current_latitude')
                             ->numeric()
-                            ->default(null),
+                            ->disabled()
+                            ->dehydrated(false),
                         TextInput::make('current_longitude')
                             ->numeric()
-                            ->default(null),
-                        DateTimePicker::make('last_location_at'),
+                            ->disabled()
+                            ->dehydrated(false),
+                        DateTimePicker::make('last_location_at')
+                            ->disabled()
+                            ->dehydrated(false),
                     ]),
             ]);
     }

@@ -1,59 +1,66 @@
-const OPTIONS = [
-    {
-        id: 'male',
-        label: 'Male chauffeur',
-        hint: 'Assign a male chauffeur for this trip',
-        icon: (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="10" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                    d="M4.5 19.5c.8-3.2 2.9-5 5.5-5s4.7 1.8 5.5 5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                />
-                <path d="M14.5 4.5 19 9M19 4.5v4.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        ),
-    },
-    {
-        id: 'female',
-        label: 'Female chauffeur',
-        hint: 'Assign a female chauffeur for this trip',
-        icon: (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                    d="M6.5 19.5c.8-3.2 2.9-5 5.5-5s4.7 1.8 5.5 5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                />
-                <path d="M12 14.5v5M9.75 17h4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-        ),
-    },
-];
+import { useTranslation } from 'react-i18next';
+
+const MALE_ICON = (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="10" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+        <path
+            d="M4.5 19.5c.8-3.2 2.9-5 5.5-5s4.7 1.8 5.5 5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+        />
+        <path d="M14.5 4.5 19 9M19 4.5v4.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const FEMALE_ICON = (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+        <path
+            d="M6.5 19.5c.8-3.2 2.9-5 5.5-5s4.7 1.8 5.5 5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+        />
+        <path d="M12 14.5v5M9.75 17h4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+);
 
 /**
  * Required male / female chauffeur preference — two large selectable panels.
  */
 export default function ChauffeurGenderPicker({ value, onChange, error = '', name = 'preferred-chauffeur-gender' }) {
+    const { t } = useTranslation('booking');
+    const options = [
+        {
+            id: 'male',
+            label: t('page.male'),
+            hint: t('chauffeur.maleHint'),
+            icon: MALE_ICON,
+        },
+        {
+            id: 'female',
+            label: t('page.female'),
+            hint: t('chauffeur.femaleHint'),
+            icon: FEMALE_ICON,
+        },
+    ];
+
     return (
         <div>
             <p className="font-geist m-0 text-[14px] text-muted">
-                Chauffeur preference <span className="text-wine-700">*</span>
+                {t('checkout.pickupPrefs.chauffeurPreference')} <span className="text-wine-700">*</span>
             </p>
             <p className="font-geist mt-1 m-0 text-[13px] leading-5 text-muted">
-                Only chauffeurs of the gender you choose will see and take this booking.
+                {t('chauffeur.onlyGender')}
             </p>
             <div
                 role="radiogroup"
-                aria-label="Preferred chauffeur gender"
+                aria-label={t('chauffeur.aria')}
                 aria-required="true"
                 className="mt-3 grid gap-3 sm:grid-cols-2"
             >
-                {OPTIONS.map((opt) => {
+                {options.map((opt) => {
                     const on = value === opt.id;
                     return (
                         <label
@@ -106,8 +113,8 @@ export default function ChauffeurGenderPicker({ value, onChange, error = '', nam
     );
 }
 
-export function chauffeurGenderLabel(value) {
-    if (value === 'male') return 'Male chauffeur';
-    if (value === 'female') return 'Female chauffeur';
+export function chauffeurGenderLabel(value, t) {
+    if (value === 'male') return t('page.male');
+    if (value === 'female') return t('page.female');
     return null;
 }

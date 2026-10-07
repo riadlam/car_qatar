@@ -26,7 +26,7 @@ class PricingRulesTable
                     ->sortable(),
                 TextColumn::make('base_price')
                     ->label('Starting fee')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable(),
                 TextColumn::make('per_km')
                     ->label('Per km')
@@ -38,7 +38,7 @@ class PricingRulesTable
                     ->sortable(),
                 TextColumn::make('hourly_price')
                     ->label('Hourly')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->placeholder('—')
                     ->sortable(),
                 TextColumn::make('tax_rate')

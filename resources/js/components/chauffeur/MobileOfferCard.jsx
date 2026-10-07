@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatPayout } from '../../data/chauffeurPortal';
 import SlideToAccept from './SlideToAccept';
 
-function classPill(vehicleClass = '') {
-    if (/van|suv/i.test(vehicleClass)) return 'Van';
-    if (/first/i.test(vehicleClass)) return 'First';
-    if (/business/i.test(vehicleClass)) return 'Business';
-    return vehicleClass.replace(/\s*Class$/i, '') || 'Ride';
+function classPillLabel(vehicleClass = '', t) {
+    if (/van|suv/i.test(vehicleClass)) return t('vehicleClass.van');
+    if (/first/i.test(vehicleClass)) return t('vehicleClass.first');
+    if (/business/i.test(vehicleClass)) return t('vehicleClass.business');
+    const stripped = vehicleClass.replace(/\s*Class$/i, '');
+    return stripped || t('vehicleClass.ride');
 }
 
 function PlaneIcon() {
@@ -33,13 +35,13 @@ function QuoteIcon() {
     );
 }
 
-function ChevronBtn({ open, onClick }) {
+function ChevronBtn({ open, onClick, t }) {
     return (
         <button
             type="button"
             onClick={onClick}
             aria-expanded={open}
-            aria-label={open ? 'Hide details' : 'Show details'}
+            aria-label={open ? t('actions.hideDetails') : t('actions.showDetails')}
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#f0eee9] text-muted transition hover:text-ink-text"
         >
             <svg
@@ -66,6 +68,7 @@ function ChevronBtn({ open, onClick }) {
  * Mobile offer card — matches chauffeur app reference (wine brand).
  */
 export default function MobileOfferCard({ offer, onAccept }) {
+    const { t } = useTranslation('chauffeur');
     const [open, setOpen] = useState(false);
     const [accepting, setAccepting] = useState(false);
     const amount = formatPayout(offer.payout, offer.currency);
@@ -91,9 +94,9 @@ export default function MobileOfferCard({ offer, onAccept }) {
             <div className="p-4 pb-3">
                 <div className="flex items-start justify-between gap-3">
                     <span className="font-geist inline-flex rounded-full bg-wine-50 px-2.5 py-1 text-[12px] font-500 text-wine-700">
-                        {classPill(offer.vehicle_class)}
+                        {classPillLabel(offer.vehicle_class, t)}
                     </span>
-                    <ChevronBtn open={open} onClick={() => setOpen((v) => !v)} />
+                    <ChevronBtn open={open} onClick={() => setOpen((v) => !v)} t={t} />
                 </div>
 
                 <p className="font-geist mt-3 m-0 text-[17px] leading-6 font-600 tracking-[-0.01em] text-ink-text">
@@ -102,7 +105,7 @@ export default function MobileOfferCard({ offer, onAccept }) {
                     {offer.time_label}
                 </p>
                 <p className="font-geist mt-1 m-0 text-[13px] text-muted">
-                    Booking {offer.booking_id}
+                    {t('offers.booking', { id: offer.booking_id })}
                     {offer.booking_number ? ` · ${offer.booking_number}` : ''}
                 </p>
 
@@ -135,7 +138,9 @@ export default function MobileOfferCard({ offer, onAccept }) {
                     </div>
                     {offer.distance_to_pickup_km != null ? (
                         <p className="font-geist -mt-1 mb-2 ml-6 m-0 text-[12px] font-500 text-wine-700">
-                            {Number(offer.distance_to_pickup_km).toFixed(1)} km away
+                            {t('offers.kmAway', {
+                                distance: Number(offer.distance_to_pickup_km).toFixed(1),
+                            })}
                         </p>
                     ) : null}
                     <div className="flex gap-3">
@@ -158,7 +163,7 @@ export default function MobileOfferCard({ offer, onAccept }) {
                 {open ? (
                     <div className="mt-3 rounded-xl bg-page px-3 py-2.5">
                         <p className="font-geist m-0 text-[12px] text-muted">
-                            Passenger{' '}
+                            {t('offers.passenger')}{' '}
                             <span className="font-500 text-ink-text">{offer.passenger_name}</span>
                             {offer.duration_label ? ` · ${offer.duration_label}` : ''}
                             {offer.distance_label ? ` · ${offer.distance_label}` : ''}

@@ -4,7 +4,6 @@ namespace App\Filament\Resources\RideAssignments\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -21,9 +20,18 @@ class RideAssignmentForm
                             ->relationship('booking', 'booking_number')
                             ->searchable()
                             ->required(),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'assigned' => 'Assigned',
+                                'en_route' => 'En route',
+                                'arrived' => 'Arrived',
+                                'in_progress' => 'In progress',
+                                'completed' => 'Completed',
+                                'cancelled' => 'Cancelled',
+                            ])
                             ->required()
-                            ->default('assigned'),
+                            ->default('assigned')
+                            ->native(false),
                         Select::make('chauffeur_id')
                             ->relationship('chauffeur', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?: 'Chauffeur #'.$record->id)
@@ -38,11 +46,18 @@ class RideAssignmentForm
                             ->default(null),
                     ]),
                 Section::make('Timeline')
+                    ->description('Timestamps are set by dispatch — edit only when correcting records.')
                     ->columns(2)
                     ->schema([
-                        DateTimePicker::make('assigned_at'),
-                        DateTimePicker::make('started_at'),
-                        DateTimePicker::make('completed_at'),
+                        DateTimePicker::make('assigned_at')
+                            ->disabled()
+                            ->dehydrated(false),
+                        DateTimePicker::make('started_at')
+                            ->disabled()
+                            ->dehydrated(false),
+                        DateTimePicker::make('completed_at')
+                            ->disabled()
+                            ->dehydrated(false),
                     ]),
             ]);
     }

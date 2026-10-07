@@ -2,6 +2,11 @@ export function isCustomer(user) {
     return user?.role === 'customer';
 }
 
+/** Company signup profile — still a booking customer, not a Partner portal user. */
+export function isCompanyCustomer(user) {
+    return user?.role === 'customer' && user?.account_type === 'company';
+}
+
 export function isPartnerAdmin(user) {
     return user?.role === 'partner_admin';
 }

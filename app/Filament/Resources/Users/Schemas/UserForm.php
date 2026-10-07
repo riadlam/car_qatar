@@ -14,6 +14,13 @@ class UserForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $canManageStaffRoles = auth()->user()?->canManageStaffRoles() ?? false;
+
+        $roleOptions = collect(UserRole::cases())
+            ->reject(fn (UserRole $role): bool => ! $canManageStaffRoles && in_array($role, UserRole::staffRoles(), true))
+            ->mapWithKeys(fn (UserRole $role): array => [$role->value => $role->label()])
+            ->all();
+
         return $schema
             ->components([
                 Section::make('Account')
@@ -30,27 +37,39 @@ class UserForm
                             ->revealable()
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn (?string $state): bool => filled($state))
-                            ->helperText('Leave blank on edit to keep the current password. Hashed via the User model cast.'),
+                            ->helperText('Leave blank on edit to keep the current password.'),
                         Select::make('role')
-                            ->options(collect(UserRole::cases())->mapWithKeys(
-                                fn (UserRole $role): array => [$role->value => $role->label()]
-                            )->all())
+                            ->options($roleOptions)
                             ->default(UserRole::Customer->value)
                             ->required()
-                            ->disabled(fn (): bool => auth()->user()?->role !== UserRole::SuperAdmin)
-                            ->dehydrated(fn (): bool => auth()->user()?->role === UserRole::SuperAdmin)
-                            ->helperText('Only a super admin can change roles.'),
-                        TextInput::make('status')
+                            ->disabled(fn (): bool => ! (auth()->user()?->canManageStaffRoles() ?? false))
+                            ->dehydrated(fn (): bool => auth()->user()?->canManageStaffRoles() ?? false)
+                            ->helperText('Only a Super Admin can change roles.'),
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                                'suspended' => 'Suspended',
+                            ])
                             ->required()
-                            ->default('active'),
-                        DateTimePicker::make('email_verified_at'),
+                            ->default('active')
+                            ->native(false),
+                        DateTimePicker::make('email_verified_at')
+                            ->disabled()
+                            ->dehydrated(false),
                     ]),
                 Section::make('Profile')
                     ->columns(2)
                     ->schema([
-                        TextInput::make('account_type')
+                        Select::make('account_type')
+                            ->options([
+                                'individual' => 'Individual',
+                                'company' => 'Company (customer)',
+                            ])
                             ->required()
-                            ->default('individual'),
+                            ->default('individual')
+                            ->native(false)
+                            ->helperText('Company customers book normally. Partners are separate orgs under Partners — not this field.'),
                         TextInput::make('title')
                             ->default(null),
                         TextInput::make('first_name')
@@ -58,27 +77,37 @@ class UserForm
                         TextInput::make('last_name')
                             ->default(null),
                         TextInput::make('company_name')
-                            ->default(null),
+                            ->label('Company name')
+                            ->default(null)
+                            ->helperText('Used when account type is Company (customer).'),
                         TextInput::make('phone')
                             ->tel()
                             ->default(null),
-                        TextInput::make('preferred_language')
-                            ->default(null),
-                        TextInput::make('language')
+                        Select::make('preferred_language')
+                            ->label('Preferred chauffeur language')
+                            ->options([
+                                'en' => 'English',
+                                'ar' => 'Arabic',
+                            ])
+                            ->native(false)
+                            ->nullable(),
+                        Select::make('language')
+                            ->label('App language')
+                            ->options([
+                                'en' => 'English',
+                                'ar' => 'Arabic',
+                            ])
                             ->required()
-                            ->default('en'),
+                            ->default('en')
+                            ->native(false),
                         TextInput::make('street_address')
                             ->default(null)
                             ->columnSpanFull(),
                         Toggle::make('marketing_emails')
                             ->required(),
-                        TextInput::make('booking_notifications')
-                            ->required()
-                            ->default('email_sms'),
-                        TextInput::make('avatar_path')
-                            ->default(null),
-                        DateTimePicker::make('phone_verified_at'),
-                        DateTimePicker::make('last_login_at'),
+                        DateTimePicker::make('last_login_at')
+                            ->disabled()
+                            ->dehydrated(false),
                     ]),
             ]);
     }

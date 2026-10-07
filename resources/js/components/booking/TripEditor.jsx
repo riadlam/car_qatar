@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { BookingForm, TabPills } from '../landing/BookingWidget';
 import { fetchGulfDestinations, fetchServiceTypes } from '../../api/catalog';
@@ -55,6 +56,7 @@ export function initialTripFromParams(params) {
  * Same fields and validation as the hero picker.
  */
 export default function TripEditor({ params, stacked = false, variant = 'sheet', onApply }) {
+    const { t } = useTranslation('booking');
     const initialService = params.get('service') || 'one_way';
     const [tab, setTab] = useState(initialService);
     const [serviceTabs, setServiceTabs] = useState(() => fallbackServiceTabs());
@@ -105,7 +107,7 @@ export default function TripEditor({ params, stacked = false, variant = 'sheet',
             passengerOptions={activeService?.passenger_options}
             studentOptions={activeService?.student_options}
             termOptions={activeService?.term_options}
-            submitLabel={variant === 'bar' ? 'Update' : 'Update trip'}
+            submitLabel={variant === 'bar' ? t('tripEditor.update') : t('tripEditor.updateTrip')}
         />
     );
 

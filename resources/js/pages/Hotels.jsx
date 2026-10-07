@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import CardCarousel from '../components/corporations/CardCarousel';
 import CtaStrip from '../components/corporations/CtaStrip';
@@ -53,17 +54,18 @@ const HOTEL_CARDS = [
 ];
 
 function HeroScheduler({ stacked = false, explore }) {
+    const { t } = useTranslation('marketing');
     return (
         <DestinationScheduler
             destinations={explore.destinations}
             selectedDestination={explore.selectedDestination}
             onDestinationChange={explore.setSelectedDestination}
-            destinationLabel="Hotel"
-            destinationPlaceholder="Search hotels in Qatar…"
-            pickupPlaceholder="Address, airport, hotel, ..."
+            destinationLabel={t('explore.hotels.destLabel')}
+            destinationPlaceholder={t('explore.hotels.destPlaceholder')}
+            pickupPlaceholder={t('explore.scheduler.pickupPlaceholder')}
             service="one_way"
-            title="Schedule your hotel transfer"
-            subtitle="Pick your Doha hotel, set pickup time, and view chauffeur options."
+            title={t('explore.hotels.scheduleTitle')}
+            subtitle={t('explore.hotels.scheduleSubtitle')}
             stacked={stacked}
         />
     );
@@ -86,11 +88,14 @@ function useIsPhone() {
 }
 
 function Hero({ explore }) {
+    const { t } = useTranslation('marketing');
     const isPhone = useIsPhone();
+    const heroTitle = t('explore.hotels.title');
+    const heroSubtitle = t('explore.hotels.subtitle');
 
     if (isPhone) {
         return (
-            <section id="top" className="bg-white" aria-label="Hotels in Qatar">
+            <section id="top" className="bg-white" aria-label={heroTitle}>
                 <div
                     className="relative flex min-h-[100svh] flex-col justify-center rounded-b-[16px] bg-cover bg-center px-3 py-4 pt-[72px]"
                     style={{
@@ -111,10 +116,10 @@ function Hero({ explore }) {
                     <div className="relative z-10 flex w-full -translate-y-[4%] flex-col items-center gap-3 sm:max-w-xl sm:self-center sm:gap-4">
                         <div className="w-full px-1 text-center">
                             <h1 className="font-fragment m-0 text-[32px] leading-9 font-400 tracking-[0.25px] text-white sm:text-[40px] sm:leading-[48px]">
-                                Hotels in Qatar
+                                {heroTitle}
                             </h1>
                             <p className="font-geist mt-1.5 m-0 text-[15px] leading-6 font-500 tracking-[0.15px] text-white/90 sm:text-[18px] sm:leading-7">
-                                Chauffeur transfers to Doha&apos;s finest hotels.
+                                {heroSubtitle}
                             </p>
                         </div>
 
@@ -128,7 +133,7 @@ function Hero({ explore }) {
     }
 
     return (
-        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label="Hotels in Qatar">
+        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label={heroTitle}>
             <div className="relative">
                 <div
                     className="relative flex min-h-[90svh] flex-col rounded-b-[16px] bg-cover bg-center pt-[120px] lg:min-h-[92svh] lg:pt-[132px]"
@@ -150,11 +155,10 @@ function Hero({ explore }) {
                     <div className="relative z-[1] mt-auto flex w-full flex-col items-center px-6 pb-32 text-center lg:pb-36">
                         <div className="mx-auto flex w-full max-w-[900px] flex-col items-center gap-3 lg:gap-4">
                             <h1 className="font-fragment m-0 text-[56px] leading-[64px] font-400 tracking-[0.25px] text-white lg:text-[72px] lg:leading-[80px]">
-                                Hotels in Qatar
+                                {heroTitle}
                             </h1>
                             <p className="font-geist m-0 text-[24px] leading-8 font-500 tracking-[0.15px] text-white lg:text-[30px] lg:leading-10">
-                                Airport to lobby — chauffeured transfers across Doha&apos;s West Bay,
-                                The Pearl, and beyond.
+                                {heroSubtitle}
                             </p>
                         </div>
                     </div>
@@ -169,26 +173,28 @@ function Hero({ explore }) {
 }
 
 function Breadcrumb() {
+    const { t } = useTranslation('marketing');
     return (
-        <nav aria-label="Breadcrumb" className="bg-page px-6 py-4 text-center lg:px-12">
+        <nav aria-label={t('common.breadcrumb')} className="bg-page px-6 py-4 text-center lg:px-12">
             <ol className="font-geist m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 text-[14px] leading-5 text-muted">
                 <li>
                     <a href="/" className="text-ink-text transition hover:text-wine-700">
-                        Home
+                        {t('common.home')}
                     </a>
                 </li>
                 <li aria-hidden="true">/</li>
                 <li>
-                    <span className="text-ink-text">Explore Qatar</span>
+                    <span className="text-ink-text">{t('explore.qatar')}</span>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li aria-current="page">Hotels</li>
+                <li aria-current="page">{t('explore.hotels.title')}</li>
             </ol>
         </nav>
     );
 }
 
 export default function Hotels() {
+    const { t } = useTranslation('marketing');
     const explore = useExploreCategory('hotel', HOTEL_CARDS, HOTEL_DESTINATIONS);
 
     return (
@@ -196,58 +202,58 @@ export default function Hotels() {
             <Hero explore={explore} />
             <Breadcrumb />
             <CardCarousel
-                title="Stay destinations we drive to daily"
+                title={t('explore.hotels.carouselTitle')}
                 cards={explore.cards}
                 onCardClick={explore.onCardClick}
             />
             <CalloutBanner
-                title="From Hamad Airport to your hotel lobby"
-                body="Flight tracking, Meet & Greet, and a calm ride — so check-in starts on time."
-                cta="Schedule a transfer"
+                title={t('explore.hotels.calloutSee.title')}
+                body={t('explore.hotels.calloutSee.body')}
+                cta={t('explore.hotels.calloutSee.cta')}
                 href="#schedule"
             />
             <SeoSplit
                 imageOn="right"
-                title="Arrive at the porte-cochère, not the car park"
-                body="Whether you’re staying in West Bay, The Pearl, or on Banana Island, we time your transfer so you step into the lobby ready — luggage handled, waiting time included."
+                title={t('explore.hotels.seoArrive.title')}
+                body={t('explore.hotels.seoArrive.body')}
                 bullets={[
-                    'Hotel lobby and porte-cochère drop-offs across Doha',
-                    'Hamad International Airport Meet & Greet',
-                    'Hotel-to-hotel and hotel-to-landmark rides',
+                    t('explore.hotels.seoArrive.b1'),
+                    t('explore.hotels.seoArrive.b2'),
+                    t('explore.hotels.seoArrive.b3'),
                 ]}
                 image={HOTEL_IMG.seoLobby}
-                alt="Luxury hotel interior in Doha"
+                alt={t('explore.hotels.seoArrive.alt')}
             />
             <SeoSplit
                 imageOn="left"
-                title="One chauffeur for your full Qatar stay"
-                body="Use by-the-hour service between your hotel, dinners, and meetings — same vehicle, same standard, no rebooking friction."
+                title={t('explore.hotels.seoHourly.title')}
+                body={t('explore.hotels.seoHourly.body')}
                 bullets={[
-                    'By-the-hour coverage from your hotel base',
-                    'Flexible multi-stop evenings',
-                    'Local chauffeurs who know West Bay and Pearl traffic',
+                    t('explore.hotels.seoHourly.b1'),
+                    t('explore.hotels.seoHourly.b2'),
+                    t('explore.hotels.seoHourly.b3'),
                 ]}
                 image={HOTEL_IMG.seoTransfer}
-                alt="Doha hotel waterfront at night"
-                cta={{ label: 'Book by the hour', href: '/?service=by_hour#book' }}
+                alt={t('explore.hotels.seoHourly.alt')}
+                cta={{ label: t('common.bookByTheHour'), href: '/?service=by_hour#book' }}
             />
             <SeoSplit
                 imageOn="right"
-                title="Early flights, late arrivals — we keep the schedule"
-                body="Premium fleet and clear pricing before you confirm. Built for guests who treat the hotel as home base in Qatar."
+                title={t('explore.hotels.seoMeet.title')}
+                body={t('explore.hotels.seoMeet.body')}
                 bullets={[
-                    'Punctual airport runs day and night',
-                    'Complimentary waiting time on transfers',
-                    'Discreet service for VIP and family travel',
+                    t('explore.hotels.seoMeet.b1'),
+                    t('explore.hotels.seoMeet.b2'),
+                    t('explore.hotels.seoMeet.b3'),
                 ]}
                 image={HOTEL_IMG.seoAirport}
-                alt="Premium hotel stay in Qatar"
+                alt={t('explore.hotels.seoMeet.alt')}
             />
-            <CtaStrip label="Schedule your hotel transfer" href="#schedule" />
+            <CtaStrip label={t('explore.hotels.ctaStrip')} href="#schedule" />
             <CalloutBanner
-                title="Ready when you are"
-                body="Choose a hotel above, or start from the homepage booking widget for any trip type."
-                cta="Back to booking"
+                title={t('common.readyWhen')}
+                body={t('explore.hotels.ready.body')}
+                cta={t('common.backToBooking')}
                 href={BOOK_HREF}
             />
             <ScrollTop />

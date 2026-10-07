@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Skeleton from '../ui/Skeleton';
@@ -47,6 +48,7 @@ export default function MapLocationModal({
     onClose,
     onSelect,
 }) {
+    const { t } = useTranslation(['booking', 'common']);
     const mapEl = useRef(null);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
@@ -117,9 +119,9 @@ export default function MapLocationModal({
             }
             setMessage('');
         } catch {
-            setMessage('Address lookup unavailable — coordinates will be used.');
+            setMessage(t('map.addressLookupUnavailable'));
         }
-    }, [config?.marker_color]);
+    }, [config?.marker_color, t]);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -175,7 +177,7 @@ export default function MapLocationModal({
         fetchMapConfig().then((cfg) => {
             if (cancelled || !mapEl.current) return;
             if (!hasMapboxToken()) {
-                setMessage('Maps unavailable — add the Mapbox public token on the server.');
+                setMessage(t('map.mapsUnavailable'));
                 return;
             }
             setConfig(cfg);
@@ -252,7 +254,7 @@ export default function MapLocationModal({
                 mapRef.current = null;
             }
         };
-    }, [open, place, clear, searchScope]);
+    }, [open, place, clear, searchScope, t]);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -273,7 +275,7 @@ export default function MapLocationModal({
     const pickSuggestion = async (s) => {
         const result = await retrieve(s.mapbox_id);
         if (!result) {
-            setMessage('Could not load that place — try another or tap the map.');
+            setMessage(t('map.couldNotLoadPlace'));
             return;
         }
         if (!pointInBbox(result.lng, result.lat, scopeConfig.bbox)) {
@@ -287,16 +289,16 @@ export default function MapLocationModal({
 
     const locateUser = () => {
         if (typeof window === 'undefined' || !window.isSecureContext) {
-            setMessage('Location needs a secure page (localhost or HTTPS). Search or tap the map instead.');
+            setMessage(t('map.needsSecure'));
             return;
         }
         if (!navigator.geolocation) {
-            setMessage('Location is not available in this browser. Search or tap the map instead.');
+            setMessage(t('map.geoUnavailable'));
             return;
         }
 
         setLocating(true);
-        setMessage('Asking for your location…');
+        setMessage(t('map.askingLocation'));
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 setLocating(false);
@@ -306,8 +308,8 @@ export default function MapLocationModal({
                 setLocating(false);
                 setMessage(
                     err?.code === 1
-                        ? 'Location permission was denied. Search or tap the map instead.'
-                        : 'Could not read your location. Search or tap the map instead.',
+                        ? t('map.permissionDenied')
+                        : t('map.couldNotRead'),
                 );
             },
             { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
@@ -316,15 +318,17 @@ export default function MapLocationModal({
 
     return createPortal(
         <div className="fixed inset-0 z-[210] flex items-end justify-center sm:items-center sm:p-4">
-            <button type="button" className="absolute inset-0 border-0 bg-ink/50" aria-label="Close" onClick={onClose} />
+            <button type="button" className="absolute inset-0 border-0 bg-ink/50" aria-label={t('common:actions.close')} onClick={onClose} />
             <div className="relative z-[1] flex max-h-[min(92dvh,760px)] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl">
                 <div className="flex items-center justify-between border-b border-[#eef1f3] px-5 py-4">
-                    <h2 className="font-fragment m-0 text-[22px] font-400 text-ink-text">Select {label.toLowerCase()}</h2>
+                    <h2 className="font-fragment m-0 text-[22px] font-400 text-ink-text">
+                        {t('map.selectLabel', { label: String(label).toLowerCase() })}
+                    </h2>
                     <button
                         type="button"
                         onClick={onClose}
                         className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-2xl text-muted hover:bg-page"
-                        aria-label="Close"
+                        aria-label={t('common:actions.close')}
                     >
                         ×
                     </button>
@@ -340,7 +344,7 @@ export default function MapLocationModal({
                             }}
                             className="font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700"
                             placeholder={scopeConfig.searchHint}
-                            aria-label="Search for a place"
+                            aria-label={t('map.searchPlace')}
                             autoComplete="off"
                         />
                         {loading ? (
@@ -352,7 +356,7 @@ export default function MapLocationModal({
 
                     {searchScope === 'school' && (
                         <p className="font-geist mt-2 m-0 text-[13px] leading-4 text-muted">
-                            Showing schools and universities in Qatar only.
+                            {t('map.schoolsOnly')}
                         </p>
                     )}
 
@@ -390,8 +394,8 @@ export default function MapLocationModal({
                             type="button"
                             onClick={locateUser}
                             disabled={locating}
-                            aria-label="Use my location"
-                            title="Use my location"
+                            aria-label={t('map.useMyLocation')}
+                            title={t('map.useMyLocation')}
                             className="absolute top-2 right-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-[10px] bg-white text-ink-text shadow-[0_2px_10px_rgba(15,19,25,0.12)] transition hover:bg-page disabled:cursor-wait disabled:opacity-70"
                         >
                             <LocateIcon spinning={locating} />
@@ -405,7 +409,7 @@ export default function MapLocationModal({
 
                 <div className="flex flex-col gap-3 border-t border-[#eef1f3] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-geist m-0 min-w-0 truncate text-[15px] leading-6 text-ink-text">
-                        {selected?.label || 'No location selected yet'}
+                        {selected?.label || t('map.noLocation')}
                     </p>
                     <button
                         type="button"
@@ -413,7 +417,7 @@ export default function MapLocationModal({
                         onClick={() => selected && onSelect?.(selected)}
                         className="font-geist shrink-0 cursor-pointer rounded-full bg-wine-700 px-6 py-2.5 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Confirm location
+                        {t('map.confirm')}
                     </button>
                 </div>
             </div>

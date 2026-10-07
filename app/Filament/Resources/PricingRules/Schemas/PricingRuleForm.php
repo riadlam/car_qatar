@@ -28,14 +28,10 @@ class PricingRuleForm
                                 'vehicleClass',
                                 'name',
                                 fn ($query) => $query
-                                    ->where('slug', 'van')
                                     ->where('status', 'active')
                                     ->orderBy('sort_order'),
                             )
                             ->required(),
-                        Select::make('city_id')
-                            ->relationship('city', 'name')
-                            ->default(null),
                         TextInput::make('currency')
                             ->required()
                             ->default('QAR'),

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useSectionAnim } from '../landing/useSectionAnim';
 
 /**
@@ -8,6 +9,7 @@ import { useSectionAnim } from '../landing/useSectionAnim';
  * body: subheadline sm
  */
 export default function PremiumClients() {
+    const { t } = useTranslation('marketing');
     const rootRef = useSectionAnim();
 
     return (
@@ -21,14 +23,13 @@ export default function PremiumClients() {
                     data-anim="title"
                     className="font-fragment mb-6 text-[48px] leading-[56px] font-400 tracking-[0.25px] text-ink-text lg:mb-8 lg:text-[104px] lg:leading-[120px]"
                 >
-                    Unlock global demand
+                    {t('chauffeursPage.premium.title')}
                 </h2>
                 <h3
                     data-anim="subtitle"
                     className="font-geist mx-auto m-0 max-w-[900px] text-[18px] leading-[26px] font-500 tracking-[0.15px] text-ink-text lg:max-w-none lg:text-[24px] lg:leading-8"
                 >
-                    Connect with guests from around the world via our app and website. Take only the
-                    rides that suit your schedule.
+                    {t('chauffeursPage.premium.body')}
                 </h3>
             </div>
         </section>

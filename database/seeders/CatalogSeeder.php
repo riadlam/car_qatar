@@ -209,7 +209,7 @@ class CatalogSeeder extends Seeder
             );
         }
 
-        foreach ([1, 2, 3, 4] as $count) {
+        foreach ([1, 2, 3, 4, 5, 6, 7, 8] as $count) {
             ServiceCountOption::updateOrCreate(
                 [
                     'service_type_id' => $cityTour->id,
@@ -235,7 +235,9 @@ class CatalogSeeder extends Seeder
                     'status' => 'active',
                 ],
             );
+        }
 
+        foreach ([1, 2, 3, 4] as $count) {
             ServiceCountOption::updateOrCreate(
                 [
                     'service_type_id' => $school->id,

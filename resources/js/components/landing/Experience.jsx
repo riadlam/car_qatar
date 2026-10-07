@@ -1,28 +1,11 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { IMG } from './motion';
 import { useSectionAnim } from './useSectionAnim';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const DETAILS = [
-    {
-        title: 'A welcome like no other',
-        copy: 'The door is opened for you. Your luggage is stowed. Everything is taken care of.',
-        img: IMG.ride1,
-    },
-    {
-        title: 'You set the tone',
-        copy: 'Sit back and relax. Music and temperature will be adjusted to your preferences.',
-        img: IMG.ride2,
-    },
-    {
-        title: 'Recharge your batteries',
-        copy: 'Stay connected on the go with universal chargers for iOS and Android.',
-        img: IMG.ride3,
-    },
-];
 
 const GLASS = {
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -33,7 +16,7 @@ const GLASS = {
     WebkitBackdropFilter: 'blur(16px)',
 };
 
-function PinnedSlides() {
+function PinnedSlides({ details }) {
     const containerRef = useRef(null);
     const slideRefs = useRef([]);
 
@@ -90,7 +73,7 @@ function PinnedSlides() {
         });
 
         return () => mm.revert();
-    }, []);
+    }, [details]);
 
     return (
         <div
@@ -108,9 +91,9 @@ function PinnedSlides() {
                 className="relative m-0 h-full w-full list-none p-0"
                 style={{ margin: 0, padding: 0, listStyle: 'none' }}
             >
-                {DETAILS.map((item, i) => (
+                {details.map((item, i) => (
                     <div
-                        key={item.title}
+                        key={item.key}
                         ref={(el) => {
                             slideRefs.current[i] = el;
                         }}
@@ -184,7 +167,32 @@ function PinnedSlides() {
 }
 
 export default function Experience() {
+    const { t } = useTranslation('landing');
     const rootRef = useSectionAnim();
+
+    const details = useMemo(
+        () => [
+            {
+                key: 'welcome',
+                title: t('experience.welcome.title'),
+                copy: t('experience.welcome.copy'),
+                img: IMG.ride1,
+            },
+            {
+                key: 'tone',
+                title: t('experience.tone.title'),
+                copy: t('experience.tone.copy'),
+                img: IMG.ride2,
+            },
+            {
+                key: 'recharge',
+                title: t('experience.recharge.title'),
+                copy: t('experience.recharge.copy'),
+                img: IMG.ride3,
+            },
+        ],
+        [t],
+    );
 
     return (
         <section
@@ -205,7 +213,7 @@ export default function Experience() {
                         margin: '0 auto 16px',
                     }}
                 >
-                    Step in. Breathe out.
+                    {t('experience.headline')}
                 </h2>
                 <p
                     data-anim="subtitle"
@@ -217,7 +225,7 @@ export default function Experience() {
                         marginBottom: 'clamp(2rem, 5vw, 72px)',
                     }}
                 >
-                    Thoughtful details and discreet service transform every journey into your personal sanctuary.
+                    {t('experience.subhead')}
                 </p>
             </div>
 
@@ -230,9 +238,9 @@ export default function Experience() {
                     scrollbarWidth: 'none',
                 }}
             >
-                {DETAILS.map((item) => (
+                {details.map((item) => (
                     <li
-                        key={item.title}
+                        key={item.key}
                         data-anim="item"
                         className="relative shrink-0 overflow-hidden text-left"
                         style={{
@@ -274,7 +282,7 @@ export default function Experience() {
                 ))}
             </ul>
 
-            <PinnedSlides />
+            <PinnedSlides details={details} />
         </section>
     );
 }

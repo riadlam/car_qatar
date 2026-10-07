@@ -54,7 +54,7 @@ class BookingsTable
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('total_amount')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable(),
                 TextColumn::make('quote.id')
                     ->label('Quote')
@@ -74,19 +74,19 @@ class BookingsTable
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('subtotal')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('tax_amount')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('fees')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('discount')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('pickup_sign')

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { firstApiError, saveBillingProfile } from '../../api/checkout';
 
 const EMPTY = {
@@ -17,6 +18,7 @@ export function billingSummary(profile) {
 }
 
 export default function BillingModal({ open, countries, profile, onClose, onSaved }) {
+    const { t } = useTranslation(['booking', 'common']);
     const [form, setForm] = useState(EMPTY);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
@@ -38,7 +40,7 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
     async function onSubmit(event) {
         event.preventDefault();
         if (!form.street.trim() || !form.zip.trim() || !form.city.trim() || !form.country) {
-            setError('Street, ZIP, city, and country are required.');
+            setError(t('billingModal.required'));
             return;
         }
         setSaving(true);
@@ -54,7 +56,7 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
             onSaved(saved);
             onClose();
         } catch (err) {
-            setError(firstApiError(err, 'Could not save billing details.'));
+            setError(firstApiError(err, t('billingModal.saveFailed')));
         } finally {
             setSaving(false);
         }
@@ -70,22 +72,22 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
                 className="w-full max-w-[480px] rounded-2xl bg-white p-5 shadow-[0_16px_48px_rgba(24,26,27,0.2)] sm:p-6"
             >
                 <h2 className="font-fragment m-0 text-[22px] leading-7 font-400 text-ink-text">
-                    {profile ? 'Edit billing information' : 'Add billing information'}
+                    {profile ? t('checkout.billing.edit') : t('checkout.billing.add')}
                 </h2>
                 <p className="font-geist m-0 mt-1 text-[14px] text-muted">
-                    This address is stored on your account and copied onto each booking.
+                    {t('billingModal.help')}
                 </p>
                 <div className="mt-4 grid gap-3">
                     <input
                         className={field}
-                        placeholder="Company (optional)"
+                        placeholder={t('billingModal.company')}
                         value={form.company}
                         onChange={(e) => setForm({ ...form, company: e.target.value })}
                     />
                     <input
                         className={field}
                         required
-                        placeholder="Street and number"
+                        placeholder={t('billingModal.street')}
                         value={form.street}
                         onChange={(e) => setForm({ ...form, street: e.target.value })}
                     />
@@ -93,14 +95,14 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
                         <input
                             className={field}
                             required
-                            placeholder="ZIP"
+                            placeholder={t('billingModal.zip')}
                             value={form.zip}
                             onChange={(e) => setForm({ ...form, zip: e.target.value })}
                         />
                         <input
                             className={field}
                             required
-                            placeholder="City"
+                            placeholder={t('billingModal.city')}
                             value={form.city}
                             onChange={(e) => setForm({ ...form, city: e.target.value })}
                         />
@@ -111,7 +113,7 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
                         value={form.country}
                         onChange={(e) => setForm({ ...form, country: e.target.value })}
                     >
-                        <option value="">Country</option>
+                        <option value="">{t('billingModal.country')}</option>
                         {countries.map((country) => (
                             <option key={country} value={country}>
                                 {country}
@@ -126,14 +128,14 @@ export default function BillingModal({ open, countries, profile, onClose, onSave
                         onClick={onClose}
                         className="font-geist h-11 cursor-pointer rounded-full border border-[#d8d8dc] px-4 text-[15px] font-500 text-ink-text hover:bg-page"
                     >
-                        Cancel
+                        {t('common:actions.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={saving}
                         className="font-geist h-11 cursor-pointer rounded-full border-0 bg-wine-700 px-4 text-[15px] font-500 text-white hover:bg-wine-600 disabled:opacity-50"
                     >
-                        {saving ? 'Saving…' : 'Save'}
+                        {saving ? t('guest.saving') : t('common:actions.save')}
                     </button>
                 </div>
             </form>

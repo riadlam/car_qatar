@@ -1,42 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CORP_IMG } from './assets';
-
-const ROWS = [
-    [
-        {
-            icon: CORP_IMG.iconCurrency,
-            title: 'Competitive pricing',
-            body: 'Access premium service at distance-based prices that are fair to you and our chauffeurs.',
-        },
-        {
-            icon: CORP_IMG.iconGlobal,
-            title: 'Global availability',
-            body: 'Our worldwide chauffeur service guarantees prompt and reliable travel.',
-        },
-        {
-            icon: CORP_IMG.iconCheck,
-            title: 'Priority dispatching',
-            body: 'Streamline your experience with priority bookings and real-time tracking.',
-        },
-    ],
-    [
-        {
-            icon: CORP_IMG.iconTime,
-            title: 'Easy booking',
-            body: 'Easy one-page booking, with instant confirmation and transparent pricing.',
-        },
-        {
-            icon: CORP_IMG.iconSupport,
-            title: 'Corporate support',
-            body: 'Our multilingual, 24/7 support team ensures corporate clients are covered around the clock.',
-        },
-        {
-            icon: CORP_IMG.iconEco,
-            title: 'Electric vehicle option',
-            body: 'We proudly offer an array of EVs in select cities, and ensure our carbon footprint is offset!',
-        },
-    ],
-];
 
 function BenefitRow({ items }) {
     const scrollerRef = useRef(null);
@@ -99,14 +63,56 @@ function BenefitRow({ items }) {
 }
 
 export default function Benefits() {
+    const { t } = useTranslation('marketing');
+
+    const rows = useMemo(
+        () => [
+            [
+                {
+                    icon: CORP_IMG.iconCurrency,
+                    title: t('corporations.benefitsGrid.pricing.title'),
+                    body: t('corporations.benefitsGrid.pricing.body'),
+                },
+                {
+                    icon: CORP_IMG.iconGlobal,
+                    title: t('corporations.benefitsGrid.global.title'),
+                    body: t('corporations.benefitsGrid.global.body'),
+                },
+                {
+                    icon: CORP_IMG.iconCheck,
+                    title: t('corporations.benefitsGrid.dispatch.title'),
+                    body: t('corporations.benefitsGrid.dispatch.body'),
+                },
+            ],
+            [
+                {
+                    icon: CORP_IMG.iconTime,
+                    title: t('corporations.benefitsGrid.booking.title'),
+                    body: t('corporations.benefitsGrid.booking.body'),
+                },
+                {
+                    icon: CORP_IMG.iconSupport,
+                    title: t('corporations.benefitsGrid.support.title'),
+                    body: t('corporations.benefitsGrid.support.body'),
+                },
+                {
+                    icon: CORP_IMG.iconEco,
+                    title: t('corporations.benefitsGrid.ev.title'),
+                    body: t('corporations.benefitsGrid.ev.body'),
+                },
+            ],
+        ],
+        [t],
+    );
+
     return (
         <section id="benefits" className="bg-page px-6 py-12 lg:px-12 lg:py-16">
             <div className="mx-auto max-w-[1170px]">
                 <h2 className="font-fragment m-0 mb-10 text-center text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10 lg:mb-12 lg:text-[40px] lg:leading-[48px]">
-                    Experience our corporate benefits
+                    {t('corporations.benefitsGrid.title')}
                 </h2>
                 <div className="flex flex-col gap-8 lg:gap-12">
-                    {ROWS.map((row, i) => (
+                    {rows.map((row, i) => (
                         <BenefitRow key={i} items={row} />
                     ))}
                 </div>

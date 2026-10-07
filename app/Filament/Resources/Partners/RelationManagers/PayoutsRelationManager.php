@@ -11,12 +11,18 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class PayoutsRelationManager extends RelationManager
 {
     protected static string $relationship = 'payouts';
 
     protected static ?string $title = 'Settlements';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return auth()->user()?->canManageFinance() ?? false;
+    }
 
     public function form(Schema $schema): Schema
     {

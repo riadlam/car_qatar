@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import CardCarousel from '../components/corporations/CardCarousel';
 import CtaStrip from '../components/corporations/CtaStrip';
@@ -53,17 +54,18 @@ const MALL_CARDS = [
 ];
 
 function HeroScheduler({ stacked = false, explore }) {
+    const { t } = useTranslation('marketing');
     return (
         <DestinationScheduler
             destinations={explore.destinations}
             selectedDestination={explore.selectedDestination}
             onDestinationChange={explore.setSelectedDestination}
-            destinationLabel="Mall / shopping"
-            destinationPlaceholder="Search malls in Qatar…"
-            pickupPlaceholder="Address, airport, hotel, ..."
+            destinationLabel={t('explore.malls.destLabel')}
+            destinationPlaceholder={t('explore.malls.destPlaceholder')}
+            pickupPlaceholder={t('explore.scheduler.pickupPlaceholder')}
             service="one_way"
-            title="Schedule your shopping transfer"
-            subtitle="Pick a Doha mall, set pickup time, and view chauffeur options."
+            title={t('explore.malls.scheduleTitle')}
+            subtitle={t('explore.malls.scheduleSubtitle')}
             stacked={stacked}
         />
     );
@@ -86,11 +88,14 @@ function useIsPhone() {
 }
 
 function Hero({ explore }) {
+    const { t } = useTranslation('marketing');
     const isPhone = useIsPhone();
+    const heroTitle = t('explore.malls.title');
+    const heroSubtitle = t('explore.malls.subtitle');
 
     if (isPhone) {
         return (
-            <section id="top" className="bg-white" aria-label="Malls and shopping in Qatar">
+            <section id="top" className="bg-white" aria-label={heroTitle}>
                 <div
                     className="relative flex min-h-[100svh] flex-col justify-center rounded-b-[16px] bg-cover bg-center px-3 py-4 pt-[72px]"
                     style={{
@@ -111,10 +116,10 @@ function Hero({ explore }) {
                     <div className="relative z-10 flex w-full -translate-y-[4%] flex-col items-center gap-3 sm:max-w-xl sm:self-center sm:gap-4">
                         <div className="w-full px-1 text-center">
                             <h1 className="font-fragment m-0 text-[32px] leading-9 font-400 tracking-[0.25px] text-white sm:text-[40px] sm:leading-[48px]">
-                                Malls and shopping
+                                {heroTitle}
                             </h1>
                             <p className="font-geist mt-1.5 m-0 text-[15px] leading-6 font-500 tracking-[0.15px] text-white/90 sm:text-[18px] sm:leading-7">
-                                Chauffeur transfers to Doha&apos;s malls and souqs.
+                                {heroSubtitle}
                             </p>
                         </div>
 
@@ -128,7 +133,7 @@ function Hero({ explore }) {
     }
 
     return (
-        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label="Malls and shopping in Qatar">
+        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label={heroTitle}>
             <div className="relative">
                 <div
                     className="relative flex min-h-[90svh] flex-col rounded-b-[16px] bg-cover bg-center pt-[120px] lg:min-h-[92svh] lg:pt-[132px]"
@@ -150,11 +155,10 @@ function Hero({ explore }) {
                     <div className="relative z-[1] mt-auto flex w-full flex-col items-center px-6 pb-32 text-center lg:pb-36">
                         <div className="mx-auto flex w-full max-w-[900px] flex-col items-center gap-3 lg:gap-4">
                             <h1 className="font-fragment m-0 text-[56px] leading-[64px] font-400 tracking-[0.25px] text-white lg:text-[72px] lg:leading-[80px]">
-                                Malls and shopping
+                                {heroTitle}
                             </h1>
                             <p className="font-geist m-0 text-[24px] leading-8 font-500 tracking-[0.15px] text-white lg:text-[30px] lg:leading-10">
-                                Hotel to mall — chauffeured shopping trips across Doha, Lusail, and
-                                beyond.
+                                {heroSubtitle}
                             </p>
                         </div>
                     </div>
@@ -169,26 +173,28 @@ function Hero({ explore }) {
 }
 
 function Breadcrumb() {
+    const { t } = useTranslation('marketing');
     return (
-        <nav aria-label="Breadcrumb" className="bg-page px-6 py-4 text-center lg:px-12">
+        <nav aria-label={t('common.breadcrumb')} className="bg-page px-6 py-4 text-center lg:px-12">
             <ol className="font-geist m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 text-[14px] leading-5 text-muted">
                 <li>
                     <a href="/" className="text-ink-text transition hover:text-wine-700">
-                        Home
+                        {t('common.home')}
                     </a>
                 </li>
                 <li aria-hidden="true">/</li>
                 <li>
-                    <span className="text-ink-text">Explore Qatar</span>
+                    <span className="text-ink-text">{t('explore.qatar')}</span>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li aria-current="page">Malls and shopping</li>
+                <li aria-current="page">{t('explore.malls.title')}</li>
             </ol>
         </nav>
     );
 }
 
 export default function Malls() {
+    const { t } = useTranslation('marketing');
     const explore = useExploreCategory('mall', MALL_CARDS, MALL_DESTINATIONS);
 
     return (
@@ -196,58 +202,58 @@ export default function Malls() {
             <Hero explore={explore} />
             <Breadcrumb />
             <CardCarousel
-                title="Shopping destinations we drive to daily"
+                title={t('explore.malls.carouselTitle')}
                 cards={explore.cards}
                 onCardClick={explore.onCardClick}
             />
             <CalloutBanner
-                title="Skip the parking — keep the shopping bags"
-                body="Curb-side drop-off at major Doha malls, then a calm ride back to your hotel."
-                cta="Schedule a transfer"
+                title={t('explore.malls.calloutSee.title')}
+                body={t('explore.malls.calloutSee.body')}
+                cta={t('explore.malls.calloutSee.cta')}
                 href="#schedule"
             />
             <SeoSplit
                 imageOn="right"
-                title="Arrive at the entrance, not the car park"
-                body="From Place Vendôme to Villaggio and Souq Waqif, we time your transfer so you step out at the right door — bags optional on the way home."
+                title={t('explore.malls.seoArrive.title')}
+                body={t('explore.malls.seoArrive.body')}
                 bullets={[
-                    'Mall entrance and porte-cochère drop-offs across Qatar',
-                    'Hotel-to-mall and mall-to-hotel transfers',
-                    'Hamad Airport links for same-day shopping trips',
+                    t('explore.malls.seoArrive.b1'),
+                    t('explore.malls.seoArrive.b2'),
+                    t('explore.malls.seoArrive.b3'),
                 ]}
                 image={MALL_IMG.seoShop}
-                alt="Shopping destination in Doha"
+                alt={t('explore.malls.seoArrive.alt')}
             />
             <SeoSplit
                 imageOn="left"
-                title="Several malls in one booking"
-                body="Planning Festival City then Mall of Qatar? Use by-the-hour service and keep the same chauffeur for a seamless retail day."
+                title={t('explore.malls.seoHourly.title')}
+                body={t('explore.malls.seoHourly.body')}
                 bullets={[
-                    'By-the-hour multi-mall itineraries',
-                    'Flexible wait-and-return options',
-                    'Local chauffeurs who know Doha traffic and mall access roads',
+                    t('explore.malls.seoHourly.b1'),
+                    t('explore.malls.seoHourly.b2'),
+                    t('explore.malls.seoHourly.b3'),
                 ]}
                 image={MALL_IMG.seoTransfer}
-                alt="Major shopping mall in Qatar"
-                cta={{ label: 'Book by the hour', href: '/?service=by_hour#book' }}
+                alt={t('explore.malls.seoHourly.alt')}
+                cta={{ label: t('common.bookByTheHour'), href: '/?service=by_hour#book' }}
             />
             <SeoSplit
                 imageOn="right"
-                title="Evening shopping without the logistics"
-                body="Premium fleet, clear pricing before you confirm — built for visitors who want Doha’s malls, not the parking levels."
+                title={t('explore.malls.seoMeet.title')}
+                body={t('explore.malls.seoMeet.body')}
                 bullets={[
-                    'Punctual evening and weekend runs',
-                    'Complimentary waiting time on transfers',
-                    'Discreet service for families and VIP shopping',
+                    t('explore.malls.seoMeet.b1'),
+                    t('explore.malls.seoMeet.b2'),
+                    t('explore.malls.seoMeet.b3'),
                 ]}
                 image={MALL_IMG.seoEvening}
-                alt="Evening shopping transfer in Doha"
+                alt={t('explore.malls.seoMeet.alt')}
             />
-            <CtaStrip label="Schedule your shopping transfer" href="#schedule" />
+            <CtaStrip label={t('explore.malls.ctaStrip')} href="#schedule" />
             <CalloutBanner
-                title="Ready when you are"
-                body="Choose a mall above, or start from the homepage booking widget for any trip type."
-                cta="Back to booking"
+                title={t('common.readyWhen')}
+                body={t('explore.malls.ready.body')}
+                cta={t('common.backToBooking')}
                 href={BOOK_HREF}
             />
             <ScrollTop />

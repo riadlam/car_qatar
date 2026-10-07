@@ -34,11 +34,11 @@ class SeatAddonForm
                             ->numeric()
                             ->minValue(0)
                             ->default(0)
-                            ->prefix('$')
+                            ->prefix('QAR')
                             ->columnSpanFull(),
                         TextInput::make('currency')
                             ->required()
-                            ->default('USD')
+                            ->default('QAR')
                             ->maxLength(3),
                         TextInput::make('sort_order')
                             ->required()

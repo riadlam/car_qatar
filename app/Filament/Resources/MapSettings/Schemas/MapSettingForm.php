@@ -4,7 +4,6 @@ namespace App\Filament\Resources\MapSettings\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -62,16 +61,6 @@ class MapSettingForm
                             ->options([
                                 'mapbox/driving-traffic' => 'Driving with traffic',
                                 'mapbox/driving' => 'Driving',
-                            ])
-                            ->required()
-                            ->native(false),
-                        Toggle::make('show_traffic')
-                            ->label('Prefer traffic-aware routes')
-                            ->default(true),
-                        Select::make('status')
-                            ->options([
-                                'active' => 'Active',
-                                'inactive' => 'Inactive',
                             ])
                             ->required()
                             ->native(false),

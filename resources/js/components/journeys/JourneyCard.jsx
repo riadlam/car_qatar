@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { bookingPathFromJourney, formatMoney } from '../../data/journeys';
 import { cancelBooking } from '../../api/bookings';
 import CancelReasonModal from './CancelReasonModal';
@@ -60,6 +61,7 @@ function StarRow({ rating }) {
  * Modern ride card — booking-grade info at a glance (Blacklane / Uber Black style).
  */
 export default function JourneyCard({ journey: j, onCancelled }) {
+    const { t } = useTranslation('journeys');
     const [receiptOpen, setReceiptOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
     const [cancelBusy, setCancelBusy] = useState(false);
@@ -216,7 +218,7 @@ export default function JourneyCard({ journey: j, onCancelled }) {
                                         to={`/journeys/ride/${j.id}`}
                                         className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] bg-white px-3.5 py-2 text-[13px] font-500 text-ink-text transition hover:border-wine-700 hover:text-wine-700"
                                     >
-                                        View details
+                                        {t('card.viewDetails')}
                                     </Link>
                                 );
                             }
@@ -239,7 +241,7 @@ export default function JourneyCard({ journey: j, onCancelled }) {
                                         onClick={() => setCancelOpen(true)}
                                         className="font-geist cursor-pointer rounded-full px-3.5 py-2 text-[13px] font-500 text-muted transition hover:text-ink-text"
                                     >
-                                        Cancel
+                                        {t('card.cancel')}
                                     </button>
                                 );
                             }
@@ -308,7 +310,7 @@ export default function JourneyCard({ journey: j, onCancelled }) {
             <ReceiptModal open={receiptOpen} journey={j} onClose={() => setReceiptOpen(false)} />
             <CancelReasonModal
                 open={cancelOpen}
-                title="Cancel this booking"
+                title={t('card.cancel')}
                 busy={cancelBusy}
                 onClose={() => {
                     if (!cancelBusy) setCancelOpen(false);

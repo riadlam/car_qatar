@@ -26,9 +26,14 @@ class CityForm
                             ->required(),
                         TextInput::make('timezone')
                             ->default(null),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                            ])
                             ->required()
-                            ->default('active'),
+                            ->default('active')
+                            ->native(false),
                     ]),
                 Section::make('Coordinates')
                     ->columns(2)

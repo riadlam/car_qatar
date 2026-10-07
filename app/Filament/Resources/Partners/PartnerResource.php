@@ -48,11 +48,16 @@ class PartnerResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
+        $relations = [
             UsersRelationManager::class,
             BookingsRelationManager::class,
-            PayoutsRelationManager::class,
         ];
+
+        if (auth()->user()?->canManageFinance()) {
+            $relations[] = PayoutsRelationManager::class;
+        }
+
+        return $relations;
     }
 
     public static function getPages(): array

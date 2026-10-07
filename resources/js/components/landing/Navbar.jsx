@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
+import { useChangeLanguage } from '../../hooks/useChangeLanguage';
 import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../../utils/roles';
 import { fetchContactChannels } from '../../api/catalog';
 
@@ -23,22 +25,12 @@ const LIGHT_TOP_PATHS = [
     '/partner',
 ];
 
-const EXPLORE_QATAR = [
-    { label: 'Iconic places in Qatar', href: '/iconic-places' },
-    { label: 'Hotels', href: '/hotels' },
-    { label: 'Malls and shoppings', href: '/malls' },
-    { label: 'Beaches and resorts', href: '/beaches' },
-    { label: 'Restaurants & Business Lunch', href: '/restaurants' },
-];
-
-const CONTACT_US_FALLBACK = [
-    { key: 'call_us', label: 'Call us', href: 'tel:+97440000000', type: 'phone' },
-    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000', type: 'whatsapp' },
-    { key: 'leave_message', label: 'Leave a message', href: '/contact', type: 'link' },
-    { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com', type: 'email' },
-];
-
-const LANGS = [{ label: 'English (US)', href: '#' }];
+const CONTACT_KEY_TO_I18N = {
+    call_us: 'contact.callUs',
+    whatsapp: 'contact.whatsapp',
+    leave_message: 'contact.leaveMessage',
+    email: 'contact.email',
+};
 
 function Chevron({ open }) {
     return (
@@ -105,7 +97,7 @@ function NavDropdown({ label, items, light, align = 'start' }) {
         return () => document.removeEventListener('mousedown', onDoc);
     }, []);
 
-    const itemClass = `font-geist block w-full rounded-md px-3 py-2.5 text-left text-[15px] leading-5 whitespace-nowrap transition ${
+    const itemClass = `font-geist block w-full rounded-md px-3 py-2.5 text-start text-[15px] leading-5 whitespace-nowrap transition ${
         light ? 'text-ink-text hover:bg-black/5' : 'text-white hover:bg-white/10'
     }`;
 
@@ -130,7 +122,7 @@ function NavDropdown({ label, items, light, align = 'start' }) {
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.18 }}
                         className={`absolute top-[calc(100%+8px)] z-20 min-w-[220px] list-none rounded-lg p-2 ${
-                            align === 'end' ? 'right-0' : 'left-0'
+                            align === 'end' ? 'end-0' : 'start-0'
                         } ${light ? 'nav-dd--light' : 'nav-dd--dark'}`}
                     >
                         {items.map((item) => {
@@ -178,6 +170,8 @@ function NavDropdown({ label, items, light, align = 'start' }) {
 }
 
 export default function Navbar() {
+    const { t, i18n } = useTranslation('common');
+    const changeLanguage = useChangeLanguage();
     const location = useLocation();
     const navigate = useNavigate();
     const { isAuthenticated, user, logout } = useAuth();
@@ -187,6 +181,47 @@ export default function Navbar() {
     const [mobileAcc, setMobileAcc] = useState(null);
     const [contactUs, setContactUs] = useState([]);
     const [loggingOut, setLoggingOut] = useState(false);
+
+    const exploreQatar = useMemo(
+        () => [
+            { label: t('explore.iconicPlaces'), href: '/iconic-places' },
+            { label: t('explore.hotels'), href: '/hotels' },
+            { label: t('explore.malls'), href: '/malls' },
+            { label: t('explore.beaches'), href: '/beaches' },
+            { label: t('explore.restaurants'), href: '/restaurants' },
+        ],
+        [t],
+    );
+
+    const contactFallback = useMemo(
+        () => [
+            { key: 'call_us', label: t('contact.callUs'), href: 'tel:+97455045333', type: 'phone' },
+            { key: 'whatsapp', label: t('contact.whatsapp'), href: 'https://wa.me/97455045333', type: 'whatsapp' },
+            { key: 'leave_message', label: t('contact.leaveMessage'), href: '/contact', type: 'link' },
+            { key: 'email', label: t('contact.email'), href: 'mailto:Mohammed.mashhour@almajdluxurytransport.com', type: 'email' },
+        ],
+        [t],
+    );
+
+    const langItems = useMemo(
+        () => [
+            {
+                key: 'en',
+                label: t('nav.english'),
+                onSelect: () => void changeLanguage('en'),
+                type: 'form',
+            },
+            {
+                key: 'ar',
+                label: t('nav.arabic'),
+                onSelect: () => void changeLanguage('ar'),
+                type: 'form',
+            },
+        ],
+        [t, changeLanguage],
+    );
+
+    const langLabel = i18n.language?.startsWith('ar') ? t('nav.arabic') : t('nav.english');
 
     const onLogout = async () => {
         setLoggingOut(true);
@@ -211,24 +246,25 @@ export default function Navbar() {
     const profileLabel =
         user?.first_name?.trim() ||
         user?.name?.split?.(' ')?.[0] ||
-        'Profile';
+        t('nav.account');
 
     const mapChannels = useCallback(
         (channels) =>
             channels.map((c) => {
                 const isLeaveMessage = c.key === 'leave_message' || c.type === 'form';
+                const i18nKey = CONTACT_KEY_TO_I18N[c.key];
                 return {
                     key: c.key,
-                    label: c.label,
+                    label: i18nKey ? t(i18nKey) : c.label,
                     href: isLeaveMessage ? '/contact' : c.href || '#',
                     type: isLeaveMessage ? 'link' : c.type || 'link',
                 };
             }),
-        [],
+        [t],
     );
 
     useEffect(() => {
-        setContactUs(mapChannels(CONTACT_US_FALLBACK));
+        setContactUs(mapChannels(contactFallback));
         let cancelled = false;
         fetchContactChannels()
             .then((channels) => {
@@ -236,12 +272,12 @@ export default function Navbar() {
                 setContactUs(mapChannels(channels));
             })
             .catch(() => {
-                if (!cancelled) setContactUs(mapChannels(CONTACT_US_FALLBACK));
+                if (!cancelled) setContactUs(mapChannels(contactFallback));
             });
         return () => {
             cancelled = true;
         };
-    }, [mapChannels]);
+    }, [mapChannels, contactFallback]);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
@@ -304,11 +340,11 @@ export default function Navbar() {
                     />
                 )}
                 <div className="relative mx-auto flex h-[72px] w-full max-w-[100vw] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:h-[88px] lg:px-12">
-                    <a href="/" aria-label="Go to Homepage" className="relative z-10 shrink-0">
+                    <a href="/" aria-label={t('nav.home')} className="relative z-10 shrink-0">
                         <Logo compact inverted={light} />
                     </a>
 
-                    <nav className="relative z-10 hidden lg:block" aria-label="Primary">
+                    <nav className="relative z-10 hidden lg:block" aria-label={t('nav.menu')}>
                         <ul className="m-0 flex list-none items-center gap-1 p-0 xl:gap-2">
                             <li>
                                 <a
@@ -319,10 +355,10 @@ export default function Navbar() {
                                             : 'text-white/90 hover:text-white'
                                     }`}
                                 >
-                                    Book
+                                    {t('nav.book')}
                                 </a>
                             </li>
-                            <NavDropdown label="Explore Qatar" items={EXPLORE_QATAR} light={light} />
+                            <NavDropdown label={t('nav.exploreQatar')} items={exploreQatar} light={light} />
                             <li>
                                 <a
                                     href="/business-solutions"
@@ -332,10 +368,10 @@ export default function Navbar() {
                                             : 'text-white/90 hover:text-white'
                                     }`}
                                 >
-                                    Business solutions
+                                    {t('footer.businessSolutions')}
                                 </a>
                             </li>
-                            <NavDropdown label="Contact us" items={contactUs} light={light} />
+                            <NavDropdown label={t('nav.contactUs')} items={contactUs} light={light} />
                             <li>
                                 <a
                                     href="/about-us"
@@ -345,11 +381,11 @@ export default function Navbar() {
                                             : 'text-white/90 hover:text-white'
                                     }`}
                                 >
-                                    About us
+                                    {t('nav.aboutUs')}
                                 </a>
                             </li>
-                            <NavDropdown label="English (US)" items={LANGS} light={light} align="end" />
-                            <li className="ml-1 flex items-center gap-2">
+                            <NavDropdown label={langLabel} items={langItems} light={light} align="end" />
+                            <li className="ms-1 flex items-center gap-2">
                                 {isAuthenticated ? (
                                     <>
                                         <Link
@@ -379,7 +415,7 @@ export default function Navbar() {
                                                     : 'border-white/25 text-white hover:bg-white/10'
                                             }`}
                                         >
-                                            {loggingOut ? 'Signing out…' : 'Log out'}
+                                            {loggingOut ? t('actions.loading') : t('nav.signOut')}
                                         </button>
                                     </>
                                 ) : (
@@ -393,7 +429,7 @@ export default function Navbar() {
                                         }`}
                                     >
                                         <UserIcon />
-                                        Sign in / Sign up
+                                        {t('nav.signIn')}
                                     </Link>
                                 )}
                             </li>
@@ -406,9 +442,9 @@ export default function Navbar() {
                                             animate={{ opacity: 1, scale: 1, x: 0 }}
                                             exit={{ opacity: 0, scale: 0.92, x: 8 }}
                                             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                                            className="font-geist ml-1 inline-flex rounded-full bg-wine-700 px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap text-white transition hover:bg-wine-600"
+                                            className="font-geist ms-1 inline-flex rounded-full bg-wine-700 px-4 py-2 text-[16px] leading-6 font-500 whitespace-nowrap text-white transition hover:bg-wine-600"
                                         >
-                                            Book now
+                                            {t('actions.bookNow')}
                                         </motion.a>
                                     </li>
                                 )}
@@ -427,19 +463,19 @@ export default function Navbar() {
                                     transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                                     className="font-geist rounded-full bg-wine-700 px-3.5 py-2 text-[14px] leading-5 font-500 whitespace-nowrap text-white transition hover:bg-wine-600 sm:px-4 sm:text-[15px]"
                                 >
-                                    Book now
+                                    {t('actions.bookNow')}
                                 </motion.a>
                             )}
                         </AnimatePresence>
                         <Link
                             to={isAuthenticated ? '/account' : loginHref}
-                            aria-label={isAuthenticated ? 'Open profile' : 'Sign in or sign up'}
+                            aria-label={isAuthenticated ? t('nav.account') : t('nav.signIn')}
                             className={`nav-user font-geist flex h-11 items-center justify-center gap-1.5 rounded-full border px-3 text-[13px] font-500 whitespace-nowrap ${
                                 light ? 'nav-user--light border-ink-text/12' : 'nav-user--dark border-white/25'
                             }`}
                         >
                             <UserIcon />
-                            <span>{isAuthenticated ? profileLabel : 'Sign in / Sign up'}</span>
+                            <span>{isAuthenticated ? profileLabel : t('nav.signIn')}</span>
                         </Link>
                         <button
                             type="button"
@@ -447,7 +483,7 @@ export default function Navbar() {
                             className={`nav-burger flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border ${
                                 light ? 'nav-burger--light border-ink-text/12' : 'nav-burger--dark border-white/25'
                             }`}
-                            aria-label="Toggle menu"
+                            aria-label={t('nav.menu')}
                             aria-expanded={open}
                         >
                             <span
@@ -485,64 +521,17 @@ export default function Navbar() {
                                         onClick={() => setOpen(false)}
                                         className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                     >
-                                        Book
+                                        {t('nav.book')}
                                     </a>
                                 </li>
                                 {[
-                                    { key: 'explore', label: 'Explore Qatar', items: EXPLORE_QATAR },
+                                    { key: 'explore', label: t('nav.exploreQatar'), items: exploreQatar },
+                                    { key: 'lang', label: langLabel, items: langItems },
                                 ].map((group) => (
                                     <li key={group.key} className="border-b border-ink-text/8">
                                         <button
                                             type="button"
-                                            className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
-                                            onClick={() =>
-                                                setMobileAcc(mobileAcc === group.key ? null : group.key)
-                                            }
-                                            aria-expanded={mobileAcc === group.key}
-                                        >
-                                            {group.label}
-                                            <Chevron open={mobileAcc === group.key} />
-                                        </button>
-                                        <AnimatePresence initial={false}>
-                                            {mobileAcc === group.key && (
-                                                <motion.ul
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    className="overflow-hidden pb-2"
-                                                >
-                                                    {group.items.map((item) => (
-                                                        <li key={item.label}>
-                                                            <a
-                                                                href={item.href}
-                                                                onClick={() => setOpen(false)}
-                                                                className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
-                                                            >
-                                                                {item.label}
-                                                            </a>
-                                                        </li>
-                                                    ))}
-                                                </motion.ul>
-                                            )}
-                                        </AnimatePresence>
-                                    </li>
-                                ))}
-                                <li>
-                                    <a
-                                        href="/business-solutions"
-                                        onClick={() => setOpen(false)}
-                                        className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
-                                    >
-                                        Business solutions
-                                    </a>
-                                </li>
-                                {[
-                                    { key: 'contact', label: 'Contact us', items: contactUs },
-                                ].map((group) => (
-                                    <li key={group.key} className="border-b border-ink-text/8">
-                                        <button
-                                            type="button"
-                                            className="font-geist flex w-full items-center justify-between py-3.5 text-left text-[16px] text-ink-text"
+                                            className="font-geist flex w-full items-center justify-between py-3.5 text-start text-[16px] text-ink-text"
                                             onClick={() =>
                                                 setMobileAcc(mobileAcc === group.key ? null : group.key)
                                             }
@@ -568,7 +557,7 @@ export default function Navbar() {
                                                                         setOpen(false);
                                                                         item.onSelect?.();
                                                                     }}
-                                                                    className="font-geist block w-full py-2.5 pl-3 text-left text-[15px] text-ink-text/80"
+                                                                    className="font-geist block w-full py-2.5 ps-3 text-start text-[15px] text-ink-text/80"
                                                                 >
                                                                     {item.label}
                                                                 </button>
@@ -576,7 +565,68 @@ export default function Navbar() {
                                                                 <a
                                                                     href={item.href}
                                                                     onClick={() => setOpen(false)}
-                                                                    className="font-geist block py-2.5 pl-3 text-[15px] text-ink-text/80"
+                                                                    className="font-geist block py-2.5 ps-3 text-[15px] text-ink-text/80"
+                                                                >
+                                                                    {item.label}
+                                                                </a>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </motion.ul>
+                                            )}
+                                        </AnimatePresence>
+                                    </li>
+                                ))}
+                                <li>
+                                    <a
+                                        href="/business-solutions"
+                                        onClick={() => setOpen(false)}
+                                        className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
+                                    >
+                                        {t('footer.businessSolutions')}
+                                    </a>
+                                </li>
+                                {[
+                                    { key: 'contact', label: t('nav.contactUs'), items: contactUs },
+                                ].map((group) => (
+                                    <li key={group.key} className="border-b border-ink-text/8">
+                                        <button
+                                            type="button"
+                                            className="font-geist flex w-full items-center justify-between py-3.5 text-start text-[16px] text-ink-text"
+                                            onClick={() =>
+                                                setMobileAcc(mobileAcc === group.key ? null : group.key)
+                                            }
+                                            aria-expanded={mobileAcc === group.key}
+                                        >
+                                            {group.label}
+                                            <Chevron open={mobileAcc === group.key} />
+                                        </button>
+                                        <AnimatePresence initial={false}>
+                                            {mobileAcc === group.key && (
+                                                <motion.ul
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden pb-2"
+                                                >
+                                                    {group.items.map((item) => (
+                                                        <li key={item.key || item.label}>
+                                                            {isFormChannel(item) ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setOpen(false);
+                                                                        item.onSelect?.();
+                                                                    }}
+                                                                    className="font-geist block w-full py-2.5 ps-3 text-start text-[15px] text-ink-text/80"
+                                                                >
+                                                                    {item.label}
+                                                                </button>
+                                                            ) : (
+                                                                <a
+                                                                    href={item.href}
+                                                                    onClick={() => setOpen(false)}
+                                                                    className="font-geist block py-2.5 ps-3 text-[15px] text-ink-text/80"
                                                                 >
                                                                     {item.label}
                                                                 </a>
@@ -594,7 +644,7 @@ export default function Navbar() {
                                         onClick={() => setOpen(false)}
                                         className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                     >
-                                        About us
+                                        {t('nav.aboutUs')}
                                     </a>
                                 </li>
                                 {isCustomer(user) ? (
@@ -604,14 +654,14 @@ export default function Navbar() {
                                             onClick={() => setOpen(false)}
                                             className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                         >
-                                            Journeys
+                                            {t('nav.journeys')}
                                         </Link>
                                     </li>
                                 ) : null}
                                 {isAuthenticated && chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
                                     <li>
                                         <p className="font-geist m-0 border-b border-ink-text/8 py-3.5 text-[16px] font-500 text-amber-900">
-                                            Status: {chauffeurStatusLabel(user)}
+                                            {chauffeurStatusLabel(user)}
                                         </p>
                                     </li>
                                 ) : null}
@@ -622,7 +672,7 @@ export default function Navbar() {
                                             onClick={() => setOpen(false)}
                                             className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                         >
-                                            Chauffeur portal
+                                            {t('nav.chauffeurPortal')}
                                         </Link>
                                     </li>
                                 ) : null}
@@ -633,7 +683,7 @@ export default function Navbar() {
                                             onClick={() => setOpen(false)}
                                             className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                         >
-                                            Partner portal
+                                            {t('nav.partnerPortal')}
                                         </Link>
                                     </li>
                                 ) : null}
@@ -654,7 +704,7 @@ export default function Navbar() {
                                                 disabled={loggingOut}
                                                 className="font-geist flex cursor-pointer items-center justify-center rounded-full border border-ink-text/15 py-3 text-ink-text disabled:opacity-60"
                                             >
-                                                {loggingOut ? 'Signing out…' : 'Log out'}
+                                                {loggingOut ? t('actions.loading') : t('nav.signOut')}
                                             </button>
                                         </>
                                     ) : (
@@ -664,7 +714,7 @@ export default function Navbar() {
                                             className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
                                         >
                                             <UserIcon />
-                                            Sign in / Sign up
+                                            {t('nav.signIn')}
                                         </Link>
                                     )}
                                     <a
@@ -672,7 +722,7 @@ export default function Navbar() {
                                         onClick={() => setOpen(false)}
                                         className="font-geist rounded-full bg-wine-700 py-3 text-center font-500 text-white"
                                     >
-                                        Book now
+                                        {t('actions.bookNow')}
                                     </a>
                                 </li>
                             </ul>

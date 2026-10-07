@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SeatAddons;
 
+use App\Filament\Concerns\RequiresFinanceRole;
 use App\Filament\Resources\SeatAddons\Pages\CreateSeatAddon;
 use App\Filament\Resources\SeatAddons\Pages\EditSeatAddon;
 use App\Filament\Resources\SeatAddons\Pages\ListSeatAddons;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class SeatAddonResource extends Resource
 {
+    use RequiresFinanceRole;
+
     protected static ?string $model = SeatAddon::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pricing';

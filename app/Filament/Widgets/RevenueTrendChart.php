@@ -21,6 +21,11 @@ class RevenueTrendChart extends ChartWidget
 
     protected string $color = 'success';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->canManageFinance() ?? false;
+    }
+
     protected function getData(): array
     {
         $labels = [];

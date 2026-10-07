@@ -14,7 +14,7 @@ class EnsureActivePartner
         $user = $request->user();
 
         if ($user?->role !== UserRole::PartnerAdmin) {
-            abort(403, 'Only a partner account can access this.');
+            abort(403, __('api.middleware.partner_only'));
         }
 
         $partner = $user->partners()
@@ -23,7 +23,7 @@ class EnsureActivePartner
             ->first();
 
         if (! $partner) {
-            abort(403, 'No active partner organization is linked to this account.');
+            abort(403, __('api.middleware.partner_inactive'));
         }
 
         $request->attributes->set('partner', $partner);

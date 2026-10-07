@@ -1,16 +1,23 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { fadeUp, IMG } from './motion';
 
-const FLEET = [
-    {
-        name: 'Business Van',
-        line: 'Mercedes-Benz V-Class or similar',
-        seats: '5 guests · 5 bags',
-        img: IMG.fleet3,
-    },
-];
-
 export default function Fleet() {
+    const { t } = useTranslation('landing');
+
+    const fleet = useMemo(
+        () => [
+            {
+                name: t('fleet.businessVan.name'),
+                line: t('fleet.businessVan.line'),
+                seats: t('fleet.businessVan.seats'),
+                img: IMG.fleet3,
+            },
+        ],
+        [t],
+    );
+
     return (
         <section id="fleet" className="relative bg-ink py-16 sm:py-24 lg:py-32">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -22,7 +29,7 @@ export default function Fleet() {
                         viewport={{ once: true }}
                         className="mb-4 font-sans text-[10px] font-500 tracking-[0.3em] text-gold-400 uppercase sm:mb-5 sm:text-[11px] sm:tracking-[0.4em]"
                     >
-                        The fleet
+                        {t('fleet.eyebrow')}
                     </motion.p>
                     <motion.h2
                         variants={fadeUp}
@@ -31,7 +38,8 @@ export default function Fleet() {
                         viewport={{ once: true }}
                         className="font-display text-3xl leading-tight font-600 text-ivory sm:text-4xl lg:text-5xl"
                     >
-                        Only the finest <span className="gold-text italic font-serif-lux">machines.</span>
+                        {t('fleet.titleBefore')}{' '}
+                        <span className="gold-text italic font-serif-lux">{t('fleet.titleAccent')}</span>
                     </motion.h2>
                 </div>
 
@@ -42,7 +50,7 @@ export default function Fleet() {
                     viewport={{ once: true, margin: '-60px' }}
                     className="mx-auto grid max-w-xl grid-cols-1 gap-4 sm:gap-6"
                 >
-                    {FLEET.map((car) => (
+                    {fleet.map((car) => (
                         <motion.div
                             key={car.name}
                             variants={fadeUp}
@@ -65,7 +73,13 @@ export default function Fleet() {
                                     </span>
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold-500/40 text-gold-400 transition-all duration-300 group-hover:bg-gold-500 group-hover:text-ink">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                                            <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path
+                                                d="M4 12h15M13 6l6 6-6 6"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
                                         </svg>
                                     </span>
                                 </div>

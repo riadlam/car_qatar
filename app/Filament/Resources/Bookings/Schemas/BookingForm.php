@@ -84,7 +84,7 @@ class BookingForm
                     ->schema([
                         TextInput::make('currency')
                             ->required()
-                            ->default('USD')
+                            ->default('QAR')
                             ->disabled()
                             ->dehydrated(),
                         TextInput::make('subtotal')
@@ -126,11 +126,14 @@ class BookingForm
                             ->default(null),
                         TextInput::make('customer_reference')
                             ->default(null),
-                        TextInput::make('cost_center_id')
-                            ->numeric()
-                            ->default(null),
-                        TextInput::make('preferred_language')
-                            ->default(null),
+                        Select::make('preferred_language')
+                            ->label('Preferred language')
+                            ->options([
+                                'en' => 'English',
+                                'ar' => 'Arabic',
+                            ])
+                            ->native(false)
+                            ->nullable(),
                         Select::make('preferred_chauffeur_gender')
                             ->label('Preferred chauffeur gender')
                             ->options([
@@ -139,7 +142,8 @@ class BookingForm
                             ])
                             ->nullable(),
                         Textarea::make('billing')
-                            ->default(null)
+                            ->disabled()
+                            ->dehydrated(false)
                             ->columnSpanFull(),
                         DateTimePicker::make('cancelled_at'),
                         DateTimePicker::make('completed_at'),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Logo from '../components/landing/Logo';
@@ -8,6 +9,7 @@ import Logo from '../components/landing/Logo';
  * Sign in with email + password, or start create-account (email → complete-profile).
  */
 export default function Login() {
+    const { t } = useTranslation('auth');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { setReturnTo, setPendingEmail, login, isAuthenticated, user, consumeReturnTo } = useAuth();
@@ -24,11 +26,11 @@ export default function Login() {
 
         const oauthError = searchParams.get('error');
         if (oauthError === 'google' || oauthError === 'google_email') {
-            setError('Google sign-in was cancelled or failed. Please try again.');
+            setError(t('login.errors.googleFailed'));
         } else if (oauthError === 'chauffeur_declined') {
-            setError('Your chauffeur application was not approved.');
+            setError(t('login.errors.chauffeurDeclined'));
         }
-    }, [searchParams, setReturnTo]);
+    }, [searchParams, setReturnTo, t]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -53,15 +55,15 @@ export default function Login() {
             const first = nextUser?.first_name || nextUser?.name?.split?.(' ')?.[0];
             showToast(
                 first
-                    ? `Congratulations, ${first}! You’re signed in.`
-                    : 'Congratulations! You’re signed in.',
+                    ? t('login.toast.signedInNamed', { name: first })
+                    : t('login.toast.signedIn'),
             );
             navigate(consumeReturnTo(), { replace: true });
         } catch (err) {
             const msg =
                 err?.response?.data?.message ||
                 err?.response?.data?.errors?.email?.[0] ||
-                'Unable to sign in. Check your email and password.';
+                t('login.errors.unableSignIn');
             setError(msg);
         } finally {
             setSubmitting(false);
@@ -73,7 +75,7 @@ export default function Login() {
         setError('');
         const trimmed = email.trim();
         if (!trimmed) {
-            setError('Please enter your email.');
+            setError(t('login.errors.emailRequired'));
             return;
         }
         setPendingEmail(trimmed);
@@ -86,31 +88,31 @@ export default function Login() {
     return (
         <main className="flex min-h-screen flex-col bg-white text-ink-text">
             <header className="flex items-center justify-between px-6 py-5 lg:px-12">
-                <Link to="/" aria-label="AL MAJD home">
+                <Link to="/" aria-label={t('login.homeAria')}>
                     <Logo compact inverted />
                 </Link>
                 <Link
                     to="/"
                     className="font-geist text-[14px] font-500 text-muted transition hover:text-ink-text"
                 >
-                    Close
+                    {t('login.close')}
                 </Link>
             </header>
 
             <div className="flex flex-1 items-start justify-center px-6 pt-10 pb-16 sm:items-center sm:pt-0">
                 <div className="w-full max-w-[420px]">
                     <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                        {mode === 'signin' ? 'Sign in' : 'Create an account'}
+                        {mode === 'signin' ? t('login.signInTitle') : t('login.createTitle')}
                     </h1>
                     <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
                         {mode === 'signin'
-                            ? 'Enter your email and password to continue.'
-                            : 'Enter your email. We will ask for a few details next.'}
+                            ? t('login.signInSubtitle')
+                            : t('login.createSubtitle')}
                     </p>
 
                     <div
                         role="tablist"
-                        aria-label="Auth mode"
+                        aria-label={t('login.modeAria')}
                         className="mt-8 grid grid-cols-2 gap-1 rounded-full border border-[#e0ddd6] bg-[#f7f6f3] p-1"
                     >
                         <button
@@ -127,7 +129,7 @@ export default function Login() {
                                     : 'text-muted'
                             }`}
                         >
-                            Sign in
+                            {t('login.tabSignIn')}
                         </button>
                         <button
                             type="button"
@@ -143,7 +145,7 @@ export default function Login() {
                                     : 'text-muted'
                             }`}
                         >
-                            Create account
+                            {t('login.tabCreate')}
                         </button>
                     </div>
 
@@ -157,7 +159,7 @@ export default function Login() {
                         <form onSubmit={onSignIn} className="mt-6 space-y-4">
                             <label className="block">
                                 <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                    Email
+                                    {t('login.email')}
                                 </span>
                                 <input
                                     type="email"
@@ -165,13 +167,13 @@ export default function Login() {
                                     autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@example.com"
+                                    placeholder={t('login.emailPlaceholder')}
                                     className={fieldClass}
                                 />
                             </label>
                             <label className="block">
                                 <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                    Password
+                                    {t('login.password')}
                                 </span>
                                 <input
                                     type="password"
@@ -187,14 +189,14 @@ export default function Login() {
                                 disabled={submitting}
                                 className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                             >
-                                {submitting ? 'Signing in…' : 'Sign in'}
+                                {submitting ? t('login.signingIn') : t('login.submitSignIn')}
                             </button>
                         </form>
                     ) : (
                         <form onSubmit={onCreateAccount} className="mt-6 space-y-4">
                             <label className="block">
                                 <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                    Email
+                                    {t('login.email')}
                                 </span>
                                 <input
                                     type="email"
@@ -202,7 +204,7 @@ export default function Login() {
                                     autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="you@example.com"
+                                    placeholder={t('login.emailPlaceholder')}
                                     className={fieldClass}
                                 />
                             </label>
@@ -210,7 +212,7 @@ export default function Login() {
                                 type="submit"
                                 className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
                             >
-                                Continue
+                                {t('login.continue')}
                             </button>
                         </form>
                     )}
@@ -218,7 +220,7 @@ export default function Login() {
                     <div className="my-8 flex items-center gap-4">
                         <div className="h-px flex-1 bg-[#e8e8ea]" />
                         <span className="font-geist text-[13px] font-500 tracking-[0.08em] text-muted uppercase">
-                            or
+                            {t('login.or')}
                         </span>
                         <div className="h-px flex-1 bg-[#e8e8ea]" />
                     </div>
@@ -231,7 +233,7 @@ export default function Login() {
                         className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-[#d8d8dc] bg-white px-6 py-3 text-[16px] font-500 text-ink-text transition hover:bg-[#f7f7f8]"
                     >
                         <GoogleIcon />
-                        Continue with Google
+                        {t('login.continueGoogle')}
                     </button>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createBookingDraft } from '../../api/bookingDrafts';
@@ -26,6 +27,7 @@ export default function BookingSidebar({
     quoteId = null,
     priceFailed = false,
 }) {
+    const { t } = useTranslation('booking');
     const { isAuthenticated, setReturnTo } = useAuth();
     const { guests, loading: guestsLoading, addGuest } = useSavedGuests();
     const navigate = useNavigate();
@@ -51,6 +53,14 @@ export default function BookingSidebar({
         () => guests.find((g) => g.id === selectedGuestId) || null,
         [guests, selectedGuestId],
     );
+
+    const continueLabel = continuing
+        ? t('sidebar.saving')
+        : quoteId
+          ? t('sidebar.continueCheckout')
+          : priceFailed
+            ? t('sidebar.priceUnavailable')
+            : t('sidebar.loadingPrice');
 
     const onGenderChange = (value) => {
         setPreferredChauffeurGender(value);
@@ -86,7 +96,7 @@ export default function BookingSidebar({
 
     const selectVehicle = async () => {
         if (!preferredChauffeurGender) {
-            setGenderError('Please choose a male or female chauffeur.');
+            setGenderError(t('sidebar.genderRequired'));
             return;
         }
         if (forGuest && !selectedGuest && isAuthenticated) {
@@ -128,7 +138,7 @@ export default function BookingSidebar({
             const returnPath = `/booking?${q.toString()}`;
             setReturnTo(returnPath);
             navigate(`/login?from=${encodeURIComponent(returnPath)}`);
-            throw new Error('Sign in to save guests.');
+            throw new Error(t('sidebar.signInToSaveGuests'));
         }
         const guest = await addGuest(payload);
         setSelectedGuestId(guest.id);
@@ -190,10 +200,10 @@ export default function BookingSidebar({
                         </span>
                         <span className="min-w-0">
                             <span className="font-geist block text-[16px] leading-6 font-500 text-ink-text">
-                                Book for myself
+                                {t('sidebar.bookMyself')}
                             </span>
                             <span className="font-geist mt-0.5 block text-[14px] leading-5 text-muted">
-                                Book with your account information
+                                {t('sidebar.bookMyselfHint')}
                             </span>
                         </span>
                     </button>
@@ -218,12 +228,12 @@ export default function BookingSidebar({
                             </span>
                             <span className="min-w-0 flex-1">
                                 <span className="font-geist block text-[16px] leading-6 font-500 text-ink-text">
-                                    Book for a guest
+                                    {t('sidebar.bookGuest')}
                                 </span>
                                 <span className="font-geist mt-0.5 block text-[14px] leading-5 text-muted">
                                     {selectedGuest
                                         ? guestDisplayName(selectedGuest)
-                                        : 'Select or add a guest'}
+                                        : t('sidebar.selectGuest')}
                                 </span>
                             </span>
                             <span className={`mt-1 text-ink-text transition ${guestOpen ? 'rotate-180' : ''}`}>
@@ -235,7 +245,7 @@ export default function BookingSidebar({
                             <div className="mt-2 overflow-hidden rounded-xl border border-[#e0ddd6] bg-white">
                                 <div
                                     role="listbox"
-                                    aria-label="Saved guests"
+                                    aria-label={t('sidebar.savedGuests')}
                                     className="max-h-[220px] overflow-y-auto"
                                 >
                                     {guestsLoading ? (
@@ -245,8 +255,8 @@ export default function BookingSidebar({
                                     ) : guests.length === 0 ? (
                                         <p className="font-geist m-0 px-3 py-4 text-[14px] text-muted">
                                             {isAuthenticated
-                                                ? 'No saved guests yet. Add one below.'
-                                                : 'Sign in to load and save guests.'}
+                                                ? t('sidebar.noGuests')
+                                                : t('sidebar.signInGuests')}
                                         </p>
                                     ) : (
                                         guests.map((guest) => {
@@ -300,7 +310,7 @@ export default function BookingSidebar({
                                         <span className="text-[18px] leading-none" aria-hidden="true">
                                             +
                                         </span>
-                                        Add new guest
+                                        {t('sidebar.addNewGuest')}
                                     </button>
                                 </div>
                             </div>
@@ -325,11 +335,13 @@ export default function BookingSidebar({
                                 <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                             <span>
-                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : 'Pickup time'}
-                                {vehicle.route_duration_minutes ? ` · ${vehicle.route_duration_minutes} min` : ''}
+                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : t('fields.pickupTime')}
+                                {vehicle.route_duration_minutes
+                                    ? ` · ${t('sidebar.minutes', { count: vehicle.route_duration_minutes })}`
+                                    : ''}
                             </span>
                         </p>
-                        <p className="font-geist m-0 text-[14px] text-muted">All fees included</p>
+                        <p className="font-geist m-0 text-[14px] text-muted">{t('sidebar.allFees')}</p>
                     </div>
                     <button
                         type="button"
@@ -339,13 +351,7 @@ export default function BookingSidebar({
                         disabled={!quoteId || continuing}
                         className="font-geist hidden min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
                     >
-                        {continuing
-                            ? 'Saving…'
-                            : quoteId
-                              ? 'Continue to checkout'
-                              : priceFailed
-                                ? 'Price unavailable'
-                                : 'Loading price…'}
+                        {continueLabel}
                     </button>
                 </div>
             </div>
@@ -361,15 +367,7 @@ export default function BookingSidebar({
                             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                             className="font-geist pointer-events-auto flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-full bg-wine-700 px-5 py-3 text-[16px] font-500 text-white shadow-[0_12px_32px_rgba(91,5,32,0.35)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <span>
-                                {continuing
-                                    ? 'Saving…'
-                                    : quoteId
-                                      ? 'Continue to checkout'
-                                      : priceFailed
-                                        ? 'Price unavailable'
-                                        : 'Loading price…'}
-                            </span>
+                            <span>{continueLabel}</span>
                             {quoteId && vehicle.total != null ? (
                                 <span className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[14px]">
                                     {formatMoney(vehicle.total, vehicle.currency)}

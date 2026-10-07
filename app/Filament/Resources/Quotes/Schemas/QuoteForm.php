@@ -79,7 +79,7 @@ class QuoteForm
                     ->schema([
                         TextInput::make('currency')
                             ->required()
-                            ->default('USD')
+                            ->default('QAR')
                             ->disabled()
                             ->dehydrated(),
                         TextInput::make('subtotal')

@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import RouteMap from './RouteMap';
 import EditTripModal from './EditTripModal';
 import AddGuestModal, { guestDisplayName } from './AddGuestModal';
 import { IconChevronDown, IconPassengers, IconPerson } from './icons';
-import { durationHours, durationLabel } from '../../data/bookingServices';
+import { durationHours, localizedDurationLabel } from '../../data/bookingServices';
 import { useSavedGuests } from '../../hooks/useSavedGuests';
 import Skeleton from '../ui/Skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-function formatLongDate(dateStr) {
+function formatLongDate(dateStr, locale, fallback) {
     const d = dateStr ? new Date(`${dateStr}T12:00:00`) : new Date();
-    if (Number.isNaN(d.getTime())) return 'Select date';
-    return d.toLocaleDateString('en-GB', {
+    if (Number.isNaN(d.getTime())) return fallback;
+    return d.toLocaleDateString(locale, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -84,7 +85,7 @@ function NotesIcon() {
 export default function CheckoutMobile({
     vehicle,
     trip,
-    passengerLabel = 'For myself',
+    passengerLabel,
     guestId = '',
     onPassengerChange,
     selectedCard,
@@ -108,6 +109,9 @@ export default function CheckoutMobile({
     onEditBilling,
     bookError = '',
 }) {
+    const { t, i18n } = useTranslation(['booking', 'journeys', 'common']);
+    const resolvedPassengerLabel = passengerLabel || t('checkout.defaults.forMyself');
+    const dateLocale = i18n.language?.startsWith('ar') ? 'ar' : 'en-GB';
     const [editOpen, setEditOpen] = useState(false);
     const [notesOpen, setNotesOpen] = useState(true);
     const [langOpen, setLangOpen] = useState(false);
@@ -132,13 +136,18 @@ export default function CheckoutMobile({
     );
 
     const isHourly = trip.mode === 'hourly';
-    const dropLabel = isHourly ? durationLabel(trip.duration) : trip.dropoff || 'Drop-off';
+    const dropLabel = isHourly
+        ? localizedDurationLabel(trip.duration, t)
+        : trip.dropoff || t('journeys:card.dropoff');
 
     const etaMins = isHourly ? durationHours(trip.duration) * 60 : 50;
     const arriveTime = addMinutes(trip.time, isHourly ? 0 : etaMins);
-    const etaLabel = isHourly ? durationLabel(trip.duration) : `${etaMins} min`;
+    const etaLabel = isHourly ? localizedDurationLabel(trip.duration, t) : `${etaMins} min`;
 
-    const dateLabel = useMemo(() => formatLongDate(trip.date), [trip.date]);
+    const dateLabel = useMemo(
+        () => formatLongDate(trip.date, dateLocale, t('mobile.selectDate')),
+        [trip.date, dateLocale, t],
+    );
 
     const selectMyself = () => {
         onPassengerChange?.(null);
@@ -157,7 +166,7 @@ export default function CheckoutMobile({
             navigate(
                 `/login?from=${encodeURIComponent(`/booking/checkout${window.location.search}`)}`,
             );
-            throw new Error('Sign in to save guests.');
+            throw new Error(t('sidebar.signInToSaveGuests'));
         }
         const guest = await addGuest(payload);
         onPassengerChange?.(guest.id);
@@ -172,7 +181,7 @@ export default function CheckoutMobile({
                 <button
                     type="button"
                     onClick={onBack}
-                    aria-label="Go back"
+                    aria-label={t('checkout.backAria')}
                     className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-ink-text hover:bg-page"
                 >
                     <svg width="1.4em" height="1.4em" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -180,7 +189,7 @@ export default function CheckoutMobile({
                     </svg>
                 </button>
                 <h1 className="font-geist m-0 flex-1 pr-10 text-center text-[17px] font-600 text-ink-text">
-                    Confirm reservation
+                    {t('checkout.title')}
                 </h1>
             </header>
 
@@ -208,7 +217,7 @@ export default function CheckoutMobile({
                         >
                             <IconPerson className="h-4 w-4 shrink-0" />
                             <span className="font-geist truncate text-[13px] font-500">
-                                {passengerLabel}
+                                {resolvedPassengerLabel}
                             </span>
                             <IconChevronDown />
                         </button>
@@ -217,7 +226,7 @@ export default function CheckoutMobile({
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                         <div className="min-w-0">
                             <p className="font-geist m-0 truncate text-[13px] font-500 text-ink-text" title={trip.pickup}>
-                                {trip.pickup || 'Pickup'}
+                                {trip.pickup || t('checkout.defaults.pickup')}
                             </p>
                             <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">{formatClock(trip.time)}</p>
                         </div>
@@ -234,7 +243,7 @@ export default function CheckoutMobile({
                                 {dropLabel}
                             </p>
                             <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">
-                                {isHourly ? 'Hourly' : formatClock(arriveTime)}
+                                {isHourly ? t('mobile.hourly') : formatClock(arriveTime)}
                             </p>
                         </div>
                     </div>
@@ -263,12 +272,12 @@ export default function CheckoutMobile({
                             </span>
                         </>
                     ) : (
-                        <span className="font-geist flex-1 text-[15px] text-muted">Add payment method</span>
+                        <span className="font-geist flex-1 text-[15px] text-muted">{t('checkout.payment.addCard')}</span>
                     )}
                     <IconChevronDown />
                 </button>
                 <p className="font-geist mt-2 m-0 text-[12px] leading-5 text-muted">
-                    Saved for later. Nothing is charged when you book.
+                    {t('checkout.security.noCharge')}
                 </p>
 
                 {onEditBilling ? (
@@ -278,23 +287,23 @@ export default function CheckoutMobile({
                         className="font-geist mt-3 flex w-full cursor-pointer flex-col items-start gap-1 rounded-xl border border-[#e8e6e1] bg-white px-3 py-3 text-left"
                     >
                         <span className="text-[15px] font-500 text-ink-text">
-                            {billingLine ? 'Edit billing information' : 'Add billing information'}
+                            {billingLine ? t('checkout.billing.edit') : t('checkout.billing.add')}
                         </span>
                         {billingLine ? (
                             <span className="text-[13px] leading-5 text-muted">{billingLine}</span>
                         ) : (
-                            <span className="text-[13px] leading-5 text-muted">Required before you book</span>
+                            <span className="text-[13px] leading-5 text-muted">{t('checkout.billing.addBefore')}</span>
                         )}
                     </button>
                 ) : null}
 
                 <p className="font-geist mt-3 m-0 text-[13px] text-muted">
-                    Reference: Assigned when you book
+                    {t('checkout.reference.label')}: {t('checkout.reference.assigned')}
                 </p>
 
                 {preferredChauffeurLabel ? (
                     <p className="font-geist mt-3 m-0 text-[14px] text-ink-text">
-                        <span className="text-muted">Chauffeur · </span>
+                        <span className="text-muted">{t('chauffeur.prefix')}</span>
                         {preferredChauffeurLabel}
                     </p>
                 ) : null}
@@ -306,7 +315,7 @@ export default function CheckoutMobile({
                         className="font-geist inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-500 text-ink-text"
                     >
                         <NotesIcon />
-                        Additional details
+                        {t('checkout.pickupPrefs.additionalDetails')}
                         <span className={`transition ${notesOpen ? 'rotate-180' : ''}`}>
                             <IconChevronDown />
                         </span>
@@ -316,7 +325,7 @@ export default function CheckoutMobile({
                         onClick={() => setLangOpen((v) => !v)}
                         className="font-geist inline-flex cursor-pointer items-center gap-1 text-[14px] font-500 text-ink-text"
                     >
-                        Language
+                        {t('checkout.pickupPrefs.preferredLanguage')}
                         {preferredLanguage ? (
                             <span className="rounded-full bg-wine-50 px-2 py-0.5 text-[12px] text-wine-800">
                                 {preferredLanguages.find((l) => l.id === preferredLanguage)?.label ||
@@ -333,14 +342,14 @@ export default function CheckoutMobile({
                         className="font-geist inline-flex cursor-pointer items-center gap-1 text-[14px] font-500 text-ink-text"
                     >
                         <span className="text-wine-700">+</span>
-                        {appliedOffer ? appliedOffer : 'Apply promotion'}
+                        {appliedOffer ? appliedOffer : t('mobile.applyPromotion')}
                     </button>
                 </div>
 
                 {langOpen && setPreferredLanguage && (
                     <div
                         role="radiogroup"
-                        aria-label="Preferred chauffeur language"
+                        aria-label={t('checkout.pickupPrefs.languageAria')}
                         className="mt-3 flex flex-wrap gap-2"
                     >
                         <label
@@ -357,7 +366,7 @@ export default function CheckoutMobile({
                                 checked={preferredLanguage === ''}
                                 onChange={() => setPreferredLanguage('')}
                             />
-                            No preference
+                            {t('checkout.pickupPrefs.noPreference')}
                         </label>
                         {preferredLanguages.map((lang) => {
                             const on = preferredLanguage === lang.id;
@@ -392,7 +401,7 @@ export default function CheckoutMobile({
                         rows={3}
                         maxLength={2000}
                         className="font-geist mt-3 w-full rounded-xl border border-[#d8d8dc] px-3 py-2.5 text-[14px] outline-none focus:border-wine-700"
-                        placeholder="Special instructions for your journey"
+                        placeholder={t('checkout.pickupPrefs.notesPlaceholder')}
                     />
                 )}
                 {bookError ? (
@@ -415,12 +424,12 @@ export default function CheckoutMobile({
                                 : 'cursor-not-allowed bg-[#aeaeae]'
                         }`}
                     >
-                        {booking ? 'Booking…' : 'Book now'}
+                        {booking ? t('checkout.sidebar.confirming') : t('checkout.sidebar.confirm')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setEditOpen(true)}
-                        aria-label="Change date and trip details"
+                        aria-label={t('mobile.changeTripAria')}
                         className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#d8d4cc] bg-white text-ink-text shadow-sm transition hover:bg-page"
                     >
                         <CalendarChangeIcon />
@@ -452,7 +461,7 @@ export default function CheckoutMobile({
                         <button
                             type="button"
                             className="absolute inset-0 border-0"
-                            aria-label="Close"
+                            aria-label={t('common:actions.close')}
                             onClick={() => setPassengerOpen(false)}
                         />
                         <div className="relative z-[1] max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
@@ -460,10 +469,10 @@ export default function CheckoutMobile({
                                 id="passenger-sheet-title"
                                 className="font-fragment m-0 text-[20px] text-ink-text"
                             >
-                                Who is travelling?
+                                {t('mobile.whoTravelling')}
                             </h3>
                             <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                                Book for yourself or choose a guest
+                                {t('mobile.whoTravellingHint')}
                             </p>
 
                             <div className="mt-4 flex flex-col gap-2">
@@ -482,10 +491,10 @@ export default function CheckoutMobile({
                                     </span>
                                     <span className="min-w-0">
                                         <span className="font-geist block text-[16px] leading-6 font-500 text-ink-text">
-                                            Book for myself
+                                            {t('sidebar.bookMyself')}
                                         </span>
                                         <span className="font-geist mt-0.5 block text-[14px] leading-5 text-muted">
-                                            Book with your account information
+                                            {t('sidebar.bookMyselfHint')}
                                         </span>
                                     </span>
                                 </button>
@@ -512,12 +521,12 @@ export default function CheckoutMobile({
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="font-geist block text-[16px] leading-6 font-500 text-ink-text">
-                                                Book for a guest
+                                                {t('sidebar.bookGuest')}
                                             </span>
                                             <span className="font-geist mt-0.5 block text-[14px] leading-5 text-muted">
                                                 {selectedGuest
                                                     ? guestDisplayName(selectedGuest)
-                                                    : 'Select or add a guest'}
+                                                    : t('sidebar.selectGuest')}
                                             </span>
                                         </span>
                                         <span
@@ -531,7 +540,7 @@ export default function CheckoutMobile({
                                         <div className="mt-2 overflow-hidden rounded-xl border border-[#e0ddd6] bg-white">
                                             <div
                                                 role="listbox"
-                                                aria-label="Saved guests"
+                                                aria-label={t('sidebar.savedGuests')}
                                                 className="max-h-[220px] overflow-y-auto"
                                             >
                                                 {guestsLoading ? (
@@ -541,8 +550,8 @@ export default function CheckoutMobile({
                                                 ) : guests.length === 0 ? (
                                                     <p className="font-geist m-0 px-3 py-4 text-[14px] text-muted">
                                                         {isAuthenticated
-                                                            ? 'No saved guests yet. Add one below.'
-                                                            : 'Sign in to load and save guests.'}
+                                                            ? t('sidebar.noGuests')
+                                                            : t('sidebar.signInGuests')}
                                                     </p>
                                                 ) : (
                                                     guests.map((guest) => {
@@ -598,7 +607,7 @@ export default function CheckoutMobile({
                                                     <span className="text-[18px] leading-none" aria-hidden="true">
                                                         +
                                                     </span>
-                                                    Add new guest
+                                                    {t('sidebar.addNewGuest')}
                                                 </button>
                                             </div>
                                         </div>
@@ -611,7 +620,7 @@ export default function CheckoutMobile({
                                 onClick={() => setPassengerOpen(false)}
                                 className="font-geist mt-5 w-full cursor-pointer rounded-full border border-[#d8d8dc] py-3 text-[15px] font-500"
                             >
-                                Done
+                                {t('common:actions.done')}
                             </button>
                         </div>
                     </div>,
@@ -621,9 +630,9 @@ export default function CheckoutMobile({
             {cardsOpen &&
                 createPortal(
                     <div className="fixed inset-0 z-[200] flex items-end bg-ink/45 sm:items-center sm:justify-center sm:p-4">
-                        <button type="button" className="absolute inset-0 border-0" aria-label="Close" onClick={() => setCardsOpen(false)} />
+                        <button type="button" className="absolute inset-0 border-0" aria-label={t('common:actions.close')} onClick={() => setCardsOpen(false)} />
                         <div className="relative z-[1] w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
-                            <h3 className="font-fragment m-0 text-[20px] text-ink-text">Payment method</h3>
+                            <h3 className="font-fragment m-0 text-[20px] text-ink-text">{t('mobile.paymentMethod')}</h3>
                             <div className="mt-4 flex flex-col gap-2">
                                 {cards.map((card) => (
                                     <button
@@ -653,7 +662,7 @@ export default function CheckoutMobile({
                                 }}
                                 className="font-geist mt-4 w-full cursor-pointer rounded-full border border-[#d8d8dc] py-3 text-[15px] font-500"
                             >
-                                Add card
+                                {t('checkout.payment.addCard')}
                             </button>
                         </div>
                     </div>,
@@ -663,7 +672,7 @@ export default function CheckoutMobile({
             {offerOpen &&
                 createPortal(
                     <div className="fixed inset-0 z-[200] flex items-end bg-ink/45 p-0 sm:items-center sm:justify-center sm:p-4">
-                        <button type="button" className="absolute inset-0 border-0" aria-label="Close" onClick={() => setOfferOpen(false)} />
+                        <button type="button" className="absolute inset-0 border-0" aria-label={t('common:actions.close')} onClick={() => setOfferOpen(false)} />
                         <form
                             className="relative z-[1] w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
                             onSubmit={(e) => {
@@ -672,19 +681,19 @@ export default function CheckoutMobile({
                                 setOfferOpen(false);
                             }}
                         >
-                            <h3 className="font-fragment m-0 text-[20px] text-ink-text">Apply promotion</h3>
+                            <h3 className="font-fragment m-0 text-[20px] text-ink-text">{t('mobile.applyPromotion')}</h3>
                             <input
                                 value={offerCode}
                                 onChange={(e) => setOfferCode(e.target.value)}
                                 className="font-geist mt-4 w-full rounded-lg border border-[#d8d8dc] px-4 py-3 text-[16px] outline-none focus:border-wine-700"
-                                placeholder="Offer code"
+                                placeholder={t('mobile.offerCode')}
                                 autoFocus
                             />
                             <button
                                 type="submit"
                                 className="font-geist mt-4 w-full cursor-pointer rounded-full bg-wine-700 py-3 text-[15px] font-500 text-white"
                             >
-                                Apply
+                                {t('mobile.apply')}
                             </button>
                         </form>
                     </div>,

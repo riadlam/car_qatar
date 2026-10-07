@@ -47,19 +47,19 @@ class WalletService
         $amount = round($amount, 2);
         if ($amount <= 0) {
             throw ValidationException::withMessages([
-                'amount' => ['Credit amount must be greater than zero.'],
+                'amount' => [__('api.wallet.credit_amount_positive')],
             ]);
         }
 
-        if (! $admin->role?->canAccessAdmin()) {
+        if (! $admin->canManageFinance()) {
             throw ValidationException::withMessages([
-                'amount' => ['Only staff can credit wallets.'],
+                'amount' => [__('api.wallet.credit_super_admin_only')],
             ]);
         }
 
         if (! in_array($target->role, [UserRole::Customer, UserRole::PartnerAdmin, UserRole::Chauffeur], true)) {
             throw ValidationException::withMessages([
-                'user_id' => ['Wallets are only for customers, partners, and chauffeurs.'],
+                'user_id' => [__('api.wallet.roles_only')],
             ]);
         }
 
@@ -76,7 +76,7 @@ class WalletService
 
             if (! $wallet->isActive()) {
                 throw ValidationException::withMessages([
-                    'wallet' => ['This wallet is frozen.'],
+                    'wallet' => [__('api.wallet.frozen')],
                 ]);
             }
 
@@ -123,14 +123,14 @@ class WalletService
             ];
             if (! in_array($booking->status, $payableStatuses, true)) {
                 throw ValidationException::withMessages([
-                    'booking' => ['This booking cannot be paid with wallet in its current status.'],
+                    'booking' => [__('api.wallet.cannot_pay_status')],
                 ]);
             }
 
             $amount = round((float) $booking->total_amount, 2);
             if ($amount <= 0) {
                 throw ValidationException::withMessages([
-                    'booking' => ['Booking total is invalid.'],
+                    'booking' => [__('api.wallet.booking_total_invalid')],
                 ]);
             }
 
@@ -145,13 +145,13 @@ class WalletService
 
             if (! $wallet->isActive()) {
                 throw ValidationException::withMessages([
-                    'wallet' => ['Your wallet is frozen. Contact support.'],
+                    'wallet' => [__('api.wallet.frozen_contact')],
                 ]);
             }
 
             if (strcasecmp((string) $wallet->currency, (string) $booking->currency) !== 0) {
                 throw ValidationException::withMessages([
-                    'wallet' => ['Wallet currency does not match this booking.'],
+                    'wallet' => [__('api.wallet.currency_mismatch')],
                 ]);
             }
 
@@ -159,12 +159,11 @@ class WalletService
             if ($balance < $amount) {
                 throw ValidationException::withMessages([
                     'wallet' => [
-                        sprintf(
-                            'Insufficient wallet balance. Need %s %.2f, available %.2f.',
-                            $booking->currency,
-                            $amount,
-                            $balance,
-                        ),
+                        __('api.wallet.insufficient_balance', [
+                            'currency' => $booking->currency,
+                            'amount' => number_format($amount, 2, '.', ''),
+                            'available' => number_format($balance, 2, '.', ''),
+                        ]),
                     ],
                 ]);
             }
@@ -287,7 +286,7 @@ class WalletService
         }
 
         throw ValidationException::withMessages([
-            'booking' => ['You cannot pay this booking from your wallet.'],
+            'booking' => [__('api.wallet.cannot_pay_booking')],
         ]);
     }
 
@@ -304,11 +303,11 @@ class WalletService
         if ($amount <= 0) {
             throw new InvalidArgumentException('Amount must be positive.');
         }
-        if (! $admin->role?->canAccessAdmin()) {
-            throw ValidationException::withMessages(['amount' => ['Only staff can adjust wallets.']]);
+        if (! $admin->canManageFinance()) {
+            throw ValidationException::withMessages(['amount' => [__('api.wallet.adjust_super_admin_only')]]);
         }
         if (trim($note) === '') {
-            throw ValidationException::withMessages(['note' => ['A note is required for admin debits.']]);
+            throw ValidationException::withMessages(['note' => [__('api.wallet.debit_note_required')]]);
         }
 
         return DB::transaction(function () use ($target, $amount, $admin, $note) {
@@ -317,7 +316,7 @@ class WalletService
             $balance = round((float) $wallet->balance, 2);
             if ($balance < $amount) {
                 throw ValidationException::withMessages([
-                    'amount' => ['Insufficient balance for this adjustment.'],
+                    'amount' => [__('api.wallet.insufficient_for_adjustment')],
                 ]);
             }
             $newBalance = round($balance - $amount, 2);

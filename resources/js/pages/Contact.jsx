@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import { IMG } from '../components/landing/motion';
 import { fetchContactChannels } from '../api/catalog';
@@ -10,12 +11,6 @@ const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
 
 const empty = { name: '', email: '', phone: '', subject: '', message: '' };
-
-const FALLBACK_CHANNELS = [
-    { key: 'call_us', label: 'Call us', href: 'tel:+97440000000', type: 'phone' },
-    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/97440000000', type: 'whatsapp' },
-    { key: 'email', label: 'Email', href: 'mailto:concierge@almajd.com', type: 'email' },
-];
 
 function channelIcon(type) {
     if (type === 'phone' || type === 'call') {
@@ -60,22 +55,54 @@ function channelIcon(type) {
     );
 }
 
-function channelHint(type) {
-    if (type === 'phone' || type === 'call') return 'Speak with concierge';
-    if (type === 'whatsapp') return 'Message us on WhatsApp';
-    if (type === 'email') return 'Write to our team';
-    return 'Get in touch';
+function channelLabel(channel, t) {
+    const key = channel.key;
+    if (key === 'call_us') return t('contact.channels.callUs');
+    if (key === 'whatsapp') return t('contact.channels.whatsapp');
+    if (key === 'email') return t('contact.channels.email');
+    const type = channel.type;
+    if (type === 'phone' || type === 'call') return t('contact.channels.callUs');
+    if (type === 'whatsapp') return t('contact.channels.whatsapp');
+    if (type === 'email') return t('contact.channels.email');
+    return channel.label;
+}
+
+function channelHint(type, t) {
+    if (type === 'phone' || type === 'call') return t('contact.channels.hintCall');
+    if (type === 'whatsapp') return t('contact.channels.hintWhatsapp');
+    if (type === 'email') return t('contact.channels.hintEmail');
+    return t('contact.channels.hintDefault');
 }
 
 /**
  * Dedicated leave-a-message / contact page — form + other contact channels.
  */
 export default function Contact() {
+    const { t } = useTranslation('marketing');
     const [form, setForm] = useState(empty);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
-    const [channels, setChannels] = useState(FALLBACK_CHANNELS);
+    const [channels, setChannels] = useState([]);
+
+    const fallbackChannels = useMemo(
+        () => [
+            { key: 'call_us', label: t('contact.channels.callUs'), href: 'tel:+97440000000', type: 'phone' },
+            {
+                key: 'whatsapp',
+                label: t('contact.channels.whatsapp'),
+                href: 'https://wa.me/97440000000',
+                type: 'whatsapp',
+            },
+            {
+                key: 'email',
+                label: t('contact.channels.email'),
+                href: 'mailto:concierge@almajd.com',
+                type: 'email',
+            },
+        ],
+        [t],
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -92,6 +119,8 @@ export default function Contact() {
             cancelled = true;
         };
     }, []);
+
+    const displayChannels = channels.length ? channels : fallbackChannels;
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -110,17 +139,15 @@ export default function Contact() {
             setSent(true);
             setForm(empty);
         } catch (err) {
-            const msg =
-                err?.response?.data?.message ||
-                err?.response?.data?.errors?.message?.[0] ||
-                'Could not send your message. Please try again.';
-            setError(msg);
+            const apiMsg =
+                err?.response?.data?.message || err?.response?.data?.errors?.message?.[0];
+            setError(apiMsg || t('contact.form.error'));
         } finally {
             setBusy(false);
         }
     };
 
-    const sideChannels = useMemo(() => channels.slice(0, 4), [channels]);
+    const sideChannels = useMemo(() => displayChannels.slice(0, 4), [displayChannels]);
 
     return (
         <SiteLayout>
@@ -139,7 +166,7 @@ export default function Contact() {
                             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                             className="font-fragment m-0 text-[28px] leading-none tracking-[0.2px] text-white sm:text-[34px]"
                         >
-                            AL MAJD
+                            {t('contact.brand')}
                         </motion.p>
                         <motion.h1
                             initial={{ opacity: 0, y: 16 }}
@@ -147,7 +174,7 @@ export default function Contact() {
                             transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
                             className="font-fragment mt-4 m-0 max-w-xl text-[34px] leading-10 font-400 tracking-[0.2px] text-white sm:text-[44px] sm:leading-[52px]"
                         >
-                            Leave a message
+                            {t('contact.title')}
                         </motion.h1>
                         <motion.p
                             initial={{ opacity: 0, y: 14 }}
@@ -155,7 +182,7 @@ export default function Contact() {
                             transition={{ duration: 0.6, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
                             className="font-geist mt-3 m-0 max-w-lg text-[16px] leading-6 text-white/85"
                         >
-                            Tell us how we can help — our concierge team will reply as soon as possible.
+                            {t('contact.subtitle')}
                         </motion.p>
                         <motion.a
                             href="#message"
@@ -164,7 +191,7 @@ export default function Contact() {
                             transition={{ duration: 0.5, delay: 0.28 }}
                             className="font-geist mt-7 inline-flex w-fit rounded-full bg-white px-5 py-2.5 text-[15px] font-500 text-ink-text no-underline transition hover:bg-page"
                         >
-                            Write your message
+                            {t('contact.writeCta')}
                         </motion.a>
                     </div>
                 </section>
@@ -175,14 +202,13 @@ export default function Contact() {
                 >
                     <aside className="min-w-0">
                         <p className="font-geist m-0 text-[13px] font-500 tracking-wide text-wine-700 uppercase">
-                            Other ways to reach us
+                            {t('contact.aside.eyebrow')}
                         </p>
                         <h2 className="font-fragment mt-2 m-0 text-[28px] leading-9 font-400 text-ink-text">
-                            Concierge, always close
+                            {t('contact.aside.title')}
                         </h2>
                         <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-ink-text/70">
-                            Prefer a call or chat? Use the channels below — or send a written note and we&apos;ll
-                            follow up.
+                            {t('contact.aside.body')}
                         </p>
 
                         <ul className="mt-8 m-0 list-none space-y-3 p-0">
@@ -206,10 +232,10 @@ export default function Contact() {
                                             </span>
                                             <span className="min-w-0">
                                                 <span className="font-geist block text-[16px] font-500 text-ink-text">
-                                                    {channel.label}
+                                                    {channelLabel(channel, t)}
                                                 </span>
                                                 <span className="font-geist mt-0.5 block text-[13px] text-muted">
-                                                    {channelHint(channel.type)}
+                                                    {channelHint(channel.type, t)}
                                                 </span>
                                             </span>
                                         </a>
@@ -219,9 +245,9 @@ export default function Contact() {
                         </ul>
 
                         <p className="font-geist mt-8 m-0 text-[13px] leading-5 text-muted">
-                            Looking for an upcoming ride?{' '}
+                            {t('contact.aside.journeysHint')}{' '}
                             <Link to="/journeys" className="font-500 text-wine-700 underline-offset-2 hover:underline">
-                                View your journeys
+                                {t('contact.aside.viewJourneys')}
                             </Link>
                             .
                         </p>
@@ -242,10 +268,10 @@ export default function Contact() {
                                     </svg>
                                 </span>
                                 <h2 className="font-fragment mt-5 m-0 text-[28px] leading-9 font-400 text-ink-text">
-                                    Message sent
+                                    {t('contact.success.title')}
                                 </h2>
                                 <p className="font-geist mt-3 m-0 max-w-md text-[16px] leading-6 text-ink-text/75">
-                                    Thank you — our team received your note and will follow up shortly.
+                                    {t('contact.success.body')}
                                 </p>
                                 <div className="mt-8 flex flex-wrap gap-3">
                                     <button
@@ -253,29 +279,29 @@ export default function Contact() {
                                         onClick={() => setSent(false)}
                                         className="font-geist cursor-pointer rounded-full bg-wine-700 px-5 py-3 text-[15px] font-500 text-white transition hover:bg-wine-600"
                                     >
-                                        Send another
+                                        {t('contact.success.sendAnother')}
                                     </button>
                                     <Link
                                         to="/"
                                         className="font-geist inline-flex rounded-full border border-[#d8d8dc] px-5 py-3 text-[15px] font-500 text-ink-text no-underline transition hover:border-wine-700"
                                     >
-                                        Back home
+                                        {t('contact.success.backHome')}
                                     </Link>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 <h2 className="font-fragment m-0 text-[26px] leading-8 font-400 text-ink-text sm:text-[28px]">
-                                    Write to us
+                                    {t('contact.form.title')}
                                 </h2>
                                 <p className="font-geist mt-2 m-0 text-[15px] leading-6 text-muted">
-                                    Fields marked * are required.
+                                    {t('contact.form.requiredHint')}
                                 </p>
                                 <form onSubmit={onSubmit} className="mt-6 space-y-4">
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <label className="block sm:col-span-1">
                                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                                Name *
+                                                {t('contact.form.name')}
                                             </span>
                                             <input
                                                 required
@@ -288,7 +314,7 @@ export default function Contact() {
                                         </label>
                                         <label className="block sm:col-span-1">
                                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                                Email *
+                                                {t('contact.form.email')}
                                             </span>
                                             <input
                                                 required
@@ -304,7 +330,7 @@ export default function Contact() {
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <label className="block">
                                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                                Phone
+                                                {t('contact.form.phone')}
                                             </span>
                                             <input
                                                 type="tel"
@@ -317,20 +343,20 @@ export default function Contact() {
                                         </label>
                                         <label className="block">
                                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                                Subject
+                                                {t('contact.form.subject')}
                                             </span>
                                             <input
                                                 name="subject"
                                                 value={form.subject}
                                                 onChange={set('subject')}
-                                                placeholder="Booking, feedback, partnership…"
+                                                placeholder={t('contact.form.subjectPlaceholder')}
                                                 className={fieldClass}
                                             />
                                         </label>
                                     </div>
                                     <label className="block">
                                         <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                            Message *
+                                            {t('contact.form.message')}
                                         </span>
                                         <textarea
                                             required
@@ -353,7 +379,7 @@ export default function Contact() {
                                         disabled={busy}
                                         className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
                                     >
-                                        {busy ? 'Sending…' : 'Send message'}
+                                        {busy ? t('contact.form.sending') : t('contact.form.submit')}
                                     </button>
                                 </form>
                             </>

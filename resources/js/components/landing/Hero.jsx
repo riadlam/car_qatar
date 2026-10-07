@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IMG } from './motion';
 import BookingWidget from './BookingWidget';
 import { useHeroAnim } from './useSectionAnim';
@@ -21,11 +22,12 @@ function useIsDesktopHero() {
 }
 
 export default function Hero() {
+    const { t } = useTranslation('landing');
     const rootRef = useHeroAnim();
     const isDesktop = useIsDesktopHero();
 
     return (
-        <section id="top" ref={rootRef} aria-label="Hero section" className="relative w-full">
+        <section id="top" ref={rootRef} aria-label={t('hero.ariaLabel')} className="relative w-full">
             {/* Shared booking anchor — works for mobile + desktop scroll targets */}
             <div id="book" className="pointer-events-none absolute top-0 h-0 w-0 scroll-mt-[88px]" aria-hidden="true" />
             {/*
@@ -67,7 +69,7 @@ export default function Hero() {
                         data-anim="hero-title"
                         className="font-fragment mb-5 max-w-[20rem] text-center text-[1.75rem] leading-9 font-400 tracking-[0.25px] text-hero-title sm:mb-6 sm:max-w-[26rem] sm:text-[2.125rem] sm:leading-10"
                     >
-                        Your chauffeur awaits.
+                        {t('hero.title')}
                     </h1>
 
                     <div data-anim="hero-widget" className="w-full max-w-lg">
@@ -90,7 +92,7 @@ export default function Hero() {
                         data-anim="hero-title"
                         className="font-fragment mb-6 max-w-[800px] text-center text-[4rem] leading-[4.5rem] font-400 tracking-[0.25px] text-hero-title"
                     >
-                        Your chauffeur awaits.
+                        {t('hero.title')}
                     </h1>
                     <div data-anim="hero-widget" className="w-full max-w-[1120px]">
                         {isDesktop === true ? <BookingWidget variant="desktop" /> : null}

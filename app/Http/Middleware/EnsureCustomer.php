@@ -12,7 +12,7 @@ class EnsureCustomer
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user()?->role !== UserRole::Customer) {
-            abort(403, 'Only a customer account can access journeys.');
+            abort(403, __('api.middleware.customer_only'));
         }
 
         return $next($request);

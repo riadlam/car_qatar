@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureActivePartner;
 use App\Http\Middleware\EnsureCreateEmailGate;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsureCustomerOrPartner;
+use App\Http\Middleware\SetApiLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,7 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->api(prepend: [
+            SetApiLocale::class,
+        ]);
         $middleware->alias([
+            'api.locale' => SetApiLocale::class,
             'customer' => EnsureCustomer::class,
             'customer.or.partner' => EnsureCustomerOrPartner::class,
             'chauffeur.active' => EnsureActiveChauffeur::class,

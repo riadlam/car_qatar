@@ -15,7 +15,7 @@ class EnsureActiveChauffeur
         $chauffeur = $user?->chauffeur;
 
         if ($user?->role !== UserRole::Chauffeur || $chauffeur?->status !== 'active') {
-            abort(403, 'Only an approved chauffeur can access this.');
+            abort(403, __('api.middleware.chauffeur_only'));
         }
 
         return $next($request);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Payments;
 
+use App\Filament\Concerns\RequiresFinanceRole;
 use App\Filament\Resources\Payments\Pages\CreatePayment;
 use App\Filament\Resources\Payments\Pages\EditPayment;
 use App\Filament\Resources\Payments\Pages\ListPayments;
@@ -19,6 +20,8 @@ use Filament\Tables\Table;
 
 class PaymentResource extends Resource
 {
+    use RequiresFinanceRole;
+
     protected static ?string $model = Payment::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

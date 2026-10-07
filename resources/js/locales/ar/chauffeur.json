@@ -1,0 +1,199 @@
+{
+  "title": {
+    "offers": "العروض",
+    "current": "الرحلة الحالية",
+    "rides": "الرحلات",
+    "profile": "الملف الشخصي",
+    "offersWithCount": "العروض ({{count}})",
+    "ridesWithCount": "الرحلات ({{count}})"
+  },
+  "header": {
+    "eyebrow": "بوابة السائق",
+    "title": "السائق",
+    "subtitle": "راجع العروض، أدر الرحلات، واجعل ملفك جاهزًا."
+  },
+  "tabs": {
+    "aria": "بوابة السائق",
+    "offers": "العروض",
+    "current": "الرحلة الحالية",
+    "rides": "الرحلات",
+    "profile": "الملف الشخصي"
+  },
+  "empty": {
+    "offersTitle": "لا عروض قريبة",
+    "offersBody": "فعّل الموقع لرؤية أقرب الرحلات إليك. ستظهر الحجوزات الجديدة في منطقتك هنا.",
+    "ridesTitle": "لا رحلات بعد",
+    "ridesBody": "ستظهر الرحلات المقبولة والمكتملة في هذه القائمة.",
+    "loadOffers": "تعذر تحميل العروض",
+    "loadRides": "تعذر تحميل الرحلات",
+    "oneTripTitle": "رحلة واحدة في كل مرة",
+    "oneTripBody": "أنهِ أو ألغِ رحلتك الحالية قبل قبول أخرى.",
+    "locationNeeded": "الموقع مطلوب"
+  },
+  "actions": {
+    "logOut": "تسجيل الخروج",
+    "signingOut": "جاري تسجيل الخروج…",
+    "accept": "قبول",
+    "acceptOffer": "قبول العرض",
+    "decline": "رفض",
+    "slideToAccept": "اسحب للقبول",
+    "filterOffers": "تصفية العروض",
+    "search": "بحث",
+    "searchAria": "ابحث في العروض أو الرحلات",
+    "searchPlaceholder": "ابحث بالموقع أو الراكب أو الحجز",
+    "close": "إغلاق",
+    "viewCurrentTrip": "عرض الرحلة الحالية",
+    "navigate": "التنقل",
+    "callPassenger": "اتصال بالراكب",
+    "cancel": "إلغاء",
+    "showDetails": "عرض التفاصيل",
+    "hideDetails": "إخفاء التفاصيل",
+    "closeFilters": "إغلاق التصفية"
+  },
+  "blocked": {
+    "title": "رحلة واحدة في كل مرة",
+    "message": "أنهِ أو ألغِ رحلتك الحالية قبل قبول أخرى."
+  },
+  "toasts": {
+    "accepted": "تم قبول العرض · {{label}}",
+    "acceptedFallback": "رحلة",
+    "declined": "تم رفض العرض",
+    "acceptError": "تعذر قبول هذا العرض.",
+    "declineError": "تعذر رفض هذا العرض."
+  },
+  "errors": {
+    "loadOffers": "تعذر تحميل العروض.",
+    "loadProfile": "تعذر تحميل الملف الشخصي."
+  },
+  "current": {
+    "active": "رحلة نشطة",
+    "none": "لا رحلة نشطة",
+    "statusActive": "نشط",
+    "startTrip": "بدء الرحلة",
+    "arrivePickup": "وصلت إلى موقع الاستلام",
+    "completeTrip": "إكمال الرحلة",
+    "cancelTrip": "إلغاء الرحلة",
+    "emptyTitle": "لا رحلة قيد التنفيذ",
+    "emptyBody": "عند قبول عرض، ستظهر تفاصيل الرحلة والراكب هنا.",
+    "booking": "حجز {{id}}",
+    "etaMinutes": "{{count}} د",
+    "etaUnavailable": "الوقت المتوقع غير متاح",
+    "assigned": "مُعيَّن",
+    "pickup": "الاستلام",
+    "pickupDone": "الاستلام · تم",
+    "pickupWaiting": "الاستلام · انتظار",
+    "dropoff": "التوصيل",
+    "dropoffEta": "التوصيل · {{count}} د",
+    "dropoffStarted": "التوصيل · بدأت الرحلة",
+    "dropoffDone": "التوصيل · تم",
+    "arrivedWaiting": "وصلت — بانتظار العميل",
+    "arrivedDropoff": "وصلت إلى نقطة التوصيل",
+    "enRoute": "في الطريق",
+    "updating": "جاري التحديث…",
+    "atPickup": "أنت في موقع الاستلام",
+    "atDropoff": "أنت في نقطة التوصيل",
+    "passengerReady": "الراكب جاهز؟ ابدأ عندما تكونوا مستعدين",
+    "updateError": "تعذر تحديث خطوة الرحلة.",
+    "cancelError": "تعذر إلغاء هذه الرحلة.",
+    "cancelModalTitle": "إلغاء هذه الرحلة"
+  },
+  "profile": {
+    "status": "الحالة",
+    "documents": "المستندات",
+    "wallet": "المحفظة",
+    "walletHelper": "يمكن لإدارة المجد فقط إضافة رصيد إلى محفظتك.",
+    "walletBalanceHint": "الرصيد وسجل الأموال التي أضافتها المجد.",
+    "vehicle": "المركبة",
+    "languages": "اللغات",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "address": "العنوان",
+    "thisWeek": "هذا الأسبوع",
+    "tripsMeta": "★ {{rating}} · {{count}} رحلات",
+    "partnerSince": "شريك منذ {{year}}",
+    "noVehicle": "لم تُعيَّن مركبة بعد.",
+    "noDocuments": "لا مستندات مسجلة."
+  },
+  "offers": {
+    "nearby": "عروض قريبة",
+    "payout": "الأجر",
+    "distance": "المسافة",
+    "eta": "الوقت المتوقع",
+    "passenger": "الراكب",
+    "flight": "الرحلة الجوية",
+    "mode": "الخدمة",
+    "booking": "حجز {{id}}",
+    "expiresIn": "ينتهي خلال {{time}}",
+    "kmAway": "{{distance}} كم",
+    "kmFromYou": "{{distance}} كم منك",
+    "classLabel": "الفئة",
+    "noMax": "بدون حد أقصى",
+    "maxPayout": "الحد الأقصى للأجر",
+    "minPayoutShort": "الحد الأدنى للأجر",
+    "showOffers_one": "عرض {{count}} عرض",
+    "showOffers_other": "عرض {{count}} عروض",
+    "activeFilters": "{{count}} نشط · ",
+    "offerCount_one": "{{count}} عرض",
+    "offerCount_other": "{{count}} عروض",
+    "accepted": "مقبول",
+    "filters": {
+      "title": "التصفية",
+      "minPayout": "الحد الأدنى للأجر",
+      "maxDistance": "أقصى مسافة",
+      "apply": "تطبيق التصفية",
+      "reset": "إعادة تعيين"
+    }
+  },
+  "rides": {
+    "history": "سجل الرحلات",
+    "historySubtitle": "أجور كل رحلة — صفِّ حسب الفترة أو الحالة أو الخدمة.",
+    "countOne": "رحلة {{count}}",
+    "countOther": "{{count}} رحلات",
+    "total": "الإجمالي",
+    "avg": "المتوسط",
+    "noMatchTitle": "لا رحلات مطابقة",
+    "noMatchBody": "جرّب فترة أو حالة أو بحثًا آخر.",
+    "searchHistory": "بحث في السجل",
+    "searchHistoryPlaceholder": "ابحث عن حجز أو مكان",
+    "passengerRating": "تقييم الراكب · ★ {{rating}}",
+    "cancelledByYou": "أنت",
+    "cancelledByPassenger": "الراكب",
+    "filters": {
+      "periodAria": "الفترة",
+      "statusAria": "الحالة",
+      "serviceAria": "الخدمة",
+      "allTime": "كل الوقت",
+      "thisWeek": "هذا الأسبوع",
+      "thisMonth": "هذا الشهر",
+      "all": "الكل",
+      "completed": "مكتملة",
+      "upcoming": "قادمة",
+      "canceled": "ملغاة",
+      "allServices": "كل الخدمات",
+      "airport": "المطار",
+      "city": "داخل المدينة",
+      "hourly": "بالساعة"
+    }
+  },
+  "list": {
+    "matching": "مطابقة \"{{query}}\"",
+    "offers_one": "{{count}} عرض",
+    "offers_other": "{{count}} عروض",
+    "rides_one": "{{count}} رحلة",
+    "rides_other": "{{count}} رحلات"
+  },
+  "nav": {
+    "bottomAria": "تنقل السائق",
+    "live": "مباشر"
+  },
+  "vehicleClass": {
+    "van": "فان",
+    "first": "أولى",
+    "business": "أعمال",
+    "ride": "رحلة"
+  },
+  "slideAccept": {
+    "aria": "اسحب للقبول مقابل {{amount}}",
+    "accepted": "مقبول"
+  }
+}

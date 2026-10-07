@@ -44,6 +44,34 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ])->save();
 
+        $adminEmail = env('ADMIN_EMAIL', 'admin@almajd.local');
+        $adminPassword = env('ADMIN_PASSWORD', 'ChangeMeNow!123');
+        $adminName = env('ADMIN_NAME', 'Ops Admin');
+
+        $admin = User::updateOrCreate(
+            ['email' => $adminEmail],
+            [
+                'name' => $adminName,
+                'password' => $adminPassword,
+                'account_type' => 'individual',
+                'title' => 'Mr.',
+                'first_name' => 'Ops',
+                'last_name' => 'Admin',
+                'company_name' => null,
+                'phone' => null,
+                'preferred_language' => 'en',
+                'street_address' => null,
+                'language' => 'en',
+                'marketing_emails' => false,
+                'booking_notifications' => 'email',
+                'status' => 'active',
+            ],
+        );
+        $admin->forceFill([
+            'role' => UserRole::Admin,
+            'email_verified_at' => now(),
+        ])->save();
+
         $customer = User::updateOrCreate(
             ['email' => 'customer@example.com'],
             [

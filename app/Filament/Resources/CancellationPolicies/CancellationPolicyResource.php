@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CancellationPolicies;
 
+use App\Filament\Concerns\HidesUntilWired;
 use App\Filament\Resources\CancellationPolicies\Pages\CreateCancellationPolicy;
 use App\Filament\Resources\CancellationPolicies\Pages\EditCancellationPolicy;
 use App\Filament\Resources\CancellationPolicies\Pages\ListCancellationPolicies;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class CancellationPolicyResource extends Resource
 {
+    use HidesUntilWired;
+
     protected static ?string $model = CancellationPolicy::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pricing';
@@ -26,13 +29,6 @@ class CancellationPolicyResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedNoSymbol;
 
     protected static ?string $navigationLabel = 'Cancellation Policies';
-
-    protected static bool $shouldRegisterNavigation = false;
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
 
     protected static ?string $modelLabel = 'Cancellation Policy';
 

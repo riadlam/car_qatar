@@ -22,6 +22,9 @@ class AuthController extends Controller
         $accountType = $data['account_type'];
         $isPerson = $accountType === 'individual';
 
+        // Individual and company signups are both customers who can book.
+        // account_type=company only stores the company name — it is not a Partner.
+        // Partner portal users (partner_admin) are created by Super Admin in Filament only.
         $user = DB::transaction(function () use ($data, $accountType, $isPerson) {
             $user = User::create([
                 'name' => User::deriveDisplayName(
@@ -74,13 +77,13 @@ class AuthController extends Controller
             || ! Hash::check($data['password'], $user->password)
         ) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => [__('api.auth.credentials_incorrect')],
             ]);
         }
 
         if ($user->role === UserRole::Chauffeur && $user->chauffeur?->status === 'declined') {
             throw ValidationException::withMessages([
-                'email' => ['Your chauffeur application was not approved.'],
+                'email' => [__('api.auth.chauffeur_declined')],
             ]);
         }
 
@@ -105,7 +108,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logged out successfully.',
+            'message' => __('api.auth.logged_out'),
         ]);
     }
 }

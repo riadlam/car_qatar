@@ -1,52 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { CORP_IMG } from './assets';
-
-const FAQS = [
-    {
-        q: 'How far in advance can I book a ride?',
-        a: (
-            <p>
-                You can book months ahead or as little as 60 minutes before pickup. We recommend
-                booking with lead time when possible. Free cancellation up to 1 hour before pickup;
-                changes are available until 60 minutes before.
-            </p>
-        ),
-    },
-    {
-        q: 'What vehicles does AL MAJD use?',
-        a: (
-            <p>
-                We offer Business Class, First Class, and Business Van/SUV options. Vehicle
-                availability varies by city. Browse illustrative options in our Help Center.
-            </p>
-        ),
-    },
-    {
-        q: 'Which languages do the chauffeurs speak?',
-        a: <p>Our chauffeurs speak English as well as the local language.</p>,
-    },
-    {
-        q: 'Which payment options are available?',
-        a: (
-            <p>
-                We accept Visa, Maestro, Mastercard, and American Express. Cash is not accepted.
-                PayPal and Apple Pay are available in our apps. Corporate clients can also arrange
-                monthly invoicing.
-            </p>
-        ),
-    },
-    {
-        q: 'How does AL MAJD contribute to sustainable travel options?',
-        a: (
-            <p>
-                Electric vehicles are incorporated into Business Class and First Class in many
-                cities, and we automatically offset emissions with our carbon offset program —
-                whichever vehicle class you choose.
-            </p>
-        ),
-    },
-];
 
 function AccordionItem({ item, open, onToggle }) {
     return (
@@ -85,7 +40,7 @@ function AccordionItem({ item, open, onToggle }) {
                         className="overflow-hidden"
                     >
                         <div className="font-geist pb-4 text-[15px] leading-6 font-400 text-muted sm:text-[16px]">
-                            {item.a}
+                            <p>{item.a}</p>
                         </div>
                     </motion.div>
                 )}
@@ -95,17 +50,27 @@ function AccordionItem({ item, open, onToggle }) {
 }
 
 export default function Faqs() {
+    const { t } = useTranslation('marketing');
     const [open, setOpen] = useState(0);
+
+    const faqs = useMemo(
+        () =>
+            ['advance', 'vehicles', 'languages', 'payment', 'sustain'].map((key) => ({
+                q: t(`corporations.faqsSection.items.${key}.q`),
+                a: t(`corporations.faqsSection.items.${key}.a`),
+            })),
+        [t],
+    );
 
     return (
         <section className="bg-page px-6 py-16 lg:px-12 lg:py-20">
             <div className="mx-auto flex max-w-[1170px] flex-col gap-10 lg:flex-row lg:items-start lg:gap-[100px]">
                 <div className="min-w-0 flex-1">
                     <h2 className="font-fragment m-0 mb-8 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] lg:text-[40px] lg:leading-[48px]">
-                        Frequently asked questions
+                        {t('corporations.faqsSection.title')}
                     </h2>
                     <div className="flex flex-col gap-3">
-                        {FAQS.map((item, i) => (
+                        {faqs.map((item, i) => (
                             <AccordionItem
                                 key={item.q}
                                 item={item}

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 function BagIcon({ active }) {
     return (
@@ -65,21 +66,29 @@ const ICONS = {
     profile: UserIcon,
 };
 
+const SHORT_LABEL_KEYS = {
+    offers: 'tabs.offers',
+    current: 'nav.live',
+    rides: 'tabs.rides',
+    profile: 'tabs.profile',
+};
+
 /**
  * Glass bottom tab bar — mobile chauffeur portal only.
  */
 export default function ChauffeurBottomNav({ tabs, activeId, counts = {} }) {
+    const { t } = useTranslation('chauffeur');
+
     return (
         <nav
-            aria-label="Chauffeur"
+            aria-label={t('nav.bottomAria')}
             className="fixed inset-x-0 bottom-0 z-[80] px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 lg:hidden"
         >
             <div className="mx-auto flex max-w-lg items-stretch justify-between gap-1 rounded-[28px] border border-white/60 bg-white/80 px-2 py-2 shadow-[0_12px_40px_rgba(20,6,12,0.12)] backdrop-blur-xl">
                 {tabs.map((tab) => {
                     const selected = tab.id === activeId;
                     const Icon = ICONS[tab.id] || BagIcon;
-                    const short =
-                        tab.id === 'current' ? 'Live' : tab.id === 'offers' ? 'Offers' : tab.id === 'rides' ? 'Rides' : 'Profile';
+                    const short = t(SHORT_LABEL_KEYS[tab.id] || 'tabs.offers');
                     const n = counts[tab.id];
                     return (
                         <Link

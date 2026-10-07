@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
 import { ChauffeurOfferCard, ChauffeurRideCard, RideHistorySection } from '../components/chauffeur/ChauffeurCards';
@@ -20,37 +21,6 @@ import { subscribePrivate } from '../echo';
 import useChauffeurLocation from '../hooks/useChauffeurLocation';
 import useChauffeurOfferPresence from '../hooks/useChauffeurOfferPresence';
 import WalletHistory from '../components/wallet/WalletHistory';
-
-const TABS = [
-    {
-        id: 'offers',
-        label: 'Offers',
-        path: '/chauffeur',
-        emptyTitle: 'No nearby offers',
-        emptyBody: 'Enable location to see rides closest to you. New bookings in your area will appear here.',
-    },
-    {
-        id: 'current',
-        label: 'Current ride',
-        path: '/chauffeur/current',
-        emptyTitle: '',
-        emptyBody: '',
-    },
-    {
-        id: 'rides',
-        label: 'Rides',
-        path: '/chauffeur/rides',
-        emptyTitle: 'No rides yet',
-        emptyBody: 'Accepted and completed rides will show up in this list.',
-    },
-    {
-        id: 'profile',
-        label: 'Profile',
-        path: '/chauffeur/profile',
-        emptyTitle: '',
-        emptyBody: '',
-    },
-];
 
 function SearchIcon() {
     return (
@@ -80,6 +50,7 @@ function FilterIcon() {
 }
 
 function AssignedTripDialog({ open, message, onClose }) {
+    const { t } = useTranslation('chauffeur');
     const titleId = useId();
     if (!open) return null;
 
@@ -92,10 +63,10 @@ function AssignedTripDialog({ open, message, onClose }) {
                 className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl sm:p-6"
             >
                 <h2 id={titleId} className="font-fragment m-0 text-[24px] font-400 text-ink-text">
-                    One trip at a time
+                    {t('blocked.title')}
                 </h2>
                 <p className="font-geist mt-2 m-0 text-[15px] leading-6 text-muted">
-                    {message || 'Finish or cancel your current trip before taking another.'}
+                    {message || t('blocked.message')}
                 </p>
                 <div className="mt-5 flex flex-wrap justify-end gap-2">
                     <button
@@ -103,13 +74,13 @@ function AssignedTripDialog({ open, message, onClose }) {
                         onClick={onClose}
                         className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2 text-[14px] font-500 text-ink-text"
                     >
-                        Close
+                        {t('actions.close')}
                     </button>
                     <Link
                         to="/chauffeur/current"
                         className="font-geist rounded-full bg-wine-700 px-4 py-2 text-[14px] font-500 text-white no-underline"
                     >
-                        View current trip
+                        {t('actions.viewCurrentTrip')}
                     </Link>
                 </div>
             </div>
@@ -132,6 +103,8 @@ function EmptyState({ title, body }) {
 }
 
 function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
+    const { t } = useTranslation('chauffeur');
+
     if (error && !profile) {
         return <p className="font-geist m-0 text-[15px] text-muted">{error}</p>;
     }
@@ -161,15 +134,20 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                             <div>
                                 <h2 className="font-fragment m-0 text-[26px] font-400 text-ink-text">{profile.name}</h2>
                                 <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                                    ★ {Number(profile.rating || 0).toFixed(2)} · {profile.trips || 0} trips
-                                    {profile.member_since ? ` · Partner since ${profile.member_since}` : ''}
+                                    {t('profile.tripsMeta', {
+                                        rating: Number(profile.rating || 0).toFixed(2),
+                                        count: profile.trips || 0,
+                                    })}
+                                    {profile.member_since
+                                        ? ` · ${t('profile.partnerSince', { year: profile.member_since })}`
+                                        : ''}
                                 </p>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="font-geist inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-500 text-white">
                                 <span className="h-2 w-2 rounded-full bg-white" />
-                                {profile.status_label || 'Active'}
+                                {profile.status_label || t('current.statusActive')}
                             </span>
                             {onLogout ? (
                                 <button
@@ -178,7 +156,7 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                                     disabled={loggingOut}
                                     className="font-geist inline-flex cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[13px] font-500 text-ink-text transition hover:bg-page disabled:opacity-60"
                                 >
-                                    {loggingOut ? 'Signing out…' : 'Log out'}
+                                    {loggingOut ? t('actions.signingOut') : t('actions.logOut')}
                                 </button>
                             ) : null}
                         </div>
@@ -186,20 +164,26 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
 
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         <div>
-                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">Email</p>
+                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                                {t('profile.email')}
+                            </p>
                             <p className="font-geist mt-1 m-0 text-[15px] text-ink-text">{profile.email || '—'}</p>
                         </div>
                         <div>
-                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">Phone</p>
+                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                                {t('profile.phone')}
+                            </p>
                             <p className="font-geist mt-1 m-0 text-[15px] text-ink-text">{profile.phone || '—'}</p>
                         </div>
                         <div className="sm:col-span-2">
-                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">Address</p>
+                            <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
+                                {t('profile.address')}
+                            </p>
                             <p className="font-geist mt-1 m-0 text-[15px] text-ink-text">{profile.address || '—'}</p>
                         </div>
                         <div>
                             <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                This week
+                                {t('profile.thisWeek')}
                             </p>
                             <p className="font-geist mt-1 m-0 text-[15px] font-500 text-ink-text">
                                 {formatPayout(profile.earnings_week, profile.currency)}
@@ -209,7 +193,7 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                 </section>
 
                 <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
-                    <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text">Vehicle</h3>
+                    <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text">{t('profile.vehicle')}</h3>
                     {profile.vehicle ? (
                         <>
                             <p className="font-geist mt-3 m-0 text-[18px] font-500 text-ink-text">{profile.vehicle.model}</p>
@@ -223,12 +207,12 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                             ) : null}
                         </>
                     ) : (
-                        <p className="font-geist mt-3 m-0 text-[15px] text-muted">No vehicle assigned yet.</p>
+                        <p className="font-geist mt-3 m-0 text-[15px] text-muted">{t('profile.noVehicle')}</p>
                     )}
 
-                    <h3 className="font-fragment mt-8 m-0 text-[22px] font-400 text-ink-text">Documents</h3>
+                    <h3 className="font-fragment mt-8 m-0 text-[22px] font-400 text-ink-text">{t('profile.documents')}</h3>
                     {(profile.documents || []).length === 0 ? (
-                        <p className="font-geist mt-3 m-0 text-[15px] text-muted">No documents on file.</p>
+                        <p className="font-geist mt-3 m-0 text-[15px] text-muted">{t('profile.noDocuments')}</p>
                     ) : (
                         <ul className="mt-3 m-0 list-none space-y-2 p-0">
                             {profile.documents.map((doc) => (
@@ -251,15 +235,10 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
             </div>
 
             <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
-                <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text">Wallet</h3>
-                <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                    Balance and history of funds added by AL MAJD.
-                </p>
+                <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text">{t('profile.wallet')}</h3>
+                <p className="font-geist mt-1 m-0 text-[14px] text-muted">{t('profile.walletBalanceHint')}</p>
                 <div className="mt-4">
-                    <WalletHistory
-                        showBalance
-                        helperText="Only AL MAJD admin can add funds to your wallet."
-                    />
+                    <WalletHistory showBalance helperText={t('profile.walletHelper')} />
                 </div>
             </section>
 
@@ -291,11 +270,48 @@ function assignmentToRide(row) {
  * Mobile: bottom nav + slide-to-accept offer cards. Desktop: top tabs.
  */
 export default function ChauffeurPortal() {
+    const { t } = useTranslation('chauffeur');
     const { tab: tabParam } = useParams();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const baseId = useId();
     const [loggingOut, setLoggingOut] = useState(false);
+
+    const TABS = useMemo(
+        () => [
+            {
+                id: 'offers',
+                label: t('tabs.offers'),
+                path: '/chauffeur',
+                emptyTitle: t('empty.offersTitle'),
+                emptyBody: t('empty.offersBody'),
+            },
+            {
+                id: 'current',
+                label: t('tabs.current'),
+                path: '/chauffeur/current',
+                emptyTitle: '',
+                emptyBody: '',
+            },
+            {
+                id: 'rides',
+                label: t('tabs.rides'),
+                path: '/chauffeur/rides',
+                emptyTitle: t('empty.ridesTitle'),
+                emptyBody: t('empty.ridesBody'),
+            },
+            {
+                id: 'profile',
+                label: t('tabs.profile'),
+                path: '/chauffeur/profile',
+                emptyTitle: '',
+                emptyBody: '',
+            },
+        ],
+        [t],
+    );
+
+    const blockedMessage = t('blocked.message');
 
     const onLogout = async () => {
         setLoggingOut(true);
@@ -343,7 +359,7 @@ export default function ChauffeurPortal() {
         if (tabParam === 'rides') return TABS[2];
         if (tabParam === 'profile') return TABS[3];
         return TABS[0];
-    }, [tabParam]);
+    }, [tabParam, TABS]);
 
     // Presence GPS while idle so offers are filtered to nearest pickups.
     useChauffeurOfferPresence(!currentRide);
@@ -400,9 +416,11 @@ export default function ChauffeurPortal() {
             setCurrentRide(next ? assignmentToRide(next) : null);
             const nextProfile = await getChauffeurProfile().catch(() => null);
             if (nextProfile) setProfile(nextProfile);
-            setToast(`Offer accepted · ${offer.mode_label || 'ride'}`);
+            setToast(
+                t('toasts.accepted', { label: offer.mode_label || t('toasts.acceptedFallback') }),
+            );
         } catch (error) {
-            const message = error.response?.data?.message || 'Could not accept this offer.';
+            const message = error.response?.data?.message || t('toasts.acceptError');
             if (error.response?.status === 409) {
                 setOffers([]);
                 setOffersBlocked(message);
@@ -425,12 +443,12 @@ export default function ChauffeurPortal() {
         setOffers((list) => list.filter((item) => item.id !== offer.id));
         try {
             await rejectChauffeurOffer(offer.id);
-            setToast('Offer declined');
+            setToast(t('toasts.declined'));
         } catch {
             const fresh = await listChauffeurOffers(payoutQuery(filters)).catch(() => null);
             if (fresh) setOffers(fresh.data || []);
             if (fresh) setOffersMeta(fresh.meta || null);
-            setToast('Could not decline this offer.');
+            setToast(t('toasts.declineError'));
         }
         window.setTimeout(() => setToast(''), 2000);
     };
@@ -448,7 +466,7 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers(res.data || []);
                         setOffersMeta(res.meta || null);
-                        setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
+                        setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
                         setOffersError('');
                     }
                 })
@@ -456,7 +474,7 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers([]);
                         setOffersMeta(null);
-                        setOffersError(err?.response?.data?.message || 'Could not load offers.');
+                        setOffersError(err?.response?.data?.message || t('errors.loadOffers'));
                     }
                 })
                 .finally(() => {
@@ -468,7 +486,7 @@ export default function ChauffeurPortal() {
             cancelled = true;
             window.clearTimeout(timer);
         };
-    }, [filters]);
+    }, [filters, blockedMessage, t]);
 
     useEffect(() => {
         let cancelled = false;
@@ -479,7 +497,7 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers(res.data || []);
                         setOffersMeta(res.meta || null);
-                        setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
+                        setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
                         setOffersError('');
                     }
                 })
@@ -487,7 +505,7 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers([]);
                         setOffersMeta(null);
-                        setOffersError(err?.response?.data?.message || 'Could not load offers.');
+                        setOffersError(err?.response?.data?.message || t('errors.loadOffers'));
                     }
                 })
                 .finally(() => {
@@ -504,7 +522,7 @@ export default function ChauffeurPortal() {
                 })
                 .catch((err) => {
                     if (cancelled) return;
-                    setProfileError(err?.response?.data?.message || 'Could not load profile.');
+                    setProfileError(err?.response?.data?.message || t('errors.loadProfile'));
                 })
                 .finally(() => {
                     if (!cancelled) setProfileReady(true);
@@ -579,19 +597,19 @@ export default function ChauffeurPortal() {
             cancelled = true;
             leave();
         };
-    }, [user?.chauffeur_id]);
+    }, [user?.chauffeur_id, blockedMessage, t]);
 
     const listCount =
         activeTab.id === 'offers' ? filteredOffers.length : activeTab.id === 'rides' ? filteredRides.length : null;
 
     const mobileTitle =
         activeTab.id === 'offers'
-            ? `Offers (${filteredOffers.length})`
+            ? t('title.offersWithCount', { count: filteredOffers.length })
             : activeTab.id === 'current'
-              ? 'Current ride'
+              ? t('title.current')
               : activeTab.id === 'rides'
-                ? `Rides (${filteredRides.length})`
-                : 'Profile';
+                ? t('title.ridesWithCount', { count: filteredRides.length })
+                : t('title.profile');
 
     return (
         <SiteLayout showFooter={false}>
@@ -607,7 +625,7 @@ export default function ChauffeurPortal() {
                                 type="button"
                                 onClick={() => setFilterOpen(true)}
                                 aria-expanded={filterOpen}
-                                aria-label="Filter offers"
+                                aria-label={t('actions.filterOffers')}
                                 className="absolute right-0 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white text-ink-text shadow-sm ring-1 ring-black/5 transition"
                             >
                                 <FilterIcon />
@@ -619,7 +637,7 @@ export default function ChauffeurPortal() {
                                 disabled={loggingOut}
                                 className="font-geist absolute right-0 cursor-pointer rounded-full border border-[#d8d8dc] bg-white px-3 py-2 text-[13px] font-500 text-ink-text shadow-sm disabled:opacity-60"
                             >
-                                {loggingOut ? '…' : 'Log out'}
+                                {loggingOut ? '…' : t('actions.logOut')}
                             </button>
                         )}
                     </div>
@@ -638,13 +656,13 @@ export default function ChauffeurPortal() {
                     <div className="hidden flex-col gap-4 lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-8">
                         <div>
                             <p className="font-geist m-0 text-[12px] font-500 tracking-[0.08em] text-wine-700 uppercase">
-                                Chauffeur portal
+                                {t('header.eyebrow')}
                             </p>
                             <h1 className="font-fragment m-0 mt-1 text-[40px] leading-[48px] font-400 tracking-[0.25px] text-ink-text">
-                                Chauffeur
+                                {t('header.title')}
                             </h1>
                             <p className="font-geist mt-1 m-0 text-[15px] text-muted">
-                                Review offers, manage rides, and keep your profile ready.
+                                {t('header.subtitle')}
                             </p>
                         </div>
 
@@ -655,11 +673,11 @@ export default function ChauffeurPortal() {
                             disabled={loggingOut}
                             className="font-geist inline-flex cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:bg-page disabled:opacity-60"
                         >
-                            {loggingOut ? 'Signing out…' : 'Log out'}
+                            {loggingOut ? t('actions.signingOut') : t('actions.logOut')}
                         </button>
                         {activeTab.id === 'profile' ? (
                             <div className="rounded-2xl border border-[#e8e6e1] bg-white px-4 py-3 text-right">
-                                <p className="font-geist m-0 text-[12px] text-muted">This week</p>
+                                <p className="font-geist m-0 text-[12px] text-muted">{t('profile.thisWeek')}</p>
                                 <p className="font-geist m-0 text-[20px] font-600 text-ink-text">
                                     {formatPayout(profile?.earnings_week ?? 0, profile?.currency || '')}
                                 </p>
@@ -672,7 +690,9 @@ export default function ChauffeurPortal() {
                                     <span className="relative inline-flex h-2 w-2 rounded-full bg-wine-700" />
                                 </span>
                                 <span className="font-geist text-[13px] font-500 text-wine-700">
-                                    {currentRide ? currentRide.status_label || 'Active ride' : 'No active ride'}
+                                    {currentRide
+                                        ? currentRide.status_label || t('current.active')
+                                        : t('current.none')}
                                 </span>
                             </div>
                             ) : null
@@ -686,7 +706,7 @@ export default function ChauffeurPortal() {
                                     <button
                                         type="submit"
                                         className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-text hover:bg-page"
-                                        aria-label="Search"
+                                        aria-label={t('actions.search')}
                                     >
                                         <SearchIcon />
                                     </button>
@@ -695,8 +715,8 @@ export default function ChauffeurPortal() {
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value.slice(0, 150))}
                                         maxLength={150}
-                                        aria-label="Search offers or rides"
-                                        placeholder="Search by location, passenger, or booking"
+                                        aria-label={t('actions.searchAria')}
+                                        placeholder={t('actions.searchPlaceholder')}
                                         className="font-geist min-w-0 flex-1 border-0 bg-transparent py-2 pr-3 text-[16px] leading-6 text-ink-text outline-none placeholder:text-muted"
                                     />
                                 </div>
@@ -709,7 +729,7 @@ export default function ChauffeurPortal() {
                         {/* Desktop top tabs */}
                         <div
                             role="tablist"
-                            aria-label="Chauffeur portal"
+                            aria-label={t('tabs.aria')}
                             className="hidden w-full gap-0 overflow-x-auto border-b border-[#e0ddd6] lg:flex"
                         >
                             {TABS.map((tab) => {
@@ -785,7 +805,7 @@ export default function ChauffeurPortal() {
                                                 .then((res) => {
                                                     setOffers(res.data || []);
                                                     setOffersMeta(res.meta || null);
-                                                    setOffersBlocked(res.blocked ? (res.message || 'Finish or cancel your current trip before taking another.') : '');
+                                                    setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
                                                     setOffersError('');
                                                 })
                                                 .catch(() => {});
@@ -798,18 +818,18 @@ export default function ChauffeurPortal() {
                                     <Skeleton variant="list" />
                                 ) : assignedTrip ? (
                                     <EmptyState
-                                        title="One trip at a time"
-                                        body={offersBlocked || 'Finish or cancel your current trip before taking another.'}
+                                        title={t('empty.oneTripTitle')}
+                                        body={offersBlocked || blockedMessage}
                                     />
                                 ) : filteredOffers.length === 0 ? (
                                     <EmptyState
                                         title={
                                             offersError
-                                                ? 'Could not load offers'
+                                                ? t('empty.loadOffers')
                                                 : offersBlocked
-                                                  ? 'One trip at a time'
+                                                  ? t('empty.oneTripTitle')
                                                   : offersMeta?.location_required && !offersMeta?.location_fresh
-                                                    ? 'Location needed'
+                                                    ? t('empty.locationNeeded')
                                                     : activeTab.emptyTitle
                                         }
                                         body={
@@ -844,7 +864,7 @@ export default function ChauffeurPortal() {
                             ) : !profileReady ? (
                                 <Skeleton variant="list" />
                             ) : profileError && !profile ? (
-                                <EmptyState title="Could not load rides" body={profileError} />
+                                <EmptyState title={t('empty.loadRides')} body={profileError} />
                             ) : filteredRides.length === 0 ? (
                                 <EmptyState title={activeTab.emptyTitle} body={activeTab.emptyBody} />
                             ) : (
@@ -860,8 +880,10 @@ export default function ChauffeurPortal() {
 
                         {listCount != null ? (
                             <p className="font-geist mt-5 m-0 hidden text-[15px] text-muted lg:block">
-                                {listCount} {listCount === 1 ? activeTab.label.slice(0, -1) : activeTab.label}
-                                {q ? ` matching "${query.trim()}"` : ''}
+                                {activeTab.id === 'offers'
+                                    ? t('list.offers', { count: listCount })
+                                    : t('list.rides', { count: listCount })}
+                                {q ? ` ${t('list.matching', { query: query.trim() })}` : ''}
                             </p>
                         ) : null}
                     </div>

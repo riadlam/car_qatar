@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import BookingSidebar from '../components/booking/BookingSidebar';
 import TripOverview from '../components/booking/TripOverview';
@@ -51,7 +52,12 @@ function adjustQuotesForSeat(quotes, fromId, toId, addons) {
     });
     return next;
 }
-import { durationLabel, SCHOOL_TERMS, serviceLabel } from '../data/bookingServices';
+import {
+    localizedDurationLabel,
+    localizedServiceLabel,
+    localizedTermLabel,
+    SCHOOL_TERMS,
+} from '../data/bookingServices';
 import {
     fallbackIncluded,
     fallbackSeatAddons,
@@ -72,6 +78,7 @@ function formatTimeParts(timeStr) {
 }
 
 export default function Booking() {
+    const { t, i18n } = useTranslation('booking');
     const [params] = useSearchParams();
     const initialVehicle = params.get('vehicle') || 'van';
     const [catalogVehicles, setCatalogVehicles] = useState(() => fallbackVehicles());
@@ -171,16 +178,32 @@ export default function Booking() {
     const mapLat = Number(params.get('lat'));
     const mapLng = Number(params.get('lng'));
     const routePoints = useMemo(() => tripRoutePoints(params), [params]);
-    const termLabel = SCHOOL_TERMS.find((t) => t.value === params.get('term'))?.label;
+    const termValue = params.get('term');
+    const termFallback = SCHOOL_TERMS.find((item) => item.value === termValue)?.label;
     const isHourly = serviceId === 'by_hour' || serviceId === 'city_tour' || params.get('mode') === 'hourly';
-    const durationText = params.get('duration') ? durationLabel(params.get('duration')) : '';
-    const tripSecondary = isHourly && !dropoffLabel ? durationText : '';
-    const tripMeta = [
-        isHourly && dropoffLabel && durationText ? durationText : null,
-        serviceId === 'school_chauffeured' ? termLabel : null,
-        params.get('passengers') ? `${params.get('passengers')} passengers` : null,
-        params.get('students') ? `${params.get('students')} students` : null,
-    ].filter(Boolean);
+    const { tripSecondary, tripMeta, serviceTitle } = useMemo(() => {
+        const term = termValue ? localizedTermLabel(termValue, t, termFallback) : '';
+        const duration = params.get('duration') ? localizedDurationLabel(params.get('duration'), t) : '';
+        return {
+            tripSecondary: isHourly && !dropoffLabel ? duration : '',
+            tripMeta: [
+                isHourly && dropoffLabel && duration ? duration : null,
+                serviceId === 'school_chauffeured' ? term : null,
+                params.get('passengers') ? `${params.get('passengers')} ${t('fields.passengers')}` : null,
+                params.get('students') ? `${params.get('students')} ${t('fields.students')}` : null,
+            ].filter(Boolean),
+            serviceTitle: localizedServiceLabel(serviceId, t),
+        };
+    }, [
+        termValue,
+        termFallback,
+        isHourly,
+        dropoffLabel,
+        serviceId,
+        params,
+        t,
+        i18n.language,
+    ]);
 
     useEffect(() => {
         let cancelled = false;
@@ -288,16 +311,16 @@ export default function Booking() {
             <SiteLayout className="relative min-w-0 overflow-x-clip bg-page" mainClassName="booking-page" showFooter={false}>
                 <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center px-6 pt-28 text-center">
                     <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 text-ink-text">
-                        Choose your trip first
+                        {t('page.title')}
                     </h1>
                     <p className="font-geist mt-3 text-[15px] leading-6 text-muted">
-                        Pick a location from the suggestions, then view options. Prices and the map follow that trip.
+                        {t('page.subtitle')}
                     </p>
                     <Link
                         to="/#book"
                         className="font-geist mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-wine-700 px-5 text-[15px] font-500 text-white transition hover:bg-wine-600"
                     >
-                        Back to search
+                        {t('page.editTrip')}
                     </Link>
                 </div>
             </SiteLayout>
@@ -321,18 +344,18 @@ export default function Booking() {
                     style={{ paddingTop: 'calc(var(--booking-bar-h, 88px) + 24px)' }}
                 >
                     <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                        Choose your experience
+                        {t('page.selectVehicle')}
                     </h1>
                     {pricingLoading ? <Skeleton variant="inline" className="mt-2" /> : null}
                     {pricingError ? (
                         <p className="font-geist mt-2 m-0 text-[14px] text-amber-800">{pricingError}</p>
                     ) : null}
                     <TripOverview
-                        serviceLabel={serviceLabel(serviceId)}
+                        serviceLabel={serviceTitle}
                         pickup={pickupLabel}
                         dropoff={!isHourly ? dropoffLabel : ''}
                         secondaryLabel={tripSecondary}
-                        secondaryHeading="Duration"
+                        secondaryHeading={t('fields.duration')}
                         date={tripDate}
                         time={tripTimeRaw}
                         distanceKm={vehicle?.distance_km}
@@ -356,7 +379,7 @@ export default function Booking() {
                             aria-roledescription="carousel"
                             aria-label="Vehicle class options"
                         >
-                            <div role="radiogroup" aria-label="Select vehicle class">
+                            <div role="radiogroup" aria-label={t('page.selectVehicle')}>
                                 <div
                                     ref={vehicleTrackRef}
                                     className={`booking-vehicle-track flex gap-3 pb-2 scroll-smooth ${

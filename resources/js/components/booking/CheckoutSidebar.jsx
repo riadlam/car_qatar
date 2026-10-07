@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import BookingMap from './BookingMap';
 
 /**
@@ -14,6 +15,7 @@ export default function CheckoutSidebar({
     onBook,
     booking,
 }) {
+    const { t } = useTranslation('booking');
     const currency = vehicle.currency === 'US$' ? '$' : vehicle.currency;
 
     return (
@@ -36,7 +38,7 @@ export default function CheckoutSidebar({
 
                 <div className="mt-4 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-3">
-                        <span className="font-geist text-[14px] text-muted">Price excluding tax</span>
+                        <span className="font-geist text-[14px] text-muted">{t('sidebar.priceExTax')}</span>
                         <span className="font-geist text-[14px] text-ink-text">
                             {currency}
                             {Number(vehicle.base).toFixed(2)}
@@ -44,7 +46,7 @@ export default function CheckoutSidebar({
                     </div>
                     {Number(vehicle.tax) > 0 ? (
                         <div className="flex items-center justify-between gap-3">
-                            <span className="font-geist text-[14px] text-muted">Estimated tax</span>
+                            <span className="font-geist text-[14px] text-muted">{t('sidebar.estimatedTax')}</span>
                             <span className="font-geist text-[14px] text-ink-text">
                                 {currency}
                                 {Number(vehicle.tax).toFixed(2)}
@@ -52,7 +54,7 @@ export default function CheckoutSidebar({
                         </div>
                     ) : null}
                     <div className="mt-1 flex items-center justify-between gap-3 border-t border-[#e8e6e1] pt-3">
-                        <span className="font-geist text-[16px] font-500 text-ink-text">Total price</span>
+                        <span className="font-geist text-[16px] font-500 text-ink-text">{t('checkout.sidebar.total')}</span>
                         <span className="font-geist text-[18px] font-500 text-ink-text">
                             {currency}
                             {Number(vehicle.total).toFixed(2)}
@@ -69,11 +71,13 @@ export default function CheckoutSidebar({
                                 <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                             <span>
-                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : 'Pickup time'}
-                                {vehicle.route_duration_minutes ? ` · ${vehicle.route_duration_minutes} min` : ''}
+                                {pickupTime ? `${pickupTime} ${pickupPeriod}` : t('fields.pickupTime')}
+                                {vehicle.route_duration_minutes
+                                    ? ` · ${t('sidebar.minutes', { count: vehicle.route_duration_minutes })}`
+                                    : ''}
                             </span>
                         </p>
-                        <p className="font-geist m-0 text-[13px] text-muted">Terms &amp; conditions apply</p>
+                        <p className="font-geist m-0 text-[13px] text-muted">{t('sidebar.termsApply')}</p>
                     </div>
                     <button
                         type="button"
@@ -86,7 +90,7 @@ export default function CheckoutSidebar({
                                 : 'cursor-not-allowed bg-[#aeaeae] text-white'
                         }`}
                     >
-                        {booking ? 'Booking…' : 'Book now'}
+                        {booking ? t('checkout.sidebar.confirming') : t('checkout.sidebar.confirm')}
                     </button>
                 </div>
             </div>

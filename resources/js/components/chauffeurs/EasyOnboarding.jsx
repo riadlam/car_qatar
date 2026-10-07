@@ -1,33 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CH_IMG, APPLY_HREF } from './assets';
-
-const SLIDES = [
-    {
-        id: 'onboarding',
-        label: 'Onboarding',
-        title: 'Start your journey',
-        image: CH_IMG.onboarding,
-        alt: 'Onboarding process',
-        items: [
-            'Share company details and documents',
-            'Online learning modules',
-            'Short group webinar',
-            'Take your first ride',
-        ],
-        cta: 'Apply now',
-        href: APPLY_HREF,
-    },
-    {
-        id: 'requirements',
-        label: 'Requirements',
-        title: 'Five-star standard',
-        image: CH_IMG.requirements,
-        alt: 'Chauffeur in vehicle',
-        items: ['Recent high-end vehicles', 'Chauffeur-style service', 'English fluency'],
-        cta: 'Check requirements',
-        href: APPLY_HREF,
-    },
-];
 
 function GlassCta({ href, children }) {
     return (
@@ -47,7 +20,6 @@ function SlideCard({ slide }) {
                 <img src={slide.image} alt={slide.alt} className="h-full w-full object-cover object-center" />
             </div>
 
-            {/* Full-width glass panel — hugs content, CTA sits end of row (no gap under list) */}
             <div className="bl-glass-dark absolute inset-x-0 bottom-0 z-[1] m-5 flex flex-col gap-4 rounded-lg border border-white/40 p-5 sm:m-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:p-6">
                 <div className="min-w-0 flex-1">
                     <h3 className="font-geist m-0 text-[20px] leading-7 font-500 tracking-[0.15px] text-white sm:text-[28px] sm:leading-9">
@@ -74,28 +46,52 @@ function SlideCard({ slide }) {
  * Blacklane EasyOnboarding: pill switcher + horizontal track wipe (LTR / RTL).
  */
 export default function EasyOnboarding() {
+    const { t } = useTranslation('marketing');
     const [index, setIndex] = useState(0);
 
-    const goTo = (next) => setIndex(next);
+    const slides = useMemo(
+        () => [
+            {
+                id: 'onboarding',
+                label: t('chauffeursPage.onboarding.onboarding.label'),
+                title: t('chauffeursPage.onboarding.onboarding.title'),
+                image: CH_IMG.onboarding,
+                alt: t('chauffeursPage.onboarding.onboarding.alt'),
+                items: t('chauffeursPage.onboarding.onboarding.items', { returnObjects: true }),
+                cta: t('chauffeursPage.onboarding.onboarding.cta'),
+                href: APPLY_HREF,
+            },
+            {
+                id: 'requirements',
+                label: t('chauffeursPage.onboarding.requirements.label'),
+                title: t('chauffeursPage.onboarding.requirements.title'),
+                image: CH_IMG.requirements,
+                alt: t('chauffeursPage.onboarding.requirements.alt'),
+                items: t('chauffeursPage.onboarding.requirements.items', { returnObjects: true }),
+                cta: t('chauffeursPage.onboarding.requirements.cta'),
+                href: APPLY_HREF,
+            },
+        ],
+        [t],
+    );
 
     return (
         <section
             className="overflow-hidden bg-page py-[112px] max-lg:py-[112px] lg:py-[144px]"
-            aria-label="Requirements and onboarding"
+            aria-label={t('chauffeursPage.onboarding.ariaLabel')}
         >
-            {/* Pill switcher */}
             <div
                 role="radiogroup"
-                aria-label="Onboarding sections"
+                aria-label={t('chauffeursPage.onboarding.sectionsAria')}
                 className="mx-auto mb-8 flex w-fit gap-2 rounded-lg p-2"
             >
-                {SLIDES.map((s, i) => (
+                {slides.map((s, i) => (
                     <button
                         key={s.id}
                         type="button"
                         role="radio"
                         aria-checked={index === i}
-                        onClick={() => goTo(i)}
+                        onClick={() => setIndex(i)}
                         className={`font-geist cursor-pointer rounded-lg border-0 px-6 py-2 text-[16px] leading-6 tracking-[0.15px] transition ${
                             index === i
                                 ? 'bg-wine-700 font-400 text-white'
@@ -107,14 +103,13 @@ export default function EasyOnboarding() {
                 ))}
             </div>
 
-            {/* Carousel track — wipe left/right via translateX */}
             <div className="mx-auto w-full px-5 lg:px-12">
                 <div className="mx-auto w-full max-w-[1250px] overflow-hidden">
                     <div
                         className="flex transition-transform duration-500 ease-in-out"
                         style={{ transform: `translateX(-${index * 100}%)` }}
                     >
-                        {SLIDES.map((slide) => (
+                        {slides.map((slide) => (
                             <div
                                 key={slide.id}
                                 role="group"
@@ -127,19 +122,18 @@ export default function EasyOnboarding() {
                     </div>
                 </div>
 
-                {/* Dots */}
                 <div
                     role="group"
-                    aria-label="Choose slide to display"
+                    aria-label={t('chauffeursPage.onboarding.slideAria')}
                     className="mt-8 flex justify-center gap-2"
                 >
-                    {SLIDES.map((s, i) => (
+                    {slides.map((s, i) => (
                         <button
                             key={s.id}
                             type="button"
-                            aria-label={`Slide ${i + 1}`}
+                            aria-label={t('chauffeursPage.onboarding.slideN', { n: i + 1 })}
                             aria-current={index === i ? 'step' : undefined}
-                            onClick={() => goTo(i)}
+                            onClick={() => setIndex(i)}
                             className={`h-2 w-2 rounded-full transition ${
                                 index === i ? 'bg-wine-700' : 'bg-wine-100'
                             }`}

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Surcharges;
 
+use App\Filament\Concerns\HidesUntilWired;
 use App\Filament\Resources\Surcharges\Pages\CreateSurcharge;
 use App\Filament\Resources\Surcharges\Pages\EditSurcharge;
 use App\Filament\Resources\Surcharges\Pages\ListSurcharges;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class SurchargeResource extends Resource
 {
+    use HidesUntilWired;
+
     protected static ?string $model = Surcharge::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pricing';
@@ -26,13 +29,6 @@ class SurchargeResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPlusCircle;
 
     protected static ?string $navigationLabel = 'Surcharges';
-
-    protected static bool $shouldRegisterNavigation = false;
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
 
     protected static ?string $modelLabel = 'Surcharge';
 

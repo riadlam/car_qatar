@@ -1,0 +1,199 @@
+{
+  "title": {
+    "offers": "Offers",
+    "current": "Current ride",
+    "rides": "Rides",
+    "profile": "Profile",
+    "offersWithCount": "Offers ({{count}})",
+    "ridesWithCount": "Rides ({{count}})"
+  },
+  "header": {
+    "eyebrow": "Chauffeur portal",
+    "title": "Chauffeur",
+    "subtitle": "Review offers, manage rides, and keep your profile ready."
+  },
+  "tabs": {
+    "aria": "Chauffeur portal",
+    "offers": "Offers",
+    "current": "Current ride",
+    "rides": "Rides",
+    "profile": "Profile"
+  },
+  "empty": {
+    "offersTitle": "No nearby offers",
+    "offersBody": "Enable location to see rides closest to you. New bookings in your area will appear here.",
+    "ridesTitle": "No rides yet",
+    "ridesBody": "Accepted and completed rides will show up in this list.",
+    "loadOffers": "Could not load offers",
+    "loadRides": "Could not load rides",
+    "oneTripTitle": "One trip at a time",
+    "oneTripBody": "Finish or cancel your current trip before taking another.",
+    "locationNeeded": "Location needed"
+  },
+  "actions": {
+    "logOut": "Log out",
+    "signingOut": "Signing out…",
+    "accept": "Accept",
+    "acceptOffer": "Accept offer",
+    "decline": "Decline",
+    "slideToAccept": "Slide to accept",
+    "filterOffers": "Filter offers",
+    "search": "Search",
+    "searchAria": "Search offers or rides",
+    "searchPlaceholder": "Search by location, passenger, or booking",
+    "close": "Close",
+    "viewCurrentTrip": "View current trip",
+    "navigate": "Navigate",
+    "callPassenger": "Call passenger",
+    "cancel": "Cancel",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "closeFilters": "Close filters"
+  },
+  "blocked": {
+    "title": "One trip at a time",
+    "message": "Finish or cancel your current trip before taking another."
+  },
+  "toasts": {
+    "accepted": "Offer accepted · {{label}}",
+    "acceptedFallback": "ride",
+    "declined": "Offer declined",
+    "acceptError": "Could not accept this offer.",
+    "declineError": "Could not decline this offer."
+  },
+  "errors": {
+    "loadOffers": "Could not load offers.",
+    "loadProfile": "Could not load profile."
+  },
+  "current": {
+    "active": "Active ride",
+    "none": "No active ride",
+    "statusActive": "Active",
+    "startTrip": "Start trip",
+    "arrivePickup": "Arrived at pick-up",
+    "completeTrip": "Complete trip",
+    "cancelTrip": "Cancel trip",
+    "emptyTitle": "No ride in progress",
+    "emptyBody": "When you accept an offer, the trip and passenger details will appear here.",
+    "booking": "Booking {{id}}",
+    "etaMinutes": "{{count}} min",
+    "etaUnavailable": "ETA unavailable",
+    "assigned": "Assigned",
+    "pickup": "Pickup",
+    "pickupDone": "Pickup · done",
+    "pickupWaiting": "Pickup · waiting",
+    "dropoff": "Drop-off",
+    "dropoffEta": "Drop-off · {{count}} min",
+    "dropoffStarted": "Drop-off · trip started",
+    "dropoffDone": "Drop-off · done",
+    "arrivedWaiting": "Arrived — waiting for client",
+    "arrivedDropoff": "Arrived at drop-off",
+    "enRoute": "On the way",
+    "updating": "Updating…",
+    "atPickup": "You're at the pickup",
+    "atDropoff": "You're at the drop-off",
+    "passengerReady": "Passenger ready? Start when you're both set",
+    "updateError": "Could not update this trip step.",
+    "cancelError": "Could not cancel this trip.",
+    "cancelModalTitle": "Cancel this trip"
+  },
+  "profile": {
+    "status": "Status",
+    "documents": "Documents",
+    "wallet": "Wallet",
+    "walletHelper": "Only AL MAJD admin can add funds to your wallet.",
+    "walletBalanceHint": "Balance and history of funds added by AL MAJD.",
+    "vehicle": "Vehicle",
+    "languages": "Languages",
+    "phone": "Phone",
+    "email": "Email",
+    "address": "Address",
+    "thisWeek": "This week",
+    "tripsMeta": "★ {{rating}} · {{count}} trips",
+    "partnerSince": "Partner since {{year}}",
+    "noVehicle": "No vehicle assigned yet.",
+    "noDocuments": "No documents on file."
+  },
+  "offers": {
+    "nearby": "Nearby offers",
+    "payout": "Payout",
+    "distance": "Distance",
+    "eta": "ETA",
+    "passenger": "Passenger",
+    "flight": "Flight",
+    "mode": "Service",
+    "booking": "Booking {{id}}",
+    "expiresIn": "Expires in {{time}}",
+    "kmAway": "{{distance}} km away",
+    "kmFromYou": "{{distance}} km from you",
+    "classLabel": "Class",
+    "noMax": "No max",
+    "maxPayout": "Max payout",
+    "minPayoutShort": "Min payout",
+    "showOffers_one": "Show {{count}} offer",
+    "showOffers_other": "Show {{count}} offers",
+    "activeFilters": "{{count}} active · ",
+    "offerCount_one": "{{count}} offer",
+    "offerCount_other": "{{count}} offers",
+    "accepted": "Accepted",
+    "filters": {
+      "title": "Filters",
+      "minPayout": "Minimum payout",
+      "maxDistance": "Maximum distance",
+      "apply": "Apply filters",
+      "reset": "Reset"
+    }
+  },
+  "rides": {
+    "history": "Ride history",
+    "historySubtitle": "Payouts for each ride — filter by period, status, or service.",
+    "countOne": "{{count}} Ride",
+    "countOther": "{{count}} Rides",
+    "total": "Total",
+    "avg": "Avg",
+    "noMatchTitle": "No rides match",
+    "noMatchBody": "Try another period, status, or search.",
+    "searchHistory": "Search history",
+    "searchHistoryPlaceholder": "Search booking or place",
+    "passengerRating": "Passenger rating · ★ {{rating}}",
+    "cancelledByYou": "You",
+    "cancelledByPassenger": "Passenger",
+    "filters": {
+      "periodAria": "Period",
+      "statusAria": "Status",
+      "serviceAria": "Service",
+      "allTime": "All time",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "all": "All",
+      "completed": "Completed",
+      "upcoming": "Upcoming",
+      "canceled": "Canceled",
+      "allServices": "All services",
+      "airport": "Airport",
+      "city": "City",
+      "hourly": "Hourly"
+    }
+  },
+  "list": {
+    "matching": "matching \"{{query}}\"",
+    "offers_one": "{{count}} Offer",
+    "offers_other": "{{count}} Offers",
+    "rides_one": "{{count}} Ride",
+    "rides_other": "{{count}} Rides"
+  },
+  "nav": {
+    "bottomAria": "Chauffeur navigation",
+    "live": "Live"
+  },
+  "vehicleClass": {
+    "van": "Van",
+    "first": "First",
+    "business": "Business",
+    "ride": "Ride"
+  },
+  "slideAccept": {
+    "aria": "Slide to accept for {{amount}}",
+    "accepted": "Accepted"
+  }
+}

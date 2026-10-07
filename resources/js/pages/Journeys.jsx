@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import JourneyCard from '../components/journeys/JourneyCard';
 import { useAuth } from '../context/AuthContext';
@@ -8,28 +9,10 @@ import { bookingToJourney } from '../utils/bookingMappers';
 import { subscribePrivate } from '../echo';
 import Skeleton from '../components/ui/Skeleton';
 
-const TABS = [
-    {
-        id: 'upcoming',
-        label: 'Upcoming',
-        path: '/journeys',
-        emptyTitle: 'No upcoming bookings yet',
-        emptyBody: 'Your bookings will appear here once you schedule a journey.',
-    },
-    {
-        id: 'past',
-        label: 'Past',
-        path: '/journeys/past',
-        emptyTitle: 'No past bookings yet',
-        emptyBody: 'Completed journeys will show up here.',
-    },
-    {
-        id: 'cancelled',
-        label: 'Canceled',
-        path: '/journeys/cancelled',
-        emptyTitle: 'No canceled bookings',
-        emptyBody: 'Canceled journeys will appear in this list.',
-    },
+const TAB_DEFS = [
+    { id: 'upcoming', path: '/journeys' },
+    { id: 'past', path: '/journeys/past' },
+    { id: 'cancelled', path: '/journeys/cancelled' },
 ];
 
 function SearchIcon() {
@@ -83,7 +66,7 @@ function EmptyPinFallback() {
     );
 }
 
-function EmptyState({ title, body, showBook = true }) {
+function EmptyState({ title, body, showBook = true, bookLabel }) {
     return (
         <div className="flex w-full flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
             <div className="flex flex-col items-center gap-5">
@@ -99,7 +82,7 @@ function EmptyState({ title, body, showBook = true }) {
                             to="/booking"
                             className="font-geist mt-5 inline-flex cursor-pointer rounded-full bg-wine-700 px-5 py-2.5 text-[14px] font-500 text-white transition hover:bg-wine-600"
                         >
-                            Book a journey
+                            {bookLabel}
                         </Link>
                     ) : null}
                 </div>
@@ -141,6 +124,7 @@ function matchesQuery(j, q) {
  * Routes: /journeys, /journeys/past, /journeys/cancelled
  */
 export default function Journeys() {
+    const { t, i18n } = useTranslation('journeys');
     const { tab: tabParam } = useParams();
     const navigate = useNavigate();
     const { loading, isAuthenticated, setReturnTo } = useAuth();
@@ -151,11 +135,22 @@ export default function Journeys() {
     const [listError, setListError] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
+    const tabs = useMemo(
+        () =>
+            TAB_DEFS.map((tab) => ({
+                ...tab,
+                label: t(`tabs.${tab.id}`),
+                emptyTitle: t(`empty.${tab.id}Title`),
+                emptyBody: t(`empty.${tab.id}Body`),
+            })),
+        [t, i18n.language],
+    );
+
     const activeTab = useMemo(() => {
-        if (tabParam === 'past') return TABS[1];
-        if (tabParam === 'cancelled' || tabParam === 'canceled') return TABS[2];
-        return TABS[0];
-    }, [tabParam]);
+        if (tabParam === 'past') return tabs[1];
+        if (tabParam === 'cancelled' || tabParam === 'canceled') return tabs[2];
+        return tabs[0];
+    }, [tabParam, tabs]);
 
     const q = query.trim().toLowerCase();
 
@@ -196,7 +191,7 @@ export default function Journeys() {
             .catch(() => {
                 if (!cancelled) {
                     setJourneys([]);
-                    setListError('Could not load your journeys.');
+                    setListError(t('errors.load'));
                 }
             })
             .finally(() => {
@@ -205,7 +200,7 @@ export default function Journeys() {
         return () => {
             cancelled = true;
         };
-    }, [isAuthenticated, refreshKey]);
+    }, [isAuthenticated, refreshKey, t]);
 
     const liveIds = journeys
         .filter((journey) => journey.api)
@@ -249,6 +244,9 @@ export default function Journeys() {
     }
 
     const count = filtered.length;
+    const countLabel =
+        count === 1 ? t('count.one', { count: 1 }) : t('count.other', { count });
+    const matchingLabel = q ? t('count.matching', { query: query.trim() }) : '';
 
     return (
         <SiteLayout showFooter={false}>
@@ -257,10 +255,10 @@ export default function Journeys() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                         <div>
                             <h1 className="font-fragment m-0 shrink-0 text-[32px] leading-10 font-400 tracking-[0.25px] text-ink-text sm:text-[40px] sm:leading-[48px]">
-                                Journeys
+                                {t('title')}
                             </h1>
                             <p className="font-geist mt-1 m-0 hidden text-[15px] text-muted sm:block">
-                                Track upcoming rides, past trips, and cancellations in one place.
+                                {t('subtitle')}
                             </p>
                         </div>
 
@@ -273,7 +271,7 @@ export default function Journeys() {
                                 <button
                                     type="submit"
                                     className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-text hover:bg-page"
-                                    aria-label="Search"
+                                    aria-label={t('search.aria')}
                                 >
                                     <SearchIcon />
                                 </button>
@@ -282,8 +280,8 @@ export default function Journeys() {
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value.slice(0, 150))}
                                     maxLength={150}
-                                    aria-label="Search by booking number, location, or name"
-                                    placeholder="Search by booking number, location, or name"
+                                    aria-label={t('search.inputAria')}
+                                    placeholder={t('search.placeholder')}
                                     className="font-geist min-w-0 flex-1 border-0 bg-transparent py-2 pr-3 text-[15px] leading-6 text-ink-text outline-none placeholder:text-muted sm:text-[16px]"
                                 />
                             </div>
@@ -293,10 +291,10 @@ export default function Journeys() {
                     <div className="mt-8 lg:mt-10">
                         <div
                             role="tablist"
-                            aria-label="Ride list filter"
+                            aria-label={t('tabs.aria')}
                             className="flex w-full gap-0 overflow-x-auto border-b border-[#e0ddd6]"
                         >
-                            {TABS.map((tab) => {
+                            {tabs.map((tab) => {
                                 const selected = tab.id === activeTab.id;
                                 const n = tabCounts[tab.id] ?? 0;
                                 return (
@@ -338,9 +336,18 @@ export default function Journeys() {
                             {listLoading && journeys.length === 0 ? (
                                 <Skeleton variant="list" />
                             ) : listError && journeys.length === 0 ? (
-                                <EmptyState title="Could not load journeys" body={listError} showBook={false} />
+                                <EmptyState
+                                    title={t('empty.loadErrorTitle')}
+                                    body={listError}
+                                    showBook={false}
+                                    bookLabel={t('empty.bookJourney')}
+                                />
                             ) : count === 0 ? (
-                                <EmptyState title={activeTab.emptyTitle} body={activeTab.emptyBody} />
+                                <EmptyState
+                                    title={activeTab.emptyTitle}
+                                    body={activeTab.emptyBody}
+                                    bookLabel={t('empty.bookJourney')}
+                                />
                             ) : (
                                 <ul className="m-0 flex w-full list-none flex-col gap-4 p-0 sm:gap-5">
                                     {filtered.map((j) => (
@@ -353,8 +360,8 @@ export default function Journeys() {
                         </div>
 
                         <p className="font-geist mt-5 m-0 text-[14px] text-muted sm:text-[15px]">
-                            {count} {count === 1 ? 'Booking' : 'Bookings'}
-                            {q ? ` matching “${query.trim()}”` : ''}
+                            {countLabel}
+                            {matchingLabel}
                         </p>
                     </div>
                 </div>

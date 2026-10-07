@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../utils/roles';
+import { useTranslation } from 'react-i18next';
+import { isActiveChauffeur, isCustomer, isPartnerAdmin } from '../utils/roles';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
@@ -11,13 +12,13 @@ import WalletHistory from '../components/wallet/WalletHistory';
 import { useAuth } from '../context/AuthContext';
 import { PREFERRED_LANGUAGES } from '../data/languages';
 
-const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Mx.'];
-const LANGUAGES = [
-    { value: 'en', label: 'English' },
-    { value: 'fr', label: 'Français' },
-    { value: 'ar', label: 'العربية' },
-    { value: 'de', label: 'Deutsch' },
+const TITLES = [
+    { value: 'Mr.', key: 'mr' },
+    { value: 'Mrs.', key: 'mrs' },
+    { value: 'Ms.', key: 'ms' },
+    { value: 'Mx.', key: 'mx' },
 ];
+const LANGUAGES = ['en', 'ar'];
 
 const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -37,6 +38,7 @@ function Section({ title, children, action }) {
 }
 
 function Row({ label, value, onEdit }) {
+    const { t } = useTranslation('account');
     return (
         <div className="flex flex-col gap-1 border-b border-[#f3f3f4] py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="min-w-0">
@@ -44,7 +46,7 @@ function Row({ label, value, onEdit }) {
                     {label}
                 </p>
                 <p className="font-geist mt-1 m-0 break-words text-[16px] leading-6 text-ink-text">
-                    {value || '—'}
+                    {value || t('empty')}
                 </p>
             </div>
             {onEdit ? (
@@ -53,14 +55,15 @@ function Row({ label, value, onEdit }) {
                     onClick={onEdit}
                     className="font-geist shrink-0 cursor-pointer self-start text-[14px] font-500 text-wine-700 underline-offset-2 hover:underline sm:self-center"
                 >
-                    Edit
+                    {t('edit')}
                 </button>
             ) : null}
         </div>
     );
 }
 
-function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save', saving = false, error }) {
+function EditModal({ open, title, onClose, children, onSave, saveLabel, saving = false, error }) {
+    const { t } = useTranslation('account');
     if (!open) return null;
     return (
         <div
@@ -80,7 +83,7 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save',
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close"
+                        aria-label={t('modals.closeAria')}
                         className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-black/5"
                     >
                         ×
@@ -105,14 +108,14 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save',
                             onClick={onClose}
                             className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] px-5 py-2 text-[15px] font-500"
                         >
-                            Cancel
+                            {t('modals.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={saving}
                             className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 py-2 text-[15px] font-500 text-white hover:bg-wine-600 disabled:opacity-60"
                         >
-                            {saving ? 'Saving…' : saveLabel}
+                            {saving ? t('modals.saving') : saveLabel || t('modals.save')}
                         </button>
                     </div>
                 </form>
@@ -121,18 +124,21 @@ function EditModal({ open, title, onClose, children, onSave, saveLabel = 'Save',
     );
 }
 
-function displayName(user) {
+function displayName(user, empty) {
     if (user?.account_type === 'company') {
-        return user.company || user.company_name || user.name || '—';
+        return user.company || user.company_name || user.name || empty;
     }
     const parts = [user?.title, user?.first_name || user?.name, user?.last_name]
         .filter(Boolean)
         .join(' ')
         .trim();
-    return parts || user?.name || '—';
+    return parts || user?.name || empty;
 }
 
 export default function Account() {
+    const { t } = useTranslation('account');
+    const { t: tCommon } = useTranslation('common');
+    const { t: tAuth } = useTranslation('auth');
     const navigate = useNavigate();
     const {
         user,
@@ -207,16 +213,42 @@ export default function Account() {
         return <Skeleton variant="page" />;
     }
 
+    const empty = t('empty');
     const companyName = user.company || user.company_name || '';
-    const langLabel = LANGUAGES.find((l) => l.value === (user.language || 'en'))?.label || 'English';
+    const langCode = user.language || 'en';
+    const langLabel = LANGUAGES.includes(langCode)
+        ? tCommon(`lang.${langCode}`)
+        : tCommon('lang.en');
     const bookingLabel =
         user.booking_notifications === 'email'
-            ? 'On (Email)'
+            ? t('notifications.onEmail')
             : user.booking_notifications === 'sms'
-              ? 'On (SMS)'
+              ? t('notifications.onSms')
               : user.booking_notifications === 'off'
-                ? 'Off'
-                : 'On (Email & SMS)';
+                ? t('notifications.off')
+                : t('notifications.onEmailSms');
+
+    const preferredLangLabel = (() => {
+        if (!user.preferred_language) return empty;
+        if (PREFERRED_LANGUAGES.some((l) => l.id === user.preferred_language)) {
+            return tCommon(`lang.${user.preferred_language}`);
+        }
+        return user.preferred_language;
+    })();
+
+    const accountTypeLabel =
+        user.account_type === 'company'
+            ? t('accountTypes.company')
+            : user.account_type === 'chauffeur'
+              ? t('accountTypes.chauffeur')
+              : t('accountTypes.individual');
+
+    const chauffeurStatus =
+        user.role === 'chauffeur' && user.chauffeur_status && user.chauffeur_status !== 'active'
+            ? t(`chauffeurStatus.${user.chauffeur_status}`, {
+                  defaultValue: user.chauffeur_status,
+              })
+            : null;
 
     const openEdit = (key, initial) => {
         setDraft(initial);
@@ -231,7 +263,7 @@ export default function Account() {
         setSaving(false);
     };
 
-    const apiErrorMessage = (err, fallback = 'Something went wrong. Please try again.') => {
+    const apiErrorMessage = (err, fallback = t('errors.generic')) => {
         const errors = err?.response?.data?.errors;
         if (errors && typeof errors === 'object') {
             const first = Object.values(errors).flat()[0];
@@ -257,14 +289,15 @@ export default function Account() {
             <div id="top" className="bg-white pt-[96px] pb-16 lg:pt-[120px] lg:pb-24">
                 <div className="mx-auto max-w-[720px] px-6 lg:px-0">
                     <h1 className="font-fragment m-0 text-[32px] leading-10 font-400 tracking-[0.25px] text-ink-text sm:text-[40px] sm:leading-[48px]">
-                        Account
+                        {t('title')}
                     </h1>
                     <p className="font-geist mt-2 m-0 text-[16px] leading-6 text-muted">
-                        Signed in as {user.email}
+                        {t('subtitle')}
                     </p>
-                    {chauffeurStatusLabel(user) && user.chauffeur_status !== 'active' ? (
+                    <p className="font-geist mt-1 m-0 text-[14px] leading-5 text-muted">{user.email}</p>
+                    {chauffeurStatus ? (
                         <p className="font-geist mt-4 m-0 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[13px] font-500 text-amber-900">
-                            Status: {chauffeurStatusLabel(user)}
+                            {chauffeurStatus}
                         </p>
                     ) : null}
                     <div className="mt-5 flex flex-wrap gap-3">
@@ -273,7 +306,7 @@ export default function Account() {
                                 to="/journeys"
                                 className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
                             >
-                                My journeys
+                                {tCommon('nav.journeys')}
                             </Link>
                         ) : null}
                         {isActiveChauffeur(user) ? (
@@ -281,7 +314,7 @@ export default function Account() {
                                 to="/chauffeur"
                                 className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
                             >
-                                Chauffeur portal
+                                {t('chauffeurPortal')}
                             </Link>
                         ) : null}
                         {isPartnerAdmin(user) ? (
@@ -289,7 +322,7 @@ export default function Account() {
                                 to="/partner"
                                 className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
                             >
-                                Partner portal
+                                {t('partnerPortal')}
                             </Link>
                         ) : null}
                         <button
@@ -298,25 +331,16 @@ export default function Account() {
                             disabled={loggingOut}
                             className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30 disabled:opacity-60"
                         >
-                            {loggingOut ? 'Signing out…' : 'Log out'}
+                            {loggingOut ? t('signingOut') : t('logOut')}
                         </button>
                     </div>
 
                     <div className="mt-10 border-t border-[#ececec]">
-                        <Section title="Personal information">
+                        <Section title={t('sections.personal')}>
+                            <Row label={t('fields.accountType')} value={accountTypeLabel} />
                             <Row
-                                label="Account type"
-                                value={
-                                    user.account_type === 'company'
-                                        ? 'Company'
-                                        : user.account_type === 'chauffeur'
-                                          ? 'Chauffeur'
-                                          : 'Individual'
-                                }
-                            />
-                            <Row
-                                label="Name"
-                                value={displayName(user)}
+                                label={t('fields.name')}
+                                value={displayName(user, empty)}
                                 onEdit={() =>
                                     user.account_type === 'company'
                                         ? openEdit('company', { company: companyName })
@@ -328,27 +352,22 @@ export default function Account() {
                                 }
                             />
                             <Row
-                                label="Mobile number"
-                                value={user.phone || '—'}
+                                label={t('fields.mobile')}
+                                value={user.phone || empty}
                                 onEdit={() => openEdit('phone', { phone: user.phone || '' })}
                             />
                             {user.account_type === 'company' ? (
                                 <Row
-                                    label="Company"
-                                    value={companyName || '—'}
+                                    label={t('fields.company')}
+                                    value={companyName || empty}
                                     onEdit={() =>
                                         openEdit('company', { company: companyName })
                                     }
                                 />
                             ) : null}
                             <Row
-                                label="Preferred language"
-                                value={
-                                    PREFERRED_LANGUAGES.find(
-                                        (l) => l.id === user.preferred_language,
-                                    )?.name ||
-                                    (user.preferred_language ? user.preferred_language : '—')
-                                }
+                                label={t('fields.preferredLanguage')}
+                                value={preferredLangLabel}
                                 onEdit={() =>
                                     openEdit('preferred_language', {
                                         preferred_language: user.preferred_language || '',
@@ -356,8 +375,8 @@ export default function Account() {
                                 }
                             />
                             <Row
-                                label="Street address"
-                                value={user.street_address || '—'}
+                                label={t('fields.streetAddress')}
+                                value={user.street_address || empty}
                                 onEdit={() =>
                                     openEdit('address', {
                                         street_address: user.street_address || '',
@@ -366,9 +385,9 @@ export default function Account() {
                             />
                         </Section>
 
-                        <Section title="Email address">
+                        <Section title={t('sections.email')}>
                             <Row
-                                label="Email address"
+                                label={t('fields.email')}
                                 value={user.email}
                                 onEdit={() =>
                                     openEdit('email', {
@@ -379,10 +398,10 @@ export default function Account() {
                             />
                         </Section>
 
-                        <Section title="Password">
+                        <Section title={t('sections.password')}>
                             <Row
-                                label="Password"
-                                value="••••••••••••"
+                                label={t('fields.password')}
+                                value={t('fields.passwordMasked')}
                                 onEdit={() =>
                                     openEdit('password', {
                                         current: '',
@@ -394,38 +413,29 @@ export default function Account() {
                         </Section>
 
                         {(isCustomer(user) || isPartnerAdmin(user) || isActiveChauffeur(user)) ? (
-                            <Section title="Wallet">
-                                <WalletHistory
-                                    helperText={
-                                        isActiveChauffeur(user)
-                                            ? 'Funds added by AL MAJD appear here. Only admin can add balance.'
-                                            : 'Use your wallet at checkout when the balance covers the trip total. Only AL MAJD admin can add funds.'
-                                    }
-                                />
+                            <Section title={t('sections.wallet')}>
+                                <WalletHistory helperText={t('wallet.helper')} />
                             </Section>
                         ) : null}
 
                         <Section
-                            title="Payment methods"
+                            title={t('sections.paymentMethods')}
                             action={
                                 <button
                                     type="button"
                                     onClick={() => setCardOpen(true)}
                                     className="font-geist cursor-pointer text-[14px] font-500 text-wine-700 underline-offset-2 hover:underline"
                                 >
-                                    Add new card
+                                    {t('cards.add')}
                                 </button>
                             }
                         >
-                            <p className="font-geist mb-4 m-0 text-[14px] text-muted">
-                                Online payment is not available yet. Saved cards are not charged.
-                            </p>
                             {cardError ? (
                                 <p className="font-geist mb-3 m-0 text-[14px] text-rose-700">{cardError}</p>
                             ) : null}
                             {cards.length === 0 ? (
                                 <p className="font-geist m-0 border border-dashed border-[#e5e5e5] px-4 py-8 text-center text-[15px] text-muted">
-                                    You haven&apos;t added any payment methods yet
+                                    {t('cards.empty')}
                                 </p>
                             ) : (
                                 <ul className="m-0 list-none space-y-3 p-0">
@@ -439,7 +449,8 @@ export default function Account() {
                                                     {card.brand} •••• {card.last4}
                                                 </p>
                                                 <p className="font-geist mt-1 m-0 text-[13px] text-muted">
-                                                    {card.name} · Expires {card.expiry}
+                                                    {card.name} ·{' '}
+                                                    {t('cards.exp', { expiry: card.expiry })}
                                                 </p>
                                             </div>
                                             <button
@@ -453,13 +464,13 @@ export default function Account() {
                                                         );
                                                     } catch (err) {
                                                         setCardError(
-                                                            firstApiError(err, 'Could not remove this card.'),
+                                                            firstApiError(err, t('cards.removeError')),
                                                         );
                                                     }
                                                 }}
                                                 className="font-geist cursor-pointer text-[14px] font-500 text-wine-700 hover:underline"
                                             >
-                                                Remove
+                                                {t('cards.remove')}
                                             </button>
                                         </li>
                                     ))}
@@ -467,10 +478,14 @@ export default function Account() {
                             )}
                         </Section>
 
-                        <Section title="Notifications">
+                        <Section title={t('sections.notifications')}>
                             <Row
-                                label="Marketing emails"
-                                value={user.marketing_emails === false ? 'Off' : 'On'}
+                                label={t('fields.marketingEmails')}
+                                value={
+                                    user.marketing_emails === false
+                                        ? t('notifications.off')
+                                        : t('notifications.on')
+                                }
                                 onEdit={() =>
                                     openEdit('marketing', {
                                         marketing_emails: user.marketing_emails !== false,
@@ -478,7 +493,7 @@ export default function Account() {
                                 }
                             />
                             <Row
-                                label="Booking notifications"
+                                label={t('fields.bookingNotifications')}
                                 value={bookingLabel}
                                 onEdit={() =>
                                     openEdit('booking', {
@@ -489,12 +504,9 @@ export default function Account() {
                             />
                         </Section>
 
-                        <Section title="Communication language">
-                            <p className="font-geist mb-3 m-0 text-[14px] leading-5 text-muted">
-                                Select the language of your email and SMS booking updates.
-                            </p>
+                        <Section title={t('sections.communicationLanguage')}>
                             <Row
-                                label="Language"
+                                label={t('fields.language')}
                                 value={langLabel}
                                 onEdit={() =>
                                     openEdit('language', { language: user.language || 'en' })
@@ -508,7 +520,7 @@ export default function Account() {
                                 onClick={() => openEdit('delete', { current_password: '' })}
                                 className="font-geist cursor-pointer text-[16px] font-500 text-rose-700 underline-offset-2 hover:underline"
                             >
-                                Delete account
+                                {t('sections.danger')}
                             </button>
                         </section>
                     </div>
@@ -518,7 +530,7 @@ export default function Account() {
             {/* Name */}
             <EditModal
                 open={edit === 'name'}
-                title="Edit name"
+                title={t('modals.editName')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -531,19 +543,25 @@ export default function Account() {
                 }
             >
                 <label className="block">
-                    <span className="font-geist mb-1.5 block text-[14px] font-500">Title</span>
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        {tAuth('completeProfile.fields.title')}
+                    </span>
                     <select
                         className={fieldClass}
                         value={draft.title}
                         onChange={(e) => setDraft({ ...draft, title: e.target.value })}
                     >
-                        {TITLES.map((t) => (
-                            <option key={t}>{t}</option>
+                        {TITLES.map((item) => (
+                            <option key={item.value} value={item.value}>
+                                {t(`titles.${item.key}`)}
+                            </option>
                         ))}
                     </select>
                 </label>
                 <label className="block">
-                    <span className="font-geist mb-1.5 block text-[14px] font-500">First name</span>
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        {tAuth('completeProfile.fields.firstName')}
+                    </span>
                     <input
                         required
                         className={fieldClass}
@@ -552,7 +570,9 @@ export default function Account() {
                     />
                 </label>
                 <label className="block">
-                    <span className="font-geist mb-1.5 block text-[14px] font-500">Last name</span>
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        {tAuth('completeProfile.fields.lastName')}
+                    </span>
                     <input
                         required
                         className={fieldClass}
@@ -565,7 +585,7 @@ export default function Account() {
             {/* Phone */}
             <EditModal
                 open={edit === 'phone'}
-                title="Edit mobile number"
+                title={t('modals.editMobile')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -583,7 +603,7 @@ export default function Account() {
             {/* Company */}
             <EditModal
                 open={edit === 'company'}
-                title="Edit company"
+                title={t('modals.editCompany')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -591,7 +611,7 @@ export default function Account() {
             >
                 <input
                     className={fieldClass}
-                    placeholder="Company name"
+                    placeholder={t('modals.companyPlaceholder')}
                     value={draft.company}
                     onChange={(e) => setDraft({ ...draft, company: e.target.value })}
                 />
@@ -600,7 +620,7 @@ export default function Account() {
             {/* Preferred language */}
             <EditModal
                 open={edit === 'preferred_language'}
-                title="Preferred language"
+                title={t('modals.preferredLanguage')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -608,7 +628,11 @@ export default function Account() {
                     saveProfile({ preferred_language: draft.preferred_language || null })
                 }
             >
-                <div role="radiogroup" aria-label="Preferred language" className="flex flex-wrap gap-2">
+                <div
+                    role="radiogroup"
+                    aria-label={t('fields.preferredLanguage')}
+                    className="flex flex-wrap gap-2"
+                >
                     <label
                         className={`font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3.5 py-2 text-[14px] ${
                             !draft.preferred_language
@@ -623,7 +647,7 @@ export default function Account() {
                             checked={!draft.preferred_language}
                             onChange={() => setDraft({ ...draft, preferred_language: '' })}
                         />
-                        No preference
+                        {t('languages.noPreference')}
                     </label>
                     {PREFERRED_LANGUAGES.map((lang) => {
                         const on = draft.preferred_language === lang.id;
@@ -645,7 +669,7 @@ export default function Account() {
                                         setDraft({ ...draft, preferred_language: lang.id })
                                     }
                                 />
-                                {lang.label}
+                                {tCommon(`lang.${lang.id}`)}
                             </label>
                         );
                     })}
@@ -655,7 +679,7 @@ export default function Account() {
             {/* Address */}
             <EditModal
                 open={edit === 'address'}
-                title="Edit street address"
+                title={t('modals.editAddress')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -664,7 +688,7 @@ export default function Account() {
                 <textarea
                     rows={3}
                     className={fieldClass}
-                    placeholder="Street address"
+                    placeholder={t('modals.addressPlaceholder')}
                     value={draft.street_address}
                     onChange={(e) => setDraft({ ...draft, street_address: e.target.value })}
                 />
@@ -673,7 +697,7 @@ export default function Account() {
             {/* Email */}
             <EditModal
                 open={edit === 'email'}
-                title="Edit email address"
+                title={t('modals.editEmail')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -701,7 +725,7 @@ export default function Account() {
                 />
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">
-                        Current password
+                        {t('fields.currentPassword')}
                     </span>
                     <input
                         type="password"
@@ -716,18 +740,18 @@ export default function Account() {
             {/* Password */}
             <EditModal
                 open={edit === 'password'}
-                title="Change password"
+                title={t('modals.changePassword')}
                 onClose={closeEdit}
-                saveLabel="Update password"
+                saveLabel={t('modals.updatePassword')}
                 saving={saving}
                 error={passwordMsg}
                 onSave={async () => {
                     if ((draft.next || '').length < 8) {
-                        setPasswordMsg('Password must be at least 8 characters.');
+                        setPasswordMsg(t('errors.passwordLength'));
                         return;
                     }
                     if (draft.next !== draft.confirm) {
-                        setPasswordMsg('New passwords do not match.');
+                        setPasswordMsg(t('errors.passwordMatch'));
                         return;
                     }
                     setSaving(true);
@@ -747,7 +771,7 @@ export default function Account() {
             >
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">
-                        Current password
+                        {t('fields.currentPassword')}
                     </span>
                     <input
                         type="password"
@@ -758,7 +782,9 @@ export default function Account() {
                     />
                 </label>
                 <label className="block">
-                    <span className="font-geist mb-1.5 block text-[14px] font-500">New password</span>
+                    <span className="font-geist mb-1.5 block text-[14px] font-500">
+                        {t('fields.newPassword')}
+                    </span>
                     <input
                         type="password"
                         required
@@ -770,7 +796,7 @@ export default function Account() {
                 </label>
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">
-                        Confirm new password
+                        {t('fields.confirmPassword')}
                     </span>
                     <input
                         type="password"
@@ -786,7 +812,7 @@ export default function Account() {
             {/* Marketing */}
             <EditModal
                 open={edit === 'marketing'}
-                title="Marketing emails"
+                title={t('modals.marketingEmails')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -801,14 +827,14 @@ export default function Account() {
                         }
                         className="h-4 w-4 accent-[#5b0520]"
                     />
-                    Receive marketing emails
+                    {t('fields.marketingEmails')}
                 </label>
             </EditModal>
 
             {/* Booking notifications */}
             <EditModal
                 open={edit === 'booking'}
-                title="Booking notifications"
+                title={t('modals.bookingNotifications')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -823,17 +849,17 @@ export default function Account() {
                         setDraft({ ...draft, booking_notifications: e.target.value })
                     }
                 >
-                    <option value="email_sms">On (Email & SMS)</option>
-                    <option value="email">On (Email)</option>
-                    <option value="sms">On (SMS)</option>
-                    <option value="off">Off</option>
+                    <option value="email_sms">{t('notifications.onEmailSms')}</option>
+                    <option value="email">{t('notifications.onEmail')}</option>
+                    <option value="sms">{t('notifications.onSms')}</option>
+                    <option value="off">{t('notifications.off')}</option>
                 </select>
             </EditModal>
 
             {/* Language */}
             <EditModal
                 open={edit === 'language'}
-                title="Communication language"
+                title={t('modals.communicationLanguage')}
                 onClose={closeEdit}
                 saving={saving}
                 error={passwordMsg}
@@ -844,9 +870,9 @@ export default function Account() {
                     value={draft.language}
                     onChange={(e) => setDraft({ ...draft, language: e.target.value })}
                 >
-                    {LANGUAGES.map((l) => (
-                        <option key={l.value} value={l.value}>
-                            {l.label}
+                    {LANGUAGES.map((code) => (
+                        <option key={code} value={code}>
+                            {tCommon(`lang.${code}`)}
                         </option>
                     ))}
                 </select>
@@ -855,9 +881,9 @@ export default function Account() {
             {/* Delete */}
             <EditModal
                 open={edit === 'delete'}
-                title="Delete account"
+                title={t('modals.deleteAccount')}
                 onClose={closeEdit}
-                saveLabel="Delete account"
+                saveLabel={t('delete.confirm')}
                 saving={saving}
                 error={passwordMsg}
                 onSave={async () => {
@@ -873,11 +899,11 @@ export default function Account() {
                 }}
             >
                 <p className="font-geist m-0 text-[15px] leading-6 text-muted">
-                    This permanently deletes your account. This action cannot be undone.
+                    {t('delete.warning')}
                 </p>
                 <label className="block">
                     <span className="font-geist mb-1.5 block text-[14px] font-500">
-                        Current password
+                        {t('fields.currentPassword')}
                     </span>
                     <input
                         type="password"

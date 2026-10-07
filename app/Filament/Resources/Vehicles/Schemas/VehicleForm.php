@@ -27,9 +27,16 @@ class VehicleForm
                                 fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),
                             )
                             ->required(),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                                'maintenance' => 'Maintenance',
+                                'retired' => 'Retired',
+                            ])
                             ->required()
-                            ->default('active'),
+                            ->default('active')
+                            ->native(false),
                     ]),
                 Section::make('Specs')
                     ->columns(2)

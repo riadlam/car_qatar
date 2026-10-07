@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Amenities\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -25,9 +26,14 @@ class AmenityForm
                             ->required()
                             ->numeric()
                             ->default(0),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                            ])
                             ->required()
-                            ->default('active'),
+                            ->default('active')
+                            ->native(false),
                     ]),
             ]);
     }

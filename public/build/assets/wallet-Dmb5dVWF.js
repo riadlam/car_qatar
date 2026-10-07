@@ -1,0 +1,1 @@
+import{a as s}from"./bootstrap-BJHdZ_5l.js";async function i(){const{data:a}=await s.get("/wallet");return a.data}async function o({page:a=1,perPage:r=20,type:t,reason:n}={}){const{data:e}=await s.get("/wallet/transactions",{params:{page:a,per_page:r,...t?{type:t}:{},...n?{reason:n}:{}}});return{transactions:e.data||[],meta:e.meta||{}}}export{o as a,i as g};

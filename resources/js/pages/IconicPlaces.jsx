@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import CardCarousel from '../components/corporations/CardCarousel';
 import CtaStrip from '../components/corporations/CtaStrip';
@@ -53,17 +54,18 @@ const PLACE_CARDS = [
 ];
 
 function HeroScheduler({ stacked = false, explore }) {
+    const { t } = useTranslation('marketing');
     return (
         <DestinationScheduler
             destinations={explore.destinations}
             selectedDestination={explore.selectedDestination}
             onDestinationChange={explore.setSelectedDestination}
-            destinationLabel="Iconic place"
-            destinationPlaceholder="Search iconic places…"
-            pickupPlaceholder="Address, airport, hotel, ..."
+            destinationLabel={t('explore.iconicPlaces.destLabel')}
+            destinationPlaceholder={t('explore.iconicPlaces.destPlaceholder')}
+            pickupPlaceholder={t('explore.scheduler.pickupPlaceholder')}
             service="one_way"
-            title="Schedule your visit"
-            subtitle="Select a landmark, set your pickup, and view chauffeur options."
+            title={t('explore.iconicPlaces.scheduleTitle')}
+            subtitle={t('explore.iconicPlaces.scheduleSubtitle')}
             stacked={stacked}
         />
     );
@@ -86,11 +88,14 @@ function useIsPhone() {
 }
 
 function Hero({ explore }) {
+    const { t } = useTranslation('marketing');
     const isPhone = useIsPhone();
+    const heroTitle = t('explore.iconicPlaces.title');
+    const heroSubtitle = t('explore.iconicPlaces.subtitle');
 
     if (isPhone) {
         return (
-            <section id="top" className="bg-white" aria-label="Iconic places in Qatar">
+            <section id="top" className="bg-white" aria-label={heroTitle}>
                 <div
                     className="relative flex min-h-[100svh] flex-col justify-center rounded-b-[16px] bg-cover bg-center px-3 py-4 pt-[72px]"
                     style={{
@@ -111,10 +116,10 @@ function Hero({ explore }) {
                     <div className="relative z-10 flex w-full -translate-y-[4%] flex-col items-center gap-3 sm:max-w-xl sm:self-center sm:gap-4">
                         <div className="w-full px-1 text-center">
                             <h1 className="font-fragment m-0 text-[32px] leading-9 font-400 tracking-[0.25px] text-white sm:text-[40px] sm:leading-[48px]">
-                                Iconic places in Qatar
+                                {heroTitle}
                             </h1>
                             <p className="font-geist mt-1.5 m-0 text-[15px] leading-6 font-500 tracking-[0.15px] text-white/90 sm:text-[18px] sm:leading-7">
-                                Chauffeured visits to Doha&apos;s landmarks.
+                                {heroSubtitle}
                             </p>
                         </div>
 
@@ -128,7 +133,7 @@ function Hero({ explore }) {
     }
 
     return (
-        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label="Iconic places in Qatar">
+        <section id="top" className="bg-white pb-8 lg:pb-10" aria-label={heroTitle}>
             <div className="relative">
                 <div
                     className="relative flex min-h-[90svh] flex-col rounded-b-[16px] bg-cover bg-center pt-[120px] lg:min-h-[92svh] lg:pt-[132px]"
@@ -150,11 +155,10 @@ function Hero({ explore }) {
                     <div className="relative z-[1] mt-auto flex w-full flex-col items-center px-6 pb-32 text-center lg:pb-36">
                         <div className="mx-auto flex w-full max-w-[900px] flex-col items-center gap-3 lg:gap-4">
                             <h1 className="font-fragment m-0 text-[56px] leading-[64px] font-400 tracking-[0.25px] text-white lg:text-[72px] lg:leading-[80px]">
-                                Iconic places in Qatar
+                                {heroTitle}
                             </h1>
                             <p className="font-geist m-0 text-[24px] leading-8 font-500 tracking-[0.15px] text-white lg:text-[30px] lg:leading-10">
-                                Chauffeured visits to Doha&apos;s landmarks — museums, souqs, and
-                                waterfront icons.
+                                {heroSubtitle}
                             </p>
                         </div>
                     </div>
@@ -169,26 +173,28 @@ function Hero({ explore }) {
 }
 
 function Breadcrumb() {
+    const { t } = useTranslation('marketing');
     return (
-        <nav aria-label="Breadcrumb" className="bg-page px-6 py-4 text-center lg:px-12">
+        <nav aria-label={t('common.breadcrumb')} className="bg-page px-6 py-4 text-center lg:px-12">
             <ol className="font-geist m-0 flex list-none flex-wrap items-center justify-center gap-2 p-0 text-[14px] leading-5 text-muted">
                 <li>
                     <a href="/" className="text-ink-text transition hover:text-wine-700">
-                        Home
+                        {t('common.home')}
                     </a>
                 </li>
                 <li aria-hidden="true">/</li>
                 <li>
-                    <span className="text-ink-text">Explore Qatar</span>
+                    <span className="text-ink-text">{t('explore.qatar')}</span>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li aria-current="page">Iconic places in Qatar</li>
+                <li aria-current="page">{t('explore.iconicPlaces.title')}</li>
             </ol>
         </nav>
     );
 }
 
 export default function IconicPlaces() {
+    const { t } = useTranslation('marketing');
     const explore = useExploreCategory('iconic', PLACE_CARDS, ICONIC_DESTINATIONS);
 
     return (
@@ -196,58 +202,58 @@ export default function IconicPlaces() {
             <Hero explore={explore} />
             <Breadcrumb />
             <CardCarousel
-                title="Landmarks worth the ride"
+                title={t('explore.iconicPlaces.carouselTitle')}
                 cards={explore.cards}
                 onCardClick={explore.onCardClick}
             />
             <CalloutBanner
-                title="See Qatar without the parking hunt"
-                body="Your chauffeur knows the drop-off points — you keep the afternoon for the visit."
-                cta="Schedule a visit"
+                title={t('explore.iconicPlaces.calloutSee.title')}
+                body={t('explore.iconicPlaces.calloutSee.body')}
+                cta={t('explore.iconicPlaces.calloutSee.cta')}
                 href="#schedule"
             />
             <SeoSplit
                 imageOn="right"
-                title="Arrive composed at every landmark"
-                body="Whether it’s a museum opening or an evening at the Souq, we time your transfer so you step out ready — water, Wi-Fi, and waiting time included."
+                title={t('explore.iconicPlaces.seoArrive.title')}
+                body={t('explore.iconicPlaces.seoArrive.body')}
                 bullets={[
-                    'Punctual drop-off at major Doha attractions',
-                    'Flight and hotel pickups across Qatar',
-                    'Meet & Greet available for Hamad Airport',
+                    t('explore.iconicPlaces.seoArrive.b1'),
+                    t('explore.iconicPlaces.seoArrive.b2'),
+                    t('explore.iconicPlaces.seoArrive.b3'),
                 ]}
                 image={IP_IMG.seoArrive}
-                alt="Chauffeur assisting a guest from a premium vehicle"
+                alt={t('explore.iconicPlaces.seoArrive.alt')}
             />
             <SeoSplit
                 imageOn="left"
-                title="Link several places in one booking"
-                body="Planning Katara, then The Pearl, then dinner? Use by-the-hour service and keep the same chauffeur for a seamless day of icons."
+                title={t('explore.iconicPlaces.seoHourly.title')}
+                body={t('explore.iconicPlaces.seoHourly.body')}
                 bullets={[
-                    'By-the-hour city itineraries',
-                    'Flexible multi-stop routes',
-                    'Local chauffeurs who know Doha traffic patterns',
+                    t('explore.iconicPlaces.seoHourly.b1'),
+                    t('explore.iconicPlaces.seoHourly.b2'),
+                    t('explore.iconicPlaces.seoHourly.b3'),
                 ]}
                 image={IP_IMG.seoHourly}
-                alt="Premium vehicle on a city route"
-                cta={{ label: 'Book by the hour', href: '/?service=by_hour#book' }}
+                alt={t('explore.iconicPlaces.seoHourly.alt')}
+                cta={{ label: t('common.bookByTheHour'), href: '/?service=by_hour#book' }}
             />
             <SeoSplit
                 imageOn="right"
-                title="Travel between hotel and icon in quiet comfort"
-                body="High-end fleet, discreet service, and a booking flow built for visitors who want landmarks — not logistics."
+                title={t('explore.iconicPlaces.seoMeet.title')}
+                body={t('explore.iconicPlaces.seoMeet.body')}
                 bullets={[
-                    'Modern premium vehicles',
-                    'Complimentary waiting time on transfers',
-                    'Clear pricing before you confirm',
+                    t('explore.iconicPlaces.seoMeet.b1'),
+                    t('explore.iconicPlaces.seoMeet.b2'),
+                    t('explore.iconicPlaces.seoMeet.b3'),
                 ]}
                 image={IP_IMG.seoMeet}
-                alt="Luxury vehicle interior"
+                alt={t('explore.iconicPlaces.seoMeet.alt')}
             />
-            <CtaStrip label="Schedule your iconic visit" href="#schedule" />
+            <CtaStrip label={t('explore.iconicPlaces.ctaStrip')} href="#schedule" />
             <CalloutBanner
-                title="Ready when you are"
-                body="Pick a landmark above, or start from the homepage booking widget for any trip type."
-                cta="Back to booking"
+                title={t('common.readyWhen')}
+                body={t('explore.iconicPlaces.ready.body')}
+                cta={t('common.backToBooking')}
                 href={BOOK_HREF}
             />
             <ScrollTop />

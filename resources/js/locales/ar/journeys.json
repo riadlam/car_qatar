@@ -1,0 +1,61 @@
+{
+  "title": "رحلاتي",
+  "subtitle": "تتبّع الرحلات القادمة والسابقة والإلغاءات في مكان واحد.",
+  "search": {
+    "aria": "بحث",
+    "placeholder": "ابحث برقم الحجز أو الموقع أو الاسم",
+    "inputAria": "ابحث برقم الحجز أو الموقع أو الاسم"
+  },
+  "tabs": {
+    "aria": "تصفية قائمة الرحلات",
+    "upcoming": "القادمة",
+    "past": "السابقة",
+    "cancelled": "الملغاة"
+  },
+  "empty": {
+    "upcomingTitle": "لا حجوزات قادمة بعد",
+    "upcomingBody": "ستظهر حجوزاتك هنا بعد جدولة رحلة.",
+    "pastTitle": "لا حجوزات سابقة بعد",
+    "pastBody": "ستظهر الرحلات المكتملة هنا.",
+    "cancelledTitle": "لا حجوزات ملغاة",
+    "cancelledBody": "ستظهر الرحلات الملغاة في هذه القائمة.",
+    "loadErrorTitle": "تعذر تحميل الرحلات",
+    "bookJourney": "احجز رحلة"
+  },
+  "count": {
+    "one": "حجز {{count}}",
+    "other": "{{count}} حجوزات",
+    "matching": " مطابقة لـ «{{query}}»"
+  },
+  "errors": {
+    "load": "تعذر تحميل رحلاتك."
+  },
+  "card": {
+    "bookingNumber": "الحجز {{number}}",
+    "pickup": "الاستلام",
+    "dropoff": "التوصيل",
+    "chauffeur": "السائق",
+    "vehicle": "المركبة",
+    "flight": "الرحلة الجوية",
+    "notes": "ملاحظات",
+    "viewDetails": "عرض التفاصيل",
+    "cancel": "إلغاء الحجز",
+    "cancelling": "جاري الإلغاء…",
+    "status": {
+      "upcoming": "قادمة",
+      "past": "مكتملة",
+      "cancelled": "ملغاة",
+      "pending": "قيد الانتظار",
+      "confirmed": "مؤكدة",
+      "inProgress": "قيد التنفيذ"
+    }
+  },
+  "detail": {
+    "title": "تفاصيل الرحلة",
+    "back": "العودة إلى الرحلات",
+    "timeline": "الجدول الزمني",
+    "passenger": "الراكب",
+    "share": "مشاركة التفاصيل",
+    "support": "تواصل مع الدعم"
+  }
+}

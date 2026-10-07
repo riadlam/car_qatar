@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import TripLiveMap from '../components/journeys/TripLiveMap';
 import { IncludedIcon } from '../components/booking/icons';
@@ -12,18 +13,6 @@ import { INCLUDED } from '../data/bookingVehicles';
 import { applyPositionToJourney, applyTrackToJourney, bookingToJourney } from '../utils/bookingMappers';
 import { subscribePrivate } from '../echo';
 import Skeleton from '../components/ui/Skeleton';
-
-const TIMELINE = [
-    { id: 'waiting', label: 'Route' },
-    { id: 'to_pickup', label: 'To pickup' },
-    { id: 'to_dropoff', label: 'Trip started' },
-    { id: 'completed', label: 'Completed' },
-];
-
-const CANCEL_TIMELINE = [
-    { id: 'confirmed', label: 'Confirmed' },
-    { id: 'cancelled', label: 'Canceled' },
-];
 
 function mapStep(journey) {
     if (!journey) return 'waiting';
@@ -55,6 +44,7 @@ function isDemoId(id) {
  * Left: live map (car icon when on the way) · Right: trip / chauffeur actions.
  */
 export default function JourneyRide({ mode = 'details' }) {
+    const { t } = useTranslation(['journeys', 'booking']);
     const { id } = useParams();
     const [params, setParams] = useSearchParams();
     const navigate = useNavigate();
@@ -182,16 +172,26 @@ export default function JourneyRide({ mode = 'details' }) {
     }
 
     const isCanceled = journey.status === 'cancelled' || journey.status === 'canceled';
-    const steps = isCanceled ? CANCEL_TIMELINE : TIMELINE;
+    const steps = isCanceled
+        ? [
+              { id: 'confirmed', label: t('card.status.confirmed') },
+              { id: 'cancelled', label: t('card.status.cancelled') },
+          ]
+        : [
+              { id: 'waiting', label: t('detail.timeline') },
+              { id: 'to_pickup', label: t('card.pickup') },
+              { id: 'to_dropoff', label: t('card.status.inProgress') },
+              { id: 'completed', label: t('card.status.past') },
+          ];
     const activeStep = phaseIndex(journey);
     const stepLabel =
         step === 'to_pickup'
             ? journey.assignment_status === 'arrived'
-                ? 'Chauffeur waiting at pickup'
-                : 'Chauffeur to pickup'
+                ? t('card.chauffeur')
+                : t('card.pickup')
             : step === 'to_dropoff'
-              ? 'Trip to drop-off'
-              : 'Route';
+              ? t('card.dropoff')
+              : t('detail.timeline');
     const mapTargetLat = step === 'to_pickup' ? journey.lat : step === 'to_dropoff' ? (journey.drop_lat ?? journey.lat) : null;
     const mapTargetLng = step === 'to_pickup' ? journey.lng : step === 'to_dropoff' ? (journey.drop_lng ?? journey.lng) : null;
     const etaMins =
@@ -218,7 +218,7 @@ export default function JourneyRide({ mode = 'details' }) {
                         to={backTab}
                         className="font-geist inline-flex items-center gap-1 text-[14px] font-500 text-muted transition hover:text-ink-text"
                     >
-                        ← Journeys
+                        ← {t('detail.back')}
                     </Link>
 
                     <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
@@ -232,7 +232,7 @@ export default function JourneyRide({ mode = 'details' }) {
                                 </p>
                             ) : null}
                             <h1 className="font-fragment m-0 mt-1 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                                Trip details
+                                {t('detail.title')}
                             </h1>
                             <p className="font-geist mt-1 m-0 text-[15px] text-muted">
                                 {journey.mode_label}
@@ -351,7 +351,7 @@ export default function JourneyRide({ mode = 'details' }) {
                         ) : (
                             <div className="absolute left-1/2 top-3 z-[5] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-stretch overflow-hidden rounded-lg bg-white shadow-[0_2px_12px_rgba(15,19,25,0.12)]">
                                 <div className="min-w-0 px-3 py-2">
-                                    <div className="font-geist text-[12px] leading-4 text-muted">Route</div>
+                                    <div className="font-geist text-[12px] leading-4 text-muted">{t('detail.timeline')}</div>
                                     <div className="font-geist truncate text-[14px] leading-5 font-500 text-ink-text">
                                         {journey.pickup}
                                     </div>
@@ -378,7 +378,7 @@ export default function JourneyRide({ mode = 'details' }) {
                     <hr className="mt-8 border-0 border-t border-[#e8e6e1]" />
 
                     <h2 className="font-fragment mt-8 m-0 text-[24px] font-400 tracking-[0.25px] text-ink-text">
-                        Itinerary
+                        {t('checkout.sidebar.trip', { ns: 'booking' })}
                     </h2>
 
                     <div className="mt-5 rounded-2xl border border-[#e8e6e1] bg-white p-4 sm:p-5">
@@ -428,7 +428,7 @@ export default function JourneyRide({ mode = 'details' }) {
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl border border-[#e8e6e1] bg-white p-4 sm:p-5">
                             <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                Passenger
+                                {t('detail.passenger')}
                             </p>
                             <p className="font-geist mt-2 m-0 text-[16px] font-500 text-ink-text">
                                 {journey.passenger_name}
@@ -441,7 +441,7 @@ export default function JourneyRide({ mode = 'details' }) {
                         </div>
                         <div className="rounded-2xl border border-[#e8e6e1] bg-white p-4 sm:p-5">
                             <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                Payment
+                                {t('checkout.payment.title', { ns: 'booking' })}
                             </p>
                             <p className="font-geist mt-2 m-0 text-[16px] font-500 text-ink-text">
                                 {formatMoney(journey.price, journey.currency)}
@@ -455,7 +455,7 @@ export default function JourneyRide({ mode = 'details' }) {
                             {journey.preferred_chauffeur_label ? (
                                 <>
                                     <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                        Chauffeur preference
+                                        {t('checkout.pickupPrefs.chauffeurPreference', { ns: 'booking' })}
                                     </p>
                                     <p className="font-geist mt-2 m-0 text-[15px] font-500 text-ink-text">
                                         {journey.preferred_chauffeur_label}
@@ -469,7 +469,7 @@ export default function JourneyRide({ mode = 'details' }) {
                                             journey.preferred_chauffeur_label ? 'mt-4' : ''
                                         }`}
                                     >
-                                        Pickup notes
+                                        {t('card.notes')}
                                     </p>
                                     <p className="font-geist mt-2 m-0 text-[15px] text-ink-text">{journey.notes}</p>
                                 </>
@@ -500,7 +500,7 @@ export default function JourneyRide({ mode = 'details' }) {
                                     onClick={() => setContactOpen(true)}
                                     className="font-geist cursor-pointer rounded-full bg-wine-700 px-4 py-2.5 text-[14px] font-500 text-white"
                                 >
-                                    Contact chauffeur
+                                    {t('detail.support')}
                                 </button>
                             ) : null}
                             {(journey.actions || []).includes('cancel') ? (
@@ -509,7 +509,7 @@ export default function JourneyRide({ mode = 'details' }) {
                                     onClick={() => setCancelOpen(true)}
                                     className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2.5 text-[14px] font-500 text-ink-text"
                                 >
-                                    Cancel
+                                    {t('card.cancel')}
                                 </button>
                             ) : null}
                         </div>
@@ -525,7 +525,7 @@ export default function JourneyRide({ mode = 'details' }) {
             />
             <CancelReasonModal
                 open={cancelOpen}
-                title="Cancel this trip"
+                title={t('card.cancel')}
                 busy={cancelBusy}
                 onClose={() => {
                     if (!cancelBusy) setCancelOpen(false);

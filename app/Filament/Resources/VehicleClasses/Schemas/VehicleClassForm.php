@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\VehicleClasses\Schemas;
 
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
@@ -27,9 +29,14 @@ class VehicleClassForm
                             ->required()
                             ->numeric()
                             ->default(0),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                            ])
                             ->required()
-                            ->default('active'),
+                            ->default('active')
+                            ->native(false),
                         Textarea::make('description')
                             ->default(null)
                             ->columnSpanFull(),
@@ -45,6 +52,15 @@ class VehicleClassForm
                             ->required()
                             ->numeric()
                             ->default(0),
+                    ]),
+                Section::make('Amenities')
+                    ->description('Shown on the booking page for this vehicle class.')
+                    ->schema([
+                        CheckboxList::make('amenities')
+                            ->relationship('amenities', 'label')
+                            ->columns(2)
+                            ->searchable()
+                            ->bulkToggleable(),
                     ]),
                 Section::make('Media')
                     ->columns(2)

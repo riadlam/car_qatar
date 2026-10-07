@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import Skeleton from '../components/ui/Skeleton';
 import { confirmGuestPayment, fetchGuestPayment } from '../api/partner';
@@ -11,6 +12,7 @@ function money(amount, currency = 'QAR') {
 }
 
 export default function GuestPay() {
+    const { t } = useTranslation(['booking', 'journeys']);
     const { token } = useParams();
     const [loading, setLoading] = useState(true);
     const [confirming, setConfirming] = useState(false);
@@ -31,7 +33,7 @@ export default function GuestPay() {
                     setError(
                         err?.response?.data?.message ||
                             err?.response?.data?.errors?.token?.[0] ||
-                            'This payment link is invalid or has expired.',
+                            t('guestPay.expired'),
                     );
                 }
             })
@@ -41,7 +43,7 @@ export default function GuestPay() {
         return () => {
             cancelled = true;
         };
-    }, [token]);
+    }, [token, t]);
 
     const onConfirm = async () => {
         setConfirming(true);
@@ -54,7 +56,7 @@ export default function GuestPay() {
             setError(
                 err?.response?.data?.message ||
                     err?.response?.data?.errors?.token?.[0] ||
-                    'Could not confirm this booking. Please try again.',
+                    t('checkout.errors.bookFailed'),
             );
         } finally {
             setConfirming(false);
@@ -67,14 +69,13 @@ export default function GuestPay() {
         <SiteLayout>
             <div className="mx-auto min-h-[70vh] w-full max-w-[560px] px-4 py-16 sm:px-6 lg:py-24">
                 <p className="font-geist m-0 text-[13px] font-500 tracking-[0.08em] text-muted uppercase">
-                    Secure guest checkout
+                    {t('guestPay.subtitle')}
                 </p>
                 <h1 className="font-fragment mt-2 m-0 text-[32px] leading-10 font-400 tracking-[0.2px] text-ink-text sm:text-[40px] sm:leading-[48px]">
-                    Confirm your ride
+                    {t('guestPay.title')}
                 </h1>
                 <p className="font-geist mt-3 m-0 text-[16px] leading-6 text-ink-text/75">
-                    Review the trip details below. Online card charging will be enabled when payment
-                    providers are connected — for now, confirm to lock in your booking.
+                    {t('checkout.security.noCharge')}
                 </p>
 
                 {loading ? (
@@ -90,29 +91,29 @@ export default function GuestPay() {
                     <div className="mt-10 space-y-5">
                         <div className="rounded-2xl border border-[#e8e8ea] bg-white p-5 sm:p-6">
                             <p className="font-geist m-0 text-[13px] text-muted">
-                                Booking {booking.booking_number}
+                                {t('journeys:card.bookingNumber', { number: booking.booking_number })}
                             </p>
                             <p className="font-geist mt-3 m-0 text-[15px] text-ink-text">
-                                <span className="font-500">Pickup</span>
+                                <span className="font-500">{t('journeys:card.pickup')}</span>
                                 <br />
                                 {booking.pickup_location?.formatted_address || '—'}
                             </p>
                             {booking.dropoff_location ? (
                                 <p className="font-geist mt-3 m-0 text-[15px] text-ink-text">
-                                    <span className="font-500">Drop-off</span>
+                                    <span className="font-500">{t('journeys:card.dropoff')}</span>
                                     <br />
                                     {booking.dropoff_location.formatted_address || '—'}
                                 </p>
                             ) : null}
                             <p className="font-geist mt-3 m-0 text-[15px] text-ink-text">
-                                <span className="font-500">When</span>
+                                <span className="font-500">{t('checkout.sidebar.trip')}</span>
                                 <br />
                                 {booking.pickup_at
                                     ? new Date(booking.pickup_at).toLocaleString()
                                     : '—'}
                             </p>
                             <p className="font-geist mt-3 m-0 text-[15px] text-ink-text">
-                                <span className="font-500">Vehicle</span>
+                                <span className="font-500">{t('journeys:card.vehicle')}</span>
                                 <br />
                                 {booking.vehicle_class?.name || '—'}
                                 {booking.service_type?.name ? ` · ${booking.service_type.name}` : ''}
@@ -133,7 +134,7 @@ export default function GuestPay() {
                                 </span>
                             </div>
                             <div className="flex items-center justify-between gap-3 border-t border-[#f0f0f2] pt-3">
-                                <span className="font-geist text-[16px] font-500 text-ink-text">Total</span>
+                                <span className="font-geist text-[16px] font-500 text-ink-text">{t('checkout.sidebar.total')}</span>
                                 <span className="font-geist text-[18px] font-500 text-ink-text">
                                     {money(booking.total, booking.currency)}
                                 </span>
@@ -142,7 +143,7 @@ export default function GuestPay() {
 
                         {done ? (
                             <p className="font-geist m-0 rounded-2xl border border-wine-200 bg-wine-50 p-5 text-center text-[16px] text-ink-text">
-                                Your booking is confirmed. Thank you — we&apos;ll see you on the road.
+                                {t('guestPay.paid')}
                             </p>
                         ) : (
                             <>
@@ -157,7 +158,7 @@ export default function GuestPay() {
                                     onClick={onConfirm}
                                     className="font-geist w-full rounded-full bg-wine-700 py-3.5 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                                 >
-                                    {confirming ? 'Confirming…' : 'Confirm booking'}
+                                    {confirming ? t('checkout.sidebar.confirming') : t('guestPay.pay')}
                                 </button>
                             </>
                         )}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
 import { createPaymentMethod, firstApiError } from '../../api/checkout';
@@ -22,6 +23,7 @@ const fieldClass =
  * Professional add-card modal with live card preview (react-credit-cards-2).
  */
 export default function AddCardModal({ open, onClose, onSave }) {
+    const { t } = useTranslation(['booking', 'common']);
     const [number, setNumber] = useState('');
     const [name, setName] = useState('');
     const [expiry, setExpiry] = useState('');
@@ -51,25 +53,25 @@ export default function AddCardModal({ open, onClose, onSave }) {
         setError('');
 
         if (digits.length < 13) {
-            setError('Enter a valid card number.');
+            setError(t('addCard.errNumber'));
             return;
         }
         if (!name.trim()) {
-            setError('Cardholder name is required.');
+            setError(t('addCard.errName'));
             return;
         }
         if (!/^\d{2}\/\d{2}$/.test(expiry)) {
-            setError('Use expiry format MM/YY.');
+            setError(t('addCard.errExpiryFormat'));
             return;
         }
         const [mm] = expiry.split('/').map(Number);
         if (mm < 1 || mm > 12) {
-            setError('Enter a valid expiry month.');
+            setError(t('addCard.errExpiryMonth'));
             return;
         }
         const cvcDigits = cvc.replace(/\D/g, '');
         if (cvcDigits.length < 3) {
-            setError('Enter a valid CVC.');
+            setError(t('addCard.errCvc'));
             return;
         }
 
@@ -87,7 +89,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
             reset();
             onClose();
         } catch (err) {
-            setError(firstApiError(err, 'Could not save this card.'));
+            setError(firstApiError(err, t('addCard.errSave')));
         } finally {
             setSaving(false);
         }
@@ -112,12 +114,12 @@ export default function AddCardModal({ open, onClose, onSave }) {
                         id="add-card-title"
                         className="font-fragment m-0 text-[22px] leading-8 font-400 tracking-[0.25px] text-ink-text"
                     >
-                        Add payment method
+                        {t('addCard.title')}
                     </h2>
                     <button
                         type="button"
                         onClick={handleClose}
-                        aria-label="Close"
+                        aria-label={t('common:actions.close')}
                         className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-ink-text transition hover:bg-black/5"
                     >
                         <svg width="1.4em" height="1.4em" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -137,7 +139,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
                             number={number}
                             expiry={expiry}
                             cvc={cvc}
-                            name={name || 'YOUR NAME'}
+                            name={name || t('addCard.namePreview')}
                             focused={focus}
                         />
                     </div>
@@ -152,7 +154,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
 
                     <label className="block">
                         <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                            Card number
+                            {t('addCard.number')}
                         </span>
                         <input
                             type="text"
@@ -168,12 +170,12 @@ export default function AddCardModal({ open, onClose, onSave }) {
 
                     <label className="block">
                         <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                            Name on card
+                            {t('addCard.name')}
                         </span>
                         <input
                             type="text"
                             autoComplete="cc-name"
-                            placeholder="Name as shown on card"
+                            placeholder={t('addCard.namePlaceholder')}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             onFocus={() => setFocus('name')}
@@ -184,7 +186,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
                     <div className="grid grid-cols-2 gap-3">
                         <label className="block">
                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                Expiry
+                                {t('addCard.expiry')}
                             </span>
                             <input
                                 type="text"
@@ -199,7 +201,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
                         </label>
                         <label className="block">
                             <span className="font-geist mb-1.5 block text-[14px] font-500 text-ink-text">
-                                CVC
+                                {t('addCard.cvc')}
                             </span>
                             <input
                                 type="password"
@@ -216,8 +218,7 @@ export default function AddCardModal({ open, onClose, onSave }) {
                     </div>
 
                     <p className="font-geist m-0 text-[12px] leading-5 text-muted">
-                        We validate the card and store only the brand and last four digits. The full
-                        number and CVC are not kept.
+                        {t('addCard.privacy')}
                     </p>
 
                     <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -226,14 +227,14 @@ export default function AddCardModal({ open, onClose, onSave }) {
                             onClick={handleClose}
                             className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] px-6 py-2.5 text-[16px] font-500 text-ink-text transition hover:bg-page"
                         >
-                            Cancel
+                            {t('common:actions.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={saving}
                             className="font-geist inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-2.5 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                         >
-                            {saving ? 'Saving…' : 'Save card'}
+                            {saving ? t('guest.saving') : t('addCard.saveCard')}
                         </button>
                     </div>
                 </form>

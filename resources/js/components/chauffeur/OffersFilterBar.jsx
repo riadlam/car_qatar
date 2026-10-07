@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { formatPayout } from '../../data/chauffeurPortal';
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -52,10 +53,11 @@ export function payoutQuery(filters) {
  * Mobile offers filter — min and max payout only. The API applies the range.
  */
 export default function OffersFilterBar({ open, onClose, filters, onChange, onReset, resultCount, currency = '' }) {
+    const { t } = useTranslation('chauffeur');
     const set = (patch) => onChange({ ...filters, ...patch });
     const activeCount = [filters.minPayout > 0, filters.maxPayout < PAYOUT_CEILING].filter(Boolean).length;
     const maxLabel =
-        filters.maxPayout >= PAYOUT_CEILING ? 'No max' : formatPayout(filters.maxPayout, currency);
+        filters.maxPayout >= PAYOUT_CEILING ? t('offers.noMax') : formatPayout(filters.maxPayout, currency);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -74,10 +76,15 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
     return (
         <AnimatePresence>
             {open ? (
-                <div className="fixed inset-0 z-[130] lg:hidden" role="dialog" aria-modal="true" aria-label="Filters">
+                <div
+                    className="fixed inset-0 z-[130] lg:hidden"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t('offers.filters.title')}
+                >
                     <motion.button
                         type="button"
-                        aria-label="Close filters"
+                        aria-label={t('actions.closeFilters')}
                         className="absolute inset-0 cursor-pointer border-0 bg-ink/40 backdrop-blur-[2px]"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -99,10 +106,10 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
 
                         <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-3">
                             <div>
-                                <p className="font-fragment m-0 text-[22px] text-ink-text">Filters</p>
+                                <p className="font-fragment m-0 text-[22px] text-ink-text">{t('offers.filters.title')}</p>
                                 <p className="font-geist mt-0.5 m-0 text-[13px] text-muted">
-                                    {activeCount ? `${activeCount} active · ` : ''}
-                                    {resultCount} offer{resultCount === 1 ? '' : 's'}
+                                    {activeCount ? t('offers.activeFilters', { count: activeCount }) : ''}
+                                    {t('offers.offerCount', { count: resultCount })}
                                 </p>
                             </div>
                             <div className="flex items-center gap-1">
@@ -111,12 +118,12 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
                                     onClick={onReset}
                                     className="font-geist cursor-pointer rounded-full px-3 py-2 text-[13px] font-500 text-wine-700 transition hover:bg-wine-50"
                                 >
-                                    Reset
+                                    {t('offers.filters.reset')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    aria-label="Close"
+                                    aria-label={t('actions.close')}
                                     className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-page text-ink-text transition hover:bg-[#ebe8e2]"
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -135,7 +142,7 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
                             <div className="space-y-6">
                                 <RangeField
                                     id="filter-min-payout"
-                                    label="Min payout"
+                                    label={t('offers.minPayoutShort')}
                                     valueLabel={formatPayout(filters.minPayout, currency)}
                                     min={0}
                                     max={PAYOUT_CEILING}
@@ -151,7 +158,7 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
 
                                 <RangeField
                                     id="filter-max-payout"
-                                    label="Max payout"
+                                    label={t('offers.maxPayout')}
                                     valueLabel={maxLabel}
                                     min={0}
                                     max={PAYOUT_CEILING}
@@ -173,7 +180,7 @@ export default function OffersFilterBar({ open, onClose, filters, onChange, onRe
                                 onClick={onClose}
                                 className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 text-[15px] font-500 text-white transition hover:bg-wine-600"
                             >
-                                Show {resultCount} offer{resultCount === 1 ? '' : 's'}
+                                {t('offers.showOffers', { count: resultCount })}
                             </button>
                         </div>
                     </motion.div>

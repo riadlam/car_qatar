@@ -1,43 +1,49 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { IMG } from './motion';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SERVICES = [
-    {
-        tag: 'Airport transfers',
-        title: 'Smooth landings, every time.',
-        copy: 'Delayed flight? Chauffeurs track arrivals and adjust accordingly. Plus, you have 1 hour of complimentary wait time just in case.',
-        img: IMG.service1,
-        href: '#airport',
-    },
-    {
-        tag: 'Hourly and full day hire',
-        title: 'Seize the day.',
-        copy: "Reserve a dedicated chauffeur from 2 to 24 hours. They'll be on standby as long as you need them.",
-        img: IMG.service2,
-        href: '#hourly',
-    },
-    {
-        tag: 'City-to-city',
-        title: 'Between cities, done better.',
-        copy: 'Turn long-distance journeys into time well spent. Arrive refreshed, not stressed.',
-        img: IMG.service3,
-        href: '#city-to-city',
-    },
-    {
-        tag: 'Enterprise and agency solutions',
-        title: 'Corporate travel, simplified.',
-        copy: 'One platform for companies and agencies to book, track, and account for every journey.',
-        img: IMG.service4,
-        href: '#business',
-    },
-];
-
 export default function Services() {
+    const { t } = useTranslation('landing');
     const sectionRef = useRef(null);
+
+    const SERVICES = useMemo(
+        () => [
+            {
+                tag: t('services.airport.tag'),
+                title: t('services.airport.title'),
+                copy: t('services.airport.copy'),
+                img: IMG.service1,
+                href: '#airport',
+            },
+            {
+                tag: t('services.hourly.tag'),
+                title: t('services.hourly.title'),
+                copy: t('services.hourly.copy'),
+                img: IMG.service2,
+                href: '#hourly',
+            },
+            {
+                tag: t('services.cityToCity.tag'),
+                title: t('services.cityToCity.title'),
+                copy: t('services.cityToCity.copy'),
+                img: IMG.service3,
+                href: '#city-to-city',
+            },
+            {
+                tag: t('services.enterprise.tag'),
+                title: t('services.enterprise.title'),
+                copy: t('services.enterprise.copy'),
+                img: IMG.service4,
+                href: '#business',
+            },
+        ],
+        [t],
+    );
+
     const titleRef = useRef(null);
     const subtitleRef = useRef(null);
     const titleBlockRef = useRef(null);
@@ -210,13 +216,13 @@ export default function Services() {
                         ref={titleRef}
                         className="font-fragment m-0 text-[1.75rem] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[2.75rem] sm:leading-[3.25rem] lg:text-[6.5rem] lg:leading-[7.5rem]"
                     >
-                        Arrive at your best.
+                        {t('services.headline')}
                     </h2>
                     <p
                         ref={subtitleRef}
                         className="font-geist m-0 max-w-[34rem] text-[1.125rem] leading-7 font-500 tracking-[0.15px] text-ink-text sm:text-[1.5rem] sm:leading-8 lg:max-w-none lg:text-[1.75rem] lg:leading-9 lg:tracking-[0.25px]"
                     >
-                        Effortless journeys, tailored to you.
+                        {t('services.subhead')}
                     </p>
                 </div>
             </div>
@@ -226,7 +232,7 @@ export default function Services() {
                     <div
                         ref={trackRef}
                         onScroll={onScroll}
-                        aria-label="Book services"
+                        aria-label={t('services.bookAria')}
                         className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-6 [-ms-overflow-style:none] [scrollbar-width:none] sm:px-6 lg:gap-5 lg:px-12 [&::-webkit-scrollbar]:hidden"
                     >
                         {SERVICES.map((s) => (
@@ -256,7 +262,7 @@ export default function Services() {
                                         href={s.href}
                                         className="font-geist mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-wine-700 px-4 py-2 text-[16px] font-500 text-wine-700 transition hover:bg-page sm:mt-5"
                                     >
-                                        Learn more
+                                        {t('services.learnMore')}
                                     </a>
                                 </div>
                             </article>
@@ -268,7 +274,7 @@ export default function Services() {
                             <button
                                 key={i}
                                 type="button"
-                                aria-label={`Go to slide ${i + 1}`}
+                                aria-label={t('services.goToSlide', { n: i + 1 })}
                                 onClick={() => scrollTo(i)}
                                 className={`h-2 w-2 rounded-full transition ${
                                     index === i ? 'bg-wine-700' : 'bg-wine-700/25'

@@ -1,42 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TA_IMG } from './assets';
-
-const ROWS = [
-    [
-        {
-            icon: TA_IMG.iconGlobal,
-            title: 'Globally dependable',
-            body: 'Count on immediate confirmations and high-quality service for your clients around the world.',
-        },
-        {
-            icon: TA_IMG.iconCurrency,
-            title: 'Fully competitive rates',
-            body: 'Access first-rate service at reasonable, distance-based pricing structure.',
-        },
-        {
-            icon: TA_IMG.iconTime,
-            title: 'Unrivaled flexibility',
-            body: 'Cancel bookings free of charge for any ride up to 1 hour before the pick-up time.',
-        },
-    ],
-    [
-        {
-            icon: TA_IMG.iconTeam,
-            title: '24/7 Corporate support',
-            body: 'Depend on our team 24/7 for any needs and on-site requirements.',
-        },
-        {
-            icon: TA_IMG.iconTime,
-            title: 'Easy management',
-            body: 'Our bespoke booking portal makes managing travel quick and easy.',
-        },
-        {
-            icon: TA_IMG.iconDiscussion,
-            title: 'Real-time updates',
-            body: 'Bookers and passengers get instant updates. Flight-tracking for auto adjustments.',
-        },
-    ],
-];
 
 function BenefitRow({ items }) {
     const scrollerRef = useRef(null);
@@ -99,14 +63,56 @@ function BenefitRow({ items }) {
 }
 
 export default function Benefits() {
+    const { t } = useTranslation('marketing');
+
+    const rows = useMemo(
+        () => [
+            [
+                {
+                    icon: TA_IMG.iconGlobal,
+                    title: t('travelAgencies.benefitsGrid.dependable.title'),
+                    body: t('travelAgencies.benefitsGrid.dependable.body'),
+                },
+                {
+                    icon: TA_IMG.iconCurrency,
+                    title: t('travelAgencies.benefitsGrid.rates.title'),
+                    body: t('travelAgencies.benefitsGrid.rates.body'),
+                },
+                {
+                    icon: TA_IMG.iconTime,
+                    title: t('travelAgencies.benefitsGrid.flexibility.title'),
+                    body: t('travelAgencies.benefitsGrid.flexibility.body'),
+                },
+            ],
+            [
+                {
+                    icon: TA_IMG.iconTeam,
+                    title: t('travelAgencies.benefitsGrid.support.title'),
+                    body: t('travelAgencies.benefitsGrid.support.body'),
+                },
+                {
+                    icon: TA_IMG.iconTime,
+                    title: t('travelAgencies.benefitsGrid.management.title'),
+                    body: t('travelAgencies.benefitsGrid.management.body'),
+                },
+                {
+                    icon: TA_IMG.iconDiscussion,
+                    title: t('travelAgencies.benefitsGrid.updates.title'),
+                    body: t('travelAgencies.benefitsGrid.updates.body'),
+                },
+            ],
+        ],
+        [t],
+    );
+
     return (
         <section className="bg-page px-6 py-12 lg:px-12 lg:py-16">
             <div className="mx-auto max-w-[1170px]">
                 <h2 className="font-fragment m-0 mb-10 text-center text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10 lg:mb-12 lg:text-[40px] lg:leading-[48px]">
-                    Experience our travel agency benefits
+                    {t('travelAgencies.benefitsGrid.title')}
                 </h2>
                 <div className="flex flex-col gap-8 lg:gap-12">
-                    {ROWS.map((row, i) => (
+                    {rows.map((row, i) => (
                         <BenefitRow key={i} items={row} />
                     ))}
                 </div>

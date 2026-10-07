@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { IconChevronDown } from './icons';
 
-const TITLES = ['Mr.', 'Mrs.'];
+const TITLE_VALUES = ['Mr.', 'Mrs.'];
 
 const fieldClass =
     'font-geist box-border w-full min-w-0 rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
@@ -22,10 +23,17 @@ const emptyForm = {
  * onSave may be async; returns the created guest (or void).
  */
 export default function AddGuestModal({ open, onClose, onSave }) {
+    const { t } = useTranslation(['booking', 'common', 'account']);
     const [form, setForm] = useState(emptyForm);
     const [titleOpen, setTitleOpen] = useState(false);
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
+
+    const titleLabel = (value) => {
+        if (value === 'Mr.') return t('account:titles.mr');
+        if (value === 'Mrs.') return t('account:titles.mrs');
+        return value;
+    };
 
     useEffect(() => {
         if (open) {
@@ -58,15 +66,15 @@ export default function AddGuestModal({ open, onClose, onSave }) {
         const last = form.last_name.trim();
         const email = form.email.trim();
         if (!first || !last) {
-            setError('Please enter the guest’s first and last name.');
+            setError(t('guest.errName'));
             return;
         }
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError('Please enter a valid guest email address.');
+            setError(t('guest.errEmail'));
             return;
         }
         if (!form.phone || form.phone.replace(/\D/g, '').length < 8) {
-            setError('Please enter a valid guest mobile number.');
+            setError(t('guest.errPhone'));
             return;
         }
         setSaving(true);
@@ -85,7 +93,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                 err?.response?.data?.message ||
                     Object.values(err?.response?.data?.errors || {}).flat()[0] ||
                     err?.message ||
-                    'Unable to save guest. Please try again.',
+                    t('guest.errSave'),
             );
         } finally {
             setSaving(false);
@@ -99,7 +107,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
         >
             <button
                 type="button"
-                aria-label="Close dialog"
+                aria-label={t('guest.closeDialog')}
                 className="absolute inset-0 cursor-pointer border-0 bg-ink/50"
                 onClick={onClose}
             />
@@ -117,13 +125,13 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                         id="add-guest-title"
                         className="font-fragment m-0 text-[24px] leading-8 font-400 tracking-[0.25px] text-ink-text sm:text-[28px] sm:leading-9"
                     >
-                        Add new guest
+                        {t('guest.addTitle')}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
                         className="font-geist -mr-1 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-[24px] leading-none text-muted transition hover:bg-page hover:text-ink-text"
-                        aria-label="Close"
+                        aria-label={t('common:actions.close')}
                     >
                         ×
                     </button>
@@ -131,15 +139,13 @@ export default function AddGuestModal({ open, onClose, onSave }) {
 
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-8 sm:py-6">
                     <p className="font-geist m-0 text-[15px] leading-6 text-ink-text sm:text-[16px]">
-                        Enter your guests&apos; information and treat them to a premium service. We will keep them
-                        informed of their journey throughout the process. Don&apos;t worry, we will not share any
-                        payment or invoice information with them.
+                        {t('guest.intro')}
                     </p>
 
                     <div className="mt-6 flex flex-col gap-5">
                         <div className="relative w-full max-w-[200px]">
                             <label htmlFor="guest-title" className="font-geist mb-1.5 block text-[14px] text-muted">
-                                Title
+                                {t('guest.title')}
                             </label>
                             <button
                                 id="guest-title"
@@ -150,7 +156,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                 onClick={() => setTitleOpen((v) => !v)}
                                 className={`${fieldClass} flex cursor-pointer items-center justify-between text-left`}
                             >
-                                <span>{form.title}</span>
+                                <span>{titleLabel(form.title)}</span>
                                 <span className={`text-ink-text transition ${titleOpen ? 'rotate-180' : ''}`}>
                                     <IconChevronDown />
                                 </span>
@@ -160,19 +166,19 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                     role="listbox"
                                     className="absolute left-0 right-0 z-20 mt-1 overflow-hidden rounded-lg border border-[#e0ddd6] bg-white py-1 shadow-lg"
                                 >
-                                    {TITLES.map((t) => (
-                                        <li key={t} role="option" aria-selected={form.title === t}>
+                                    {TITLE_VALUES.map((value) => (
+                                        <li key={value} role="option" aria-selected={form.title === value}>
                                             <button
                                                 type="button"
                                                 className={`font-geist w-full cursor-pointer px-4 py-2.5 text-left text-[15px] hover:bg-wine-50 ${
-                                                    form.title === t ? 'bg-wine-50 text-wine-800' : 'text-ink-text'
+                                                    form.title === value ? 'bg-wine-50 text-wine-800' : 'text-ink-text'
                                                 }`}
                                                 onClick={() => {
-                                                    setForm({ ...form, title: t });
+                                                    setForm({ ...form, title: value });
                                                     setTitleOpen(false);
                                                 }}
                                             >
-                                                {t}
+                                                {titleLabel(value)}
                                             </button>
                                         </li>
                                     ))}
@@ -183,7 +189,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                             <div className="min-w-0">
                                 <label htmlFor="guest-first" className="font-geist mb-1.5 block text-[14px] text-muted">
-                                    First name
+                                    {t('guest.firstName')}
                                 </label>
                                 <input
                                     id="guest-first"
@@ -191,14 +197,14 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                     maxLength={30}
                                     onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                                     className={fieldClass}
-                                    placeholder="Guest's first name"
+                                    placeholder={t('guest.firstPlaceholder')}
                                     autoComplete="given-name"
                                 />
                             </div>
 
                             <div className="min-w-0">
                                 <label htmlFor="guest-last" className="font-geist mb-1.5 block text-[14px] text-muted">
-                                    Last name
+                                    {t('guest.lastName')}
                                 </label>
                                 <input
                                     id="guest-last"
@@ -206,7 +212,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                     maxLength={30}
                                     onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                                     className={fieldClass}
-                                    placeholder="Guest's last name"
+                                    placeholder={t('guest.lastPlaceholder')}
                                     autoComplete="family-name"
                                 />
                             </div>
@@ -214,7 +220,7 @@ export default function AddGuestModal({ open, onClose, onSave }) {
 
                         <div className="min-w-0">
                             <label htmlFor="guest-email" className="font-geist mb-1.5 block text-[14px] text-muted">
-                                Email address
+                                {t('guest.email')}
                             </label>
                             <input
                                 id="guest-email"
@@ -223,14 +229,14 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                 maxLength={100}
                                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                                 className={fieldClass}
-                                placeholder="Guest's email address"
+                                placeholder={t('guest.emailPlaceholder')}
                                 autoComplete="email"
                             />
                         </div>
 
                         <div className="min-w-0">
                             <label htmlFor="guest-phone" className="font-geist mb-1.5 block text-[14px] text-muted">
-                                Guest&apos;s mobile number
+                                {t('guest.phone')}
                             </label>
                             <PhoneInput
                                 defaultCountry="dz"
@@ -240,12 +246,12 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                                 className="almajd-phone"
                                 inputProps={{
                                     id: 'guest-phone',
-                                    placeholder: "Guest's mobile number",
+                                    placeholder: t('guest.phonePlaceholder'),
                                     autoComplete: 'tel',
                                 }}
                             />
                             <p className="font-geist mt-2 m-0 text-[13px] leading-5 text-muted">
-                                Your guest will receive their journey notifications and support with this mobile number.
+                                {t('guest.phoneHelp')}
                             </p>
                         </div>
                     </div>
@@ -264,14 +270,14 @@ export default function AddGuestModal({ open, onClose, onSave }) {
                         disabled={saving}
                         className="font-geist flex-1 cursor-pointer rounded-full border border-[#d8d8dc] py-3.5 text-[15px] font-500 text-ink-text hover:bg-page disabled:opacity-60"
                     >
-                        Cancel
+                        {t('common:actions.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={saving}
                         className="font-geist flex-1 cursor-pointer rounded-full bg-wine-700 py-3.5 text-[15px] font-500 text-white hover:bg-wine-600 disabled:opacity-60"
                     >
-                        {saving ? 'Saving…' : 'Add guest'}
+                        {saving ? t('guest.saving') : t('guest.add')}
                     </button>
                 </div>
             </form>

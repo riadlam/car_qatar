@@ -1,0 +1,1058 @@
+{
+  "about": {
+    "eyebrow": "About us",
+    "title": "Premium chauffeur travel, thoughtfully delivered",
+    "intro": "AL MAJD provides private chauffeur services designed for comfort, reliability, and a calm travel experience — across Qatar and beyond.",
+    "imageAlt": "AL MAJD chauffeur welcoming a passenger",
+    "story": {
+      "title": "Our story",
+      "p1": "Content for this section will be added later. For now, AL MAJD stands for elevated private travel — combining professional chauffeurs, carefully selected vehicles, and attentive service that starts before you step into the car and continues until your journey is complete.",
+      "p2": "Whether you are booking a one-way transfer, a city tour, or recurring school journeys, our focus is the same: arrive on time, travel in comfort, and leave ready for what comes next."
+    },
+    "values": {
+      "title": "What we stand for",
+      "reliable": {
+        "title": "Reliable chauffeurs",
+        "body": "Professionally trained drivers dedicated to punctual, discreet, and courteous service."
+      },
+      "fleet": {
+        "title": "Premium fleet",
+        "body": "A curated selection of recent, well-maintained vehicles for every occasion."
+      },
+      "journeys": {
+        "title": "Seamless journeys",
+        "body": "From airport transfers to multi-stop itineraries, we tailor every ride to you."
+      }
+    },
+    "cta": {
+      "title": "Ready when you are",
+      "body": "Book your next journey, or speak with our team about business travel.",
+      "bookRide": "Book a ride",
+      "businessSolutions": "Business solutions"
+    }
+  },
+  "contact": {
+    "brand": "AL MAJD",
+    "title": "Leave a message",
+    "subtitle": "Tell us how we can help — our concierge team will reply as soon as possible.",
+    "writeCta": "Write your message",
+    "aside": {
+      "eyebrow": "Other ways to reach us",
+      "title": "Concierge, always close",
+      "body": "Prefer a call or chat? Use the channels below — or send a written note and we'll follow up.",
+      "journeysHint": "Looking for an upcoming ride?",
+      "viewJourneys": "View your journeys"
+    },
+    "channels": {
+      "callUs": "Call us",
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "hintCall": "Speak with concierge",
+      "hintWhatsapp": "Message us on WhatsApp",
+      "hintEmail": "Write to our team",
+      "hintDefault": "Get in touch"
+    },
+    "form": {
+      "title": "Write to us",
+      "requiredHint": "Fields marked * are required.",
+      "name": "Name *",
+      "email": "Email *",
+      "phone": "Phone",
+      "subject": "Subject",
+      "subjectPlaceholder": "Booking, feedback, partnership…",
+      "message": "Message *",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "error": "Could not send your message. Please try again."
+    },
+    "success": {
+      "title": "Message sent",
+      "body": "Thank you — our team received your note and will follow up shortly.",
+      "sendAnother": "Send another",
+      "backHome": "Back home"
+    }
+  },
+  "business": {
+    "eyebrow": "AL MAJD for Business",
+    "title": "Corporate travel, simplified",
+    "subtitle": "One platform for companies, agencies, and partners to book and manage every journey.",
+    "cta": "Explore business solutions",
+    "contactSales": "Contact sales",
+    "ariaLabel": "Corporate transportation",
+    "alreadyAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "services": {
+      "breadcrumbCurrent": "Discover Reliable Corporate Transportation Services",
+      "title": "Tailored to you",
+      "learnMore": "Learn more",
+      "learnMoreAbout": "Learn more about {{title}}",
+      "corporate": {
+        "title": "Corporate travel",
+        "body": "Arrange business journeys for your employees, clients, or yourself with ease."
+      },
+      "agencies": {
+        "title": "Travel agencies",
+        "body": "Earn more with a top-tier travel provider, integrated in your GDS."
+      },
+      "partnerships": {
+        "title": "Strategic partnerships",
+        "body": "Gift your valuable customers our services via a bespoke business solution."
+      }
+    },
+    "planning": {
+      "title": "From planning to pickup.",
+      "body": "Our platforms are built to make your airport transfers, commutes, and city-to-city journeys a breeze.",
+      "cta": "Create a business account",
+      "imageAlt": "Business booking platform"
+    },
+    "arrival": {
+      "title": "How you arrive matters.",
+      "reliability": {
+        "title": "Global reliability",
+        "body": "Count on instant confirmation and high-quality service in over 60 countries."
+      },
+      "rates": {
+        "title": "Competitive rates",
+        "body": "Access excellent service at distance-based rates that are fair to you and our chauffeurs."
+      },
+      "flexibility": {
+        "title": "Unrivaled flexibility",
+        "body": "Change or cancel at no extra charge up until 1 hour before pickup."
+      },
+      "support": {
+        "title": "Priority 24/7 support",
+        "body": "Receive multilingual care whenever you need it via chat, phone, or email."
+      },
+      "management": {
+        "title": "Simplified management",
+        "body": "Reduce accounting hassles with detailed reporting and individual or monthly invoicing."
+      },
+      "sustainability": {
+        "title": "Sustainability",
+        "body": "Support your ESG goals with carbon-offset rides, and electric vehicles in many locations."
+      }
+    },
+    "quote": {
+      "text": "I can always rely on AL MAJD to provide our customers with a reliable, professional, and elegant service.",
+      "attribution": "Witta Wette, Project Manager.\n American Express Meetings & Events"
+    },
+    "helpSection": {
+      "title": "How can we help?",
+      "subtitle": "We're happy to answer any questions.",
+      "cta": "Get in touch"
+    },
+    "awards": {
+      "title": "Award-winning chauffeur service",
+      "lux": "LUX Life Leaders in Luxury Awards",
+      "travel": "Business Travel Awards Europe 2024",
+      "world": "World Travel Awards Winner"
+    }
+  },
+  "corporations": {
+    "eyebrow": "Corporations",
+    "title": "Business travel that works as hard as you do",
+    "subtitle": "Punctual chauffeurs, modern fleet, and tools that make corporate ground transport effortless.",
+    "useCases": {
+      "meetings": {
+        "title": "Business trips & meetings",
+        "body": "Ensure punctual arrivals, seamless departures, and foster strong professional relationships at every meeting."
+      },
+      "cityToCity": {
+        "title": "City-to-City travel",
+        "body": "Effortlessly work while traveling City to City. Seamlessly travel between London to Manchester or Paris to Lyon, and more.",
+        "cta": "Explore City-to-City"
+      },
+      "airport": {
+        "title": "Global airport transfers",
+        "body": "Experience seamless airport pick-ups and drop-offs, making your corporate travels hassle-free."
+      },
+      "clients": {
+        "title": "Client & partner travel",
+        "body": "Impress clients and partners with exceptional chauffeur service, elevating their travel experience."
+      }
+    },
+    "sustainability": {
+      "newNormal": {
+        "title": "The new normal",
+        "body": "Electric vehicles are naturally incorporated into our Business Class and First Class in many cities. Our goal is to continue making sustainable travel more easily accessible by growing our electric vehicle fleet."
+      },
+      "offset": {
+        "body": "Whichever vehicle class you choose, we automatically offset the emissions with our carbon offset program.",
+        "title": "100% carbon offset"
+      }
+    },
+    "stories": {
+      "hudson": {
+        "title": "AL MAJD X Hudson Yards",
+        "cta": "Read the story",
+        "body": "Discover AL MAJD's partnership with Hudson Yards in NYC."
+      },
+      "flow": {
+        "title": "Finding Flow in Business Travel: Report",
+        "body": "Why better business travel improves performance.",
+        "cta": "Read the whitepaper"
+      },
+      "trends": {
+        "title": "Travel trends report",
+        "body": "Get an insight into how travel impacts productivity, backed with real data.",
+        "cta": "Read the report"
+      }
+    },
+    "benefits": {
+      "availability": "Availability in 60+ countries",
+      "chauffeurs": "Skilled English-speaking chauffeurs",
+      "tracking": "Real-time tracking and notifications",
+      "fleet": "Modern fleet for a professional and productive travel",
+      "platform": "All-in-one platform for booking and reporting",
+      "invoicing": "Automated invoicing that saves time",
+      "support": "Dedicated support & account managers",
+      "rebates": "Enjoy corporate rebates & login access for 500+ travelers"
+    },
+    "learnMore": "Learn more here",
+    "carouselServices": "Corporate chauffeur services for every occasion",
+    "carouselSustainability": "Sustainability initiatives",
+    "carouselArticles": "Check out our latest articles",
+    "ctaTry": "Try our award-winning service",
+    "ctaCreate": "Create an account",
+    "seo": {
+      "reliability": {
+        "title": "A new level of chauffeur reliability",
+        "body": "Our global network of locally licensed and insured chauffeurs ensures a seamless transportation experience for corporate travel. Check out our case studies of happy corporate customers to hear more.",
+        "alt": "A suited chauffeur looks out the open window of the limo he is driving."
+      },
+      "invoicing": {
+        "title": "A relief from chasing invoices",
+        "body": "Simplify your bill management. Our automated invoicing system streamlines the process, while dedicated corporate support are ready to assist.",
+        "alt": "Female passenger in backseat with phone; chauffeur holds door"
+      },
+      "bookers": {
+        "title": "Booking for your executives",
+        "body": "If you're a PA/EA or corporate booker that wants to manage your executive travel with ease using a booking platform designed for your fast-paced world, then you're in luck. We've dedicated a page to answer all your queries.",
+        "alt": "Stylish woman in back seat with shopping bags"
+      },
+      "hourly": {
+        "title": "By the hour",
+        "body": "This service helps businesses globally. No more waiting for different taxis. Maximize your productivity with our by-the-hour service.",
+        "alt": "Chauffeur smiles and adjusts control while driving",
+        "link": "by-the-hour service"
+      }
+    },
+    "benefitsGrid": {
+      "title": "Experience our corporate benefits",
+      "pricing": {
+        "title": "Competitive pricing",
+        "body": "Access premium service at distance-based prices that are fair to you and our chauffeurs."
+      },
+      "global": {
+        "title": "Global availability",
+        "body": "Our worldwide chauffeur service guarantees prompt and reliable travel."
+      },
+      "dispatch": {
+        "title": "Priority dispatching",
+        "body": "Streamline your experience with priority bookings and real-time tracking."
+      },
+      "booking": {
+        "title": "Easy booking",
+        "body": "Easy one-page booking, with instant confirmation and transparent pricing."
+      },
+      "support": {
+        "title": "Corporate support",
+        "body": "Our multilingual, 24/7 support team ensures corporate clients are covered around the clock."
+      },
+      "ev": {
+        "title": "Electric vehicle option",
+        "body": "We proudly offer an array of EVs in select cities, and ensure our carbon footprint is offset!"
+      }
+    },
+    "faqsSection": {
+      "title": "Frequently asked questions",
+      "items": {
+        "advance": {
+          "q": "How far in advance can I book a ride?",
+          "a": "You can book months ahead or as little as 60 minutes before pickup. We recommend booking with lead time when possible. Free cancellation up to 1 hour before pickup; changes are available until 60 minutes before."
+        },
+        "vehicles": {
+          "q": "What vehicles does AL MAJD use?",
+          "a": "We offer Business Class, First Class, and Business Van/SUV options. Vehicle availability varies by city. Browse illustrative options in our Help Center."
+        },
+        "languages": {
+          "q": "Which languages do the chauffeurs speak?",
+          "a": "Our chauffeurs speak English as well as the local language."
+        },
+        "payment": {
+          "q": "Which payment options are available?",
+          "a": "We accept Visa, Maestro, Mastercard, and American Express. Cash is not accepted. PayPal and Apple Pay are available in our apps. Corporate clients can also arrange monthly invoicing."
+        },
+        "sustain": {
+          "q": "How does AL MAJD contribute to sustainable travel options?",
+          "a": "Electric vehicles are incorporated into Business Class and First Class in many cities, and we automatically offset emissions with our carbon offset program — whichever vehicle class you choose."
+        }
+      }
+    },
+    "testimonial": {
+      "text": "I know that I can rely on AL MAJD's high quality standards worldwide. The customer is the main focus at AL MAJD, which makes me feel taken care of.",
+      "attribution": "Tom Grover, European VSP, Smith & Nephew"
+    },
+    "breadcrumbCurrent": "Corporate Travel Solutions for Business Executives",
+    "callout": {
+      "title": "Ready to get started?",
+      "body": "Start today and create your own account in minutes.",
+      "cta": "Create an account"
+    }
+  },
+  "travelAgencies": {
+    "eyebrow": "Travel agencies",
+    "title": "Partner with AL MAJD",
+    "subtitle": "Offer your clients premium chauffeur service with seamless booking and reliable delivery.",
+    "cta": "Become a partner",
+    "breadcrumbCurrent": "Global Chauffeur Services for Travel Agencies",
+    "heroAlt": "A two-tone Mercedes EQS serving as an AL MAJD limo is parked outside an elegant building on a city street.",
+    "carouselServices": "Elevate Your Travel Agency Services",
+    "carouselFleet": "Our modern fleet",
+    "ctaGetInTouch": "Get in touch",
+    "services": {
+      "award": {
+        "title": "Award-winning quality",
+        "body": "Won the \"Best Global Chauffeur Services Company\" by Magellan Awards, and \"Best on the Road\" by Travolution Awards."
+      },
+      "ease": {
+        "title": "Ease of booking",
+        "body": "Prioritize your clients' duty of care with our rigorously trained chauffeurs, and hygiene protocols."
+      },
+      "global": {
+        "title": "Global yet local",
+        "body": "Offer a globally consistent service with a local flavor, ensuring comfort and convenience across borders."
+      },
+      "carbon": {
+        "title": "Carbon offset travel",
+        "body": "Progress towards sustainable tourism by providing the green travel option of electric vehicles in select cities."
+      }
+    },
+    "fleet": {
+      "solo": {
+        "title": "Fit for solo or group travel",
+        "body": "Whether your client's party size one or many, our service adapts. We effortlessly accommodate groups in select cities, ensuring seamless transit."
+      },
+      "amenities": {
+        "title": "Memorable amenities",
+        "body": "Our service is designed to make all kinds of travel smooth. Each car is added with complimentary waiting time, water, charging cables, and the ease of Meet and Greet too."
+      }
+    },
+    "callout": {
+      "transform": {
+        "title": "Transform your clients' travel",
+        "body": "Partner with AL MAJD and enhance your agency's travel offerings.",
+        "cta": "Create your account"
+      },
+      "try": {
+        "title": "Try it out",
+        "body": "Start today and create your own account in minutes.",
+        "cta": "Open an account"
+      }
+    },
+    "testimonial": {
+      "text": "We especially value the speed of booking and cost efficiency. We always include AL MAJD in our corporate pitches to new and existing clients. All-around a very, very important supplier to us here.",
+      "attribution": "David Strange, Corporate Director, EFR Travel Group"
+    },
+    "seo": {
+      "revenue": {
+        "title": "Additional revenue and commission, without the hassle",
+        "body": "AL MAJD's partnership model presents you an opportunity to generate additional revenue without having to manage the end-to-end operations, making it a profitable addition to your portfolio.",
+        "b1": "Stress-free additional revenue streams",
+        "b2": "Predictable income with our commission model",
+        "b3": "No operational overhead costs",
+        "alt": "Business traveler with phone"
+      },
+      "vehicles": {
+        "title": "Vehicles ready for all occasions",
+        "body": "Your clients can travel in comfort with our modern fleet with a range of vehicles, including stand-outs like Jaguar I-PACE and Mercedes EQE. Expect top-tier amenities - from umbrellas for rainy days to complimentary water, refreshments, charging cables and Wi-Fi.",
+        "b1": "High-end fleet",
+        "b2": "Electric vehicles through the fleet",
+        "b3": "Signature Meet & Greet service",
+        "alt": "Premium chauffeur vehicle"
+      },
+      "satisfaction": {
+        "title": "Deliver top-notch client satisfaction",
+        "body": "We prioritize exceeding client expectations while providing them quality, safe, and sustainable travel options. Bring these offerings to your clients, allowing you to make a positive impact on client satisfaction and brand loyalty.",
+        "b1": "Industry-leading quality",
+        "b2": "Environmentally-conscious travel options",
+        "b3": "Improvement of client loyalty",
+        "alt": "A glamorous couple laugh in the backseat of a limousine."
+      },
+      "reputation": {
+        "title": "Boost your brand reputation",
+        "body": "Partner with AL MAJD and be associated with a globally recognized and award-winning chauffeur service, which resonates positively with your clients and elevates your brand reputation.",
+        "b1": "Enhance your credibility",
+        "b2": "Increase client trust",
+        "b3": "Promote upgraded client experiences",
+        "alt": "A woman steps out of an AL MAJD limo as a chauffeur holds open the door."
+      },
+      "api": {
+        "title": "Explore our API integrations",
+        "body": "From instant bookings to streamlined cancellations, our cutting-edge integrations with global booking platforms make corporate travel effortless. Sync, scale, and simplify—without missing a beat.",
+        "gdsLead": "Global GDS integration:",
+        "gdsText": "Book and manage trips via Sabre, Amadeus, and Travelport with full functionality.",
+        "obtLead": "Top OBT compatibility:",
+        "obtText": "Leverage tools like SAP Concur and Navan for real-time bookings, directly integrated into your existing workflows.",
+        "realtimeLead": "Instant access, real-time updates:",
+        "realtimeText": "Live pricing, availability, and trip details keep you in control and your clients on track, no matter the destination.",
+        "alt": "A slow-capture of a cityscape at sunset.",
+        "cta": "Learn more"
+      },
+      "dedicated": {
+        "title": "Check out our dedicated pages",
+        "leisureTitle": "Leisure Travel Agency",
+        "leisureBody": ": Delivering seamless airport transfers, personalized city tours, and premium experiences for high-net-worth clients.",
+        "corporateTitle": "Corporate Travel Agency",
+        "corporateBody": ": Streamline business travel for your clients with global coverage, reliable services, and seamless integration with booking tools.",
+        "alt": "An AL MAJD Mercedes EQE speeds through the wooded countryside at sunset."
+      }
+    },
+    "benefitsGrid": {
+      "dependable": {
+        "title": "Globally dependable",
+        "body": "Count on immediate confirmations and high-quality service for your clients around the world."
+      },
+      "rates": {
+        "title": "Fully competitive rates",
+        "body": "Access first-rate service at reasonable, distance-based pricing structure."
+      },
+      "flexibility": {
+        "title": "Unrivaled flexibility",
+        "body": "Cancel bookings free of charge for any ride up to 1 hour before the pick-up time."
+      },
+      "support": {
+        "title": "24/7 Corporate support",
+        "body": "Depend on our team 24/7 for any needs and on-site requirements."
+      },
+      "management": {
+        "title": "Easy management",
+        "body": "Our bespoke booking portal makes managing travel quick and easy."
+      },
+      "updates": {
+        "title": "Real-time updates",
+        "body": "Bookers and passengers get instant updates. Flight-tracking for auto adjustments."
+      },
+      "title": "Experience our travel agency benefits"
+    },
+    "contactForm": {
+      "title": "Transform your client's travel",
+      "subtitle": "Enable clients to experience an award-winning chauffeur service.",
+      "support": "If you have an existing account and need support, email",
+      "thanks": "Thank you — we'll be in touch shortly.",
+      "firstName": "First name *",
+      "lastName": "Last name *",
+      "workEmail": "Work email *",
+      "phone": "Phone",
+      "company": "Company name *",
+      "based": "Where are you based? *",
+      "rides": "Estimated rides per month *",
+      "select": "Select…",
+      "hearAbout": "How did you hear about us? *",
+      "help": "How can we help? *",
+      "privacyLead": "Learn how we handle your data in our",
+      "privacy": "Privacy Policy",
+      "submit": "Submit",
+      "countries": {
+        "us": "United States",
+        "uk": "United Kingdom",
+        "de": "Germany",
+        "fr": "France",
+        "ae": "United Arab Emirates",
+        "sa": "Saudi Arabia",
+        "dz": "Algeria",
+        "ca": "Canada",
+        "au": "Australia",
+        "other": "Other"
+      }
+    },
+    "faqs": {
+      "title": "Frequently Asked Questions",
+      "imageAlt": "Chauffeur loads luggage into the back of an AL MAJD limousine.",
+      "items": {
+        "commission": {
+          "q": "Can travel agencies earn commission through AL MAJD?",
+          "a": "Yes. Our partnership model lets agencies earn commission without managing end-to-end operations. Speak to our team via the <contact>contact form</contact>."
+        },
+        "clientInfo": {
+          "q": "What information does my client receive?",
+          "a": "Booking confirmations go to the booker only and never include price for the passenger. Passengers are contacted only when the chauffeur is on the way, has arrived, or to clarify the pickup location."
+        },
+        "vehicles": {
+          "q": "What vehicles does AL MAJD use?",
+          "a": "We offer Business Class, Business Van/SUV, First Class, electric options, and Sprinter vehicles depending on city availability."
+        },
+        "advance": {
+          "q": "How far in advance can I book a ride?",
+          "a": "Months ahead or as little as 60 minutes before pickup. Free cancellation up to 1 hour before; changes until 60 minutes before."
+        },
+        "sustain": {
+          "q": "How does AL MAJD contribute to sustainable travel options?",
+          "a": "Electric vehicles are available in select cities, with ongoing expansion in Business Class, plus automatic carbon offset on every ride."
+        },
+        "pricing": {
+          "q": "How does AL MAJD's pricing fare against traditional providers?",
+          "a": "Transparent, competitive, distance-based pricing without compromising quality — built for agency partners and their clients."
+        }
+      }
+    }
+  },
+  "strategicPartnerships": {
+    "eyebrow": "Strategic partnerships",
+    "title": "Grow together",
+    "subtitle": "Hotels, venues, and platforms — elevate guest travel with AL MAJD.",
+    "cta": "Talk to partnerships",
+    "breadcrumbCurrent": "Partnership Opportunities with AL MAJD",
+    "heroAlt": "An AL MAJD chauffeur sits in the driver's seat of a limousine, smiling and looking over his shoulder into the back seat.",
+    "carouselTitle": "Become an AL MAJD partner",
+    "partners": {
+      "aviation": {
+        "title": "Aviation",
+        "body": "Deliver market-leading chauffeur service for your First and Business Class guests.",
+        "b1": "Rely on a trusted partner for top commercial airlines",
+        "b2": "Serve your high-value airline guests globally",
+        "b3": "Work with tailored solutions for complimentary, ancillary, and crew services"
+      },
+      "cruise": {
+        "title": "Cruise",
+        "body": "Elevate your guests' experience with a chauffeured transfer.",
+        "b1": "Deliver your guests a seamless door-to-door experience",
+        "b2": "Take advantage of our local expertise with port and airport pickups",
+        "b3": "Fully white-label complimentary ride booking solution available"
+      },
+      "financial": {
+        "title": "Financial services",
+        "body": "Offer added-value benefits to your high net worth cardmembers.",
+        "b1": "Complimentary transfer booking for air travel",
+        "b2": "Enhanced offerings for cardmember-paid services",
+        "b3": "Support team experienced serving high-value customers in the financial sector"
+      },
+      "hotel": {
+        "title": "Hotel",
+        "body": "Extend hospitality and provide exceptional travel experiences beyond the hotel doors.",
+        "b1": "Treat your high-value guests to complimentary airport transfers",
+        "b2": "Offer guests city excursions and tours using our by-the-hour service",
+        "b3": "Rely on our global experience in serving travelers worldwide"
+      }
+    },
+    "seo": {
+      "api": {
+        "title": "Explore our API integrations",
+        "body": "From instant bookings to streamlined cancellations, our cutting-edge integrations with global booking platforms make corporate travel effortless. Sync, scale, and simplify—without missing a beat.",
+        "gdsLead": "Global GDS integration:",
+        "gdsText": "Book and manage trips via Sabre, Amadeus, and Travelport with full functionality.",
+        "obtLead": "Top OBT compatibility:",
+        "obtText": "Leverage tools like SAP Concur and Navan for real-time bookings, directly integrated into your existing workflows.",
+        "realtimeLead": "Instant access, real-time updates:",
+        "realtimeText": "Live pricing, availability, and trip details keep you in control and your clients on track, no matter the destination.",
+        "alt": "A slow-capture of a cityscape at sunset.",
+        "cta": "Learn more"
+      }
+    },
+    "callout": {
+      "title": "Join as a chauffeur partner today.",
+      "body": "Own or manage premium vehicles? Let's talk.",
+      "cta": "Become a chauffeur partner"
+    },
+    "benefitsGrid": {
+      "coverage": {
+        "title": "Global coverage",
+        "body": "Consistent and reliable service in over 60 countries worldwide. Local expertise guaranteed."
+      },
+      "compliance": {
+        "title": "Compliance and safety",
+        "body": "Travel confidently in clean, premium vehicles driven by licensed and insured professionals."
+      },
+      "support": {
+        "title": "Priority support",
+        "body": "Dedicated support team available 24/7 for any day-to-day needs and on-site requirements."
+      },
+      "pricing": {
+        "title": "Competitive pricing",
+        "body": "All-inclusive pricing based on the shortest possible distance and fixed at the time of booking."
+      },
+      "custom": {
+        "title": "Custom business solutions",
+        "body": "Easily integrate custom turn-key solutions through an API to manage complimentary services."
+      },
+      "sustain": {
+        "title": "Sustainable travel",
+        "body": "We proudly offer an array of EVs in select cities, and ensure our carbon footprint is offset!"
+      },
+      "title": "Experience our corporate benefits"
+    }
+  },
+  "chauffeursPage": {
+    "eyebrow": "Chauffeurs",
+    "title": "Drive with AL MAJD",
+    "subtitle": "Join a premium network of professional chauffeurs across Qatar and the Gulf.",
+    "cta": "Apply now",
+    "registrationNote": "Straightforward registration with support available throughout.",
+    "benefits": {
+      "flexible": "Flexible schedule",
+      "earnings": "Competitive earnings",
+      "support": "Dedicated chauffeur support",
+      "fleet": "Access to premium bookings"
+    },
+    "ariaLabel": "Become a chauffeur partner",
+    "premium": {
+      "title": "Unlock global demand",
+      "body": "Connect with guests from around the world via our app and website. Take only the rides that suit your schedule."
+    },
+    "journey": {
+      "income": {
+        "title": "Increase your income",
+        "copy": "Clear rates. Reliable payments. Straight to your account."
+      },
+      "define": {
+        "title": "Define your day",
+        "copy": "Airport transfers. By-the-hour. City-to-city. Across town. It's your choice."
+      },
+      "admin": {
+        "title": "Ease your admin",
+        "copy": "Simplify ride management with a platform built for your needs."
+      },
+      "trust": {
+        "title": "Trust your team",
+        "copy": "Dedicated 24/7 support. Local operations teams. We're here for you."
+      },
+      "platformAlt": "AL MAJD platform"
+    },
+    "quote": {
+      "text": "AL MAJD is 60% of my revenue. I've grown from 2 to 20 chauffeurs and have 10 vehicles from working with them.",
+      "attribution": "Angel T.\nAL MAJD chauffeur, Madrid"
+    },
+    "onboarding": {
+      "ariaLabel": "Requirements and onboarding",
+      "sectionsAria": "Onboarding sections",
+      "slideAria": "Choose slide to display",
+      "slideN": "Slide {{n}}",
+      "onboarding": {
+        "label": "Onboarding",
+        "title": "Start your journey",
+        "alt": "Onboarding process",
+        "items": [
+          "Share company details and documents",
+          "Online learning modules",
+          "Short group webinar",
+          "Take your first ride"
+        ],
+        "cta": "Apply now"
+      },
+      "requirements": {
+        "label": "Requirements",
+        "title": "Five-star standard",
+        "alt": "Chauffeur in vehicle",
+        "items": [
+          "Recent high-end vehicles",
+          "Chauffeur-style service",
+          "English fluency"
+        ],
+        "cta": "Check requirements"
+      }
+    },
+    "sustainable": {
+      "title": "Driving a sustainable future",
+      "body": "We're moving toward an all-electric fleet. Every ride since 2017 is carbon-offset, and we're progressing to offset our historical emissions to 2011.",
+      "cta": "Learn more"
+    },
+    "faqs": {
+      "title": "FAQs",
+      "imageAlt": "Chauffeur opening car door",
+      "here": "here",
+      "registrationPage": "on the registration page",
+      "items": {
+        "partner": {
+          "q": "Can anyone become an AL MAJD partner?",
+          "p1": "We only partner with insured, pre-existing chauffeur companies.",
+          "p2": "To apply, you must:",
+          "i1": "Meet our vehicle requirements",
+          "i2": "Submit documentation for your business, one vehicle, and either yourself or one of your company's chauffeurs",
+          "p3Before": "Once your account is active, begin your partner application ",
+          "p3After": "."
+        },
+        "rides": {
+          "q": "How many rides can I do with AL MAJD per month?",
+          "a": "The amount of rides you perform is entirely up to you. The volume of rides available is dependent on regional and seasonal demand."
+        },
+        "paid": {
+          "q": "How do I get paid?",
+          "a": "You receive a monthly invoice for the previous month, including extras such as wait time or route changes. Payments are made via wire/bank transfer and usually visible in your account by the 17th of the month."
+        },
+        "vehicles": {
+          "q": "Which vehicles can I use to work with AL MAJD?",
+          "aBefore": "Vehicle requirements are city-specific. You can review the full list ",
+          "aAfter": "."
+        },
+        "apply": {
+          "q": "How do I apply to partner with AL MAJD?",
+          "aBefore": "We work with insured and licensed chauffeur companies. After submitting documents required by local regulations and completing a short group webinar, you can go live. Start ",
+          "aAfter": "."
+        },
+        "ev": {
+          "q": "Does AL MAJD work with electric vehicles?",
+          "aBefore": "Yes. EVs are incorporated into our regular fleet, and we encourage partners to operate electric vehicles wherever possible. See details ",
+          "aAfter": "."
+        }
+      }
+    },
+    "helpSection": {
+      "title": "Still have questions?",
+      "subtitle": "Visit our help center.",
+      "cta": "Learn more"
+    }
+  },
+  "explore": {
+    "iconicPlaces": {
+      "title": "Iconic places in Qatar",
+      "subtitle": "Discover landmarks worth the ride.",
+      "destLabel": "Iconic place",
+      "destPlaceholder": "Search iconic places…",
+      "scheduleTitle": "Schedule your visit",
+      "scheduleSubtitle": "Select a landmark, set your pickup, and view chauffeur options.",
+      "carouselTitle": "Landmarks worth the ride",
+      "calloutSee": {
+        "title": "See Qatar without the parking hunt",
+        "body": "Your chauffeur knows the drop-off points — you keep the afternoon for the visit.",
+        "cta": "Schedule a visit"
+      },
+      "seoArrive": {
+        "title": "Arrive composed at every landmark",
+        "body": "Whether it's a museum opening or an evening at the Souq, we time your transfer so you step out ready — water, Wi-Fi, and waiting time included.",
+        "b1": "Punctual drop-off at major Doha attractions",
+        "b2": "Flight and hotel pickups across Qatar",
+        "b3": "Meet & Greet available for Hamad Airport",
+        "alt": "Chauffeur assisting a guest from a premium vehicle"
+      },
+      "seoHourly": {
+        "title": "Link several places in one booking",
+        "body": "Planning Katara, then The Pearl, then dinner? Use by-the-hour service and keep the same chauffeur for a seamless day of icons.",
+        "b1": "By-the-hour city itineraries",
+        "b2": "Flexible multi-stop routes",
+        "b3": "Local chauffeurs who know Doha traffic patterns",
+        "alt": "Premium vehicle on a city route"
+      },
+      "seoMeet": {
+        "title": "Travel between hotel and icon in quiet comfort",
+        "body": "High-end fleet, discreet service, and a booking flow built for visitors who want landmarks — not logistics.",
+        "b1": "Modern premium vehicles",
+        "b2": "Complimentary waiting time on transfers",
+        "b3": "Clear pricing before you confirm",
+        "alt": "Luxury vehicle interior"
+      },
+      "ctaStrip": "Schedule your iconic visit",
+      "ready": {
+        "body": "Pick a landmark above, or start from the homepage booking widget for any trip type."
+      }
+    },
+    "hotels": {
+      "title": "Hotels",
+      "subtitle": "Door-to-door service to Doha's finest stays.",
+      "destLabel": "Hotel",
+      "destPlaceholder": "Search hotels in Qatar…",
+      "scheduleTitle": "Schedule your hotel transfer",
+      "scheduleSubtitle": "Pick your Doha hotel, set pickup time, and view chauffeur options.",
+      "carouselTitle": "Stay destinations we drive to daily",
+      "calloutSee": {
+        "title": "From Hamad Airport to your hotel lobby",
+        "body": "Flight tracking, Meet & Greet, and a calm ride — so check-in starts on time.",
+        "cta": "Schedule a transfer"
+      },
+      "seoArrive": {
+        "title": "Arrive at the porte-cochère, not the car park",
+        "body": "Whether you are staying in West Bay, The Pearl, or on Banana Island, we time your transfer so you step into the lobby ready — luggage handled, waiting time included.",
+        "b1": "Hotel lobby and porte-cochère drop-offs across Doha",
+        "b2": "Hamad International Airport Meet & Greet",
+        "b3": "Hotel-to-hotel and hotel-to-landmark rides",
+        "alt": "Luxury hotel interior in Doha"
+      },
+      "seoHourly": {
+        "title": "One chauffeur for your full Qatar stay",
+        "body": "Use by-the-hour service between your hotel, dinners, and meetings — same vehicle, same standard, no rebooking friction.",
+        "b1": "By-the-hour coverage from your hotel base",
+        "b2": "Flexible multi-stop evenings",
+        "b3": "Local chauffeurs who know West Bay and Pearl traffic",
+        "alt": "Doha hotel waterfront at night"
+      },
+      "seoMeet": {
+        "title": "Early flights, late arrivals — we keep the schedule",
+        "body": "Premium fleet and clear pricing before you confirm. Built for guests who treat the hotel as home base in Qatar.",
+        "b1": "Punctual airport runs day and night",
+        "b2": "Complimentary waiting time on transfers",
+        "b3": "Discreet service for VIP and family travel",
+        "alt": "Premium hotel stay in Qatar"
+      },
+      "ctaStrip": "Schedule your hotel transfer",
+      "ready": {
+        "body": "Choose a hotel above, or start from the homepage booking widget for any trip type."
+      }
+    },
+    "malls": {
+      "title": "Malls and shoppings",
+      "subtitle": "Arrive refreshed for shopping and leisure.",
+      "destLabel": "Mall / shopping",
+      "destPlaceholder": "Search malls in Qatar…",
+      "scheduleTitle": "Schedule your shopping transfer",
+      "scheduleSubtitle": "Pick a Doha mall, set pickup time, and view chauffeur options.",
+      "carouselTitle": "Shopping destinations we drive to daily",
+      "calloutSee": {
+        "title": "Skip the parking — keep the shopping bags",
+        "body": "Curb-side drop-off at major Doha malls, then a calm ride back to your hotel.",
+        "cta": "Schedule a transfer"
+      },
+      "seoArrive": {
+        "title": "Arrive at the entrance, not the car park",
+        "body": "From Place Vendôme to Villaggio and Souq Waqif, we time your transfer so you step out at the right door — bags optional on the way home.",
+        "b1": "Mall entrance and porte-cochère drop-offs across Qatar",
+        "b2": "Hotel-to-mall and mall-to-hotel transfers",
+        "b3": "Hamad Airport links for same-day shopping trips",
+        "alt": "Shopping destination in Doha"
+      },
+      "seoHourly": {
+        "title": "Several malls in one booking",
+        "body": "Planning Festival City then Mall of Qatar? Use by-the-hour service and keep the same chauffeur for a seamless retail day.",
+        "b1": "By-the-hour multi-mall itineraries",
+        "b2": "Flexible wait-and-return options",
+        "b3": "Local chauffeurs who know Doha traffic and mall access roads",
+        "alt": "Major shopping mall in Qatar"
+      },
+      "seoMeet": {
+        "title": "Evening shopping without the logistics",
+        "body": "Premium fleet, clear pricing before you confirm — built for visitors who want Doha's malls, not the parking levels.",
+        "b1": "Punctual evening and weekend runs",
+        "b2": "Complimentary waiting time on transfers",
+        "b3": "Discreet service for families and VIP shopping",
+        "alt": "Evening shopping transfer in Doha"
+      },
+      "ctaStrip": "Schedule your shopping transfer",
+      "ready": {
+        "body": "Choose a mall above, or start from the homepage booking widget for any trip type."
+      }
+    },
+    "beaches": {
+      "title": "Beaches and resorts",
+      "subtitle": "Coastal escapes with a private chauffeur.",
+      "destLabel": "Beach / resort",
+      "destPlaceholder": "Search beaches & resorts in Qatar…",
+      "scheduleTitle": "Schedule your beach transfer",
+      "scheduleSubtitle": "Pick a Qatar beach or resort, set pickup time, and view chauffeur options.",
+      "carouselTitle": "Shores and resorts we drive to daily",
+      "calloutSee": {
+        "title": "Skip the parking — keep the sea view",
+        "body": "Curb-side drop-off at beaches and resorts, then a calm ride back when you're ready.",
+        "cta": "Schedule a transfer"
+      },
+      "seoArrive": {
+        "title": "Arrive at the sand, not the car park",
+        "body": "From Katara Beach to Sealine and Banana Island, we time your transfer so you step out ready — towels optional, logistics handled.",
+        "b1": "Beach and resort entrance drop-offs across Qatar",
+        "b2": "Hotel-to-beach and beach-to-hotel transfers",
+        "b3": "Hamad Airport links for same-day coastal trips",
+        "alt": "Beach destination in Qatar"
+      },
+      "seoHourly": {
+        "title": "Resort day, one chauffeur",
+        "body": "Planning Sealine then a West Bay dinner? Use by-the-hour service and keep the same vehicle for a seamless coastal day.",
+        "b1": "By-the-hour beach and resort itineraries",
+        "b2": "Flexible wait-and-return options",
+        "b3": "Local chauffeurs who know Mesaieed, Lusail, and Pearl access",
+        "alt": "Resort transfer in Qatar"
+      },
+      "seoMeet": {
+        "title": "Island and lagoon escapes without the logistics",
+        "body": "Premium fleet and clear pricing before you confirm — built for guests who want Qatar's shoreline, not the route planning.",
+        "b1": "Punctual morning and sunset runs",
+        "b2": "Complimentary waiting time on transfers",
+        "b3": "Discreet service for families and VIP resort stays",
+        "alt": "Coastal resort day in Qatar"
+      },
+      "ctaStrip": "Schedule your beach transfer",
+      "ready": {
+        "body": "Choose a beach or resort above, or start from the homepage booking widget for any trip type."
+      }
+    },
+    "restaurants": {
+      "title": "Restaurants & Business Lunch",
+      "subtitle": "From business lunch to evening dining.",
+      "destLabel": "Restaurant",
+      "destPlaceholder": "Search restaurants & lunch venues in Qatar…",
+      "scheduleTitle": "Schedule your restaurant transfer",
+      "scheduleSubtitle": "Pick a Doha restaurant or lunch venue, set pickup time, and view chauffeur options.",
+      "carouselTitle": "Tables and lunch spots we drive to daily",
+      "calloutSee": {
+        "title": "Arrive on time for the reservation",
+        "body": "Curb-side drop-off at restaurants and hotel dining rooms, then a calm ride back when the meal ends.",
+        "cta": "Schedule a transfer"
+      },
+      "seoArrive": {
+        "title": "Business lunch without the parking scramble",
+        "body": "From West Bay towers to Corniche and Souq Waqif, we time your transfer so you walk in ready — clients and colleagues included.",
+        "b1": "Restaurant and hotel dining entrance drop-offs",
+        "b2": "Office-to-lunch and lunch-to-office transfers",
+        "b3": "Hamad Airport links for same-day dining arrivals",
+        "alt": "Business lunch transfer in Doha"
+      },
+      "seoHourly": {
+        "title": "Evening dining, one chauffeur",
+        "body": "Planning a Souq dinner then a Pearl dessert stop? Use by-the-hour service and keep the same vehicle for the night.",
+        "b1": "By-the-hour restaurant itineraries",
+        "b2": "Flexible wait-and-return for long lunches",
+        "b3": "Local chauffeurs who know West Bay, Pearl, and Souq access",
+        "alt": "Restaurant transfer in Qatar"
+      },
+      "seoMeet": {
+        "title": "Fine dining without the logistics",
+        "body": "Premium fleet and clear pricing before you confirm — built for guests who want the table, not the route planning.",
+        "b1": "Punctual lunch and dinner runs",
+        "b2": "Complimentary waiting time on transfers",
+        "b3": "Discreet service for VIP and corporate dining",
+        "alt": "Evening dining in Doha"
+      },
+      "ctaStrip": "Schedule your restaurant transfer",
+      "ready": {
+        "body": "Choose a restaurant above, or start from the homepage booking widget for any trip type."
+      }
+    },
+    "qatar": "Explore Qatar",
+    "scheduler": {
+      "pickup": "Pickup location",
+      "pickupPlaceholder": "Address, airport, hotel, ...",
+      "date": "Date",
+      "pickupTime": "Pickup time",
+      "selectDate": "Select a date",
+      "viewOptions": "View options",
+      "finding": "Finding destination…",
+      "noMatches": "No matches in Qatar",
+      "choosePickup": "Choose a pickup location from the suggestions.",
+      "chooseDestination": "Please choose a destination.",
+      "chooseDate": "Choose a date.",
+      "chooseDateToday": "Choose a date that is today or later.",
+      "chooseTime": "Choose a pickup time.",
+      "noMap": "This destination has no map location yet.",
+      "dropoffDefault": "Drop-off location",
+      "chooseDestDefault": "Choose a destination"
+    }
+  },
+  "help": {
+    "title": "Help",
+    "pageTitle": "How can we help?",
+    "subtitle": "Find answers or reach our concierge team.",
+    "contactUs": "Contact us",
+    "faqs": "Frequently asked questions",
+    "sidebar": {
+      "ridePrompt": "Need help with your recent or past ride?",
+      "signIn": "Sign in",
+      "gettingStarted": "Getting started",
+      "manageBookings": "Manage bookings",
+      "billing": "Billing and payments",
+      "viewAllGettingStarted": "View all articles related to getting started",
+      "viewAllBookings": "View all manage bookings articles",
+      "viewAllBilling": "View all billing and payment articles"
+    },
+    "resourcesHeading": "Our help resources to answer most of your queries",
+    "resources": {
+      "gettingStarted": {
+        "title": "Getting started",
+        "body": "All that you need to know before booking an AL MAJD ride."
+      },
+      "manageBookings": {
+        "title": "Manage bookings",
+        "body": "Answers regarding changing and canceling your AL MAJD ride."
+      },
+      "billing": {
+        "title": "Billing & payments",
+        "body": "Answers to common billing and payment questions."
+      },
+      "account": {
+        "title": "My AL MAJD account",
+        "body": "All you need to know about your AL MAJD account."
+      },
+      "safety": {
+        "title": "Your safety",
+        "body": "Keeping our customers and chauffeurs safe."
+      },
+      "hailing": {
+        "title": "Chauffeur hailing",
+        "body": "Discover AL MAJD's on demand service available in selected cities."
+      }
+    },
+    "chat": {
+      "notFound": "Can not find what you are looking for?",
+      "cta": "Chat with our customer service",
+      "modalTitle": "Sign in for better chat experience",
+      "modalBody": "Signing in to your account allows you to make smaller changes to your bookings through chat. For any other queries you may reach out to customer support by emailing us.",
+      "startAnyway": "Start chat anyway",
+      "signIn": "Sign in",
+      "close": "Close modal"
+    },
+    "articles": {
+      "vehicles": "What vehicles does AL MAJD use?",
+      "cities": "What cities does AL MAJD operate in?",
+      "luggage": "How do I find out the luggage capacity of the vehicles?",
+      "delayed": "What if my flight or train is delayed?",
+      "changes": "How can I make changes to my booking?",
+      "offerCode": "How do I add an offer code?",
+      "cancel": "What is the cancellation policy and how can I cancel my ride?",
+      "bookedForMe": "How do I see a ride that was booked for me?",
+      "tip": "Do I need to tip the chauffeur?",
+      "payment": "Which payment options are available?",
+      "changePayment": "Can I change my payment method for an upcoming ride?"
+    }
+  },
+  "businessSolutions": {
+    "title": "Business solutions",
+    "subtitle": "Corporations, agencies, and strategic partners — one premium ground transport partner.",
+    "corporations": "Corporations",
+    "travelAgencies": "Travel agencies",
+    "strategicPartnerships": "Strategic partnerships",
+    "heroTitle": "Chauffeur solutions built around your business",
+    "heroSubtitle": "From executive travel and airport transfers to events and recurring journeys, our team creates reliable transportation plans tailored to your company.",
+    "heroCta": "Talk to our sales team",
+    "heroImageAlt": "Premium chauffeur service for business travel",
+    "sales": {
+      "title": "Speak with our sales team",
+      "body": "Tell us what your business needs. Our team will help you find the right service, booking setup, and travel solution."
+    },
+    "salesContacts": {
+      "email": "Email our sales team",
+      "call": "Call our sales team",
+      "whatsapp": "Chat on WhatsApp"
+    },
+    "register": {
+      "eyebrow": "Register your interest",
+      "title": "Let's discuss how we can help",
+      "body": "Share a few details and your question. A member of our sales team will contact you shortly."
+    },
+    "success": {
+      "title": "Thank you for your interest",
+      "body": "Our sales team will be in touch shortly."
+    },
+    "form": {
+      "fullName": "Full name *",
+      "company": "Company *",
+      "workEmail": "Work email *",
+      "phone": "Phone number *",
+      "message": "How can we help? *",
+      "messagePlaceholder": "Tell us what you would like to ask or discuss...",
+      "consent": "By submitting this form, you agree that our sales team may contact you about your enquiry.",
+      "submit": "Submit enquiry"
+    }
+  },
+  "common": {
+    "home": "Home",
+    "learnMore": "Learn more",
+    "signIn": "Sign in",
+    "breadcrumb": "Breadcrumb",
+    "newBadge": "NEW",
+    "getInTouch": "Get in touch",
+    "createAccount": "Create an account",
+    "bookByTheHour": "Book by the hour",
+    "backToBooking": "Back to booking",
+    "readyWhen": "Ready when you are",
+    "scheduleTransfer": "Schedule a transfer",
+    "awardWinning": "Award-winning chauffeur service",
+    "awardLux": "LUX Life Leaders in Luxury Awards",
+    "awardTravel": "Business Travel Awards Europe 2024",
+    "awardWorld": "World Travel Awards Winner"
+  }
+}

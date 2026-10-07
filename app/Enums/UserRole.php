@@ -29,6 +29,28 @@ enum UserRole: string
         ], true);
     }
 
+    public function canManageFinance(): bool
+    {
+        return $this === self::SuperAdmin;
+    }
+
+    public function canManageStaffRoles(): bool
+    {
+        return $this === self::SuperAdmin;
+    }
+
+    /**
+     * @return list<self>
+     */
+    public static function staffRoles(): array
+    {
+        return [
+            self::Support,
+            self::Admin,
+            self::SuperAdmin,
+        ];
+    }
+
     public function label(): string
     {
         return match ($this) {

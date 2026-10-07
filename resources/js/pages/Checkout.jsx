@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import BillingModal, { billingSummary } from '../components/checkout/BillingModal';
@@ -82,6 +83,7 @@ function InfoIcon() {
 }
 
 export default function Checkout() {
+    const { t } = useTranslation('booking');
     const [params, setParams] = useSearchParams();
     const navigate = useNavigate();
     const { isAuthenticated, loading, user, setReturnTo } = useAuth();
@@ -125,7 +127,7 @@ export default function Checkout() {
                 if (!cancelled) {
                     setDraftError(
                         err?.response?.data?.message ||
-                            'This booking session expired. Please start again from booking.',
+                            t('checkout.sessionExpired.body'),
                     );
                     setDraftReady(true);
                 }
@@ -229,7 +231,7 @@ export default function Checkout() {
 
     const trip = useMemo(
         () => ({
-            pickup: params.get('pickup') || 'Pickup',
+            pickup: params.get('pickup') || t('checkout.defaults.pickup'),
             dropoff: params.get('dropoff') || '',
             duration: params.get('duration') || '2',
             date: params.get('date') || new Date().toISOString().slice(0, 10),
@@ -240,7 +242,7 @@ export default function Checkout() {
             dropLat: params.get('drop_lat') != null && params.get('drop_lat') !== '' ? Number(params.get('drop_lat')) : undefined,
             dropLng: params.get('drop_lng') != null && params.get('drop_lng') !== '' ? Number(params.get('drop_lng')) : undefined,
         }),
-        [params],
+        [params, t],
     );
 
     const { time: pickupTime, period: pickupPeriod } = formatTimeParts(trip.time);
@@ -276,7 +278,7 @@ export default function Checkout() {
         () => findById(guestId) || findGuestById(guestId, guests),
         [findById, guestId, guests],
     );
-    const passengerLabel = selectedGuest ? guestDisplayName(selectedGuest) : 'For myself';
+    const passengerLabel = selectedGuest ? guestDisplayName(selectedGuest) : t('checkout.defaults.forMyself');
 
     const onPassengerChange = (nextGuestId) => {
         const q = new URLSearchParams(params);
@@ -371,7 +373,7 @@ export default function Checkout() {
     };
 
     const preferredChauffeurGender = params.get('preferred_chauffeur_gender') || '';
-    const preferredChauffeurLabel = chauffeurGenderLabel(preferredChauffeurGender);
+    const preferredChauffeurLabel = chauffeurGenderLabel(preferredChauffeurGender, t);
 
     const canBook = Boolean(billing) || isPartnerAdmin(user);
     const billingLine = billingSummary(billing);
@@ -379,7 +381,7 @@ export default function Checkout() {
     const onBook = async () => {
         if (!billing && !isPartnerAdmin(user)) return;
         if (!preferredChauffeurGender) {
-            setBookError('Choose male or female chauffeur on the vehicle page, then continue.');
+            setBookError(t('checkout.errors.genderRequired'));
             return;
         }
         setBooking(true);
@@ -400,7 +402,7 @@ export default function Checkout() {
             }
             const quoteId = current?.id;
             if (!quoteId) {
-                throw new Error('Unable to create a price quote for this trip.');
+                throw new Error(t('checkout.errors.quoteFailed'));
             }
 
             const guestPayload = selectedGuest
@@ -414,7 +416,7 @@ export default function Checkout() {
                 : undefined;
 
             if (isPartnerAdmin(user) && !selectedGuest) {
-                throw new Error('Partner bookings require a guest traveler. Add a guest before confirming.');
+                throw new Error(t('checkout.errors.guestRequired'));
             }
 
             const { booking: booked, payment_link: paymentLink } = await createBooking({
@@ -451,7 +453,7 @@ export default function Checkout() {
                 err?.response?.data?.message ||
                 Object.values(err?.response?.data?.errors || {}).flat()[0] ||
                 err?.message ||
-                'Booking failed. Please try again.';
+                t('checkout.errors.bookFailed');
             setBookError(msg);
         } finally {
             setBooking(false);
@@ -462,13 +464,13 @@ export default function Checkout() {
         return (
             <SiteLayout>
                 <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center px-6 py-16 text-center">
-                    <h1 className="font-fragment m-0 text-2xl text-ink-text">Booking session expired</h1>
+                    <h1 className="font-fragment m-0 text-2xl text-ink-text">{t('checkout.sessionExpired.title')}</h1>
                     <p className="font-geist mt-3 m-0 text-[15px] text-muted">{draftError}</p>
                     <Link
                         to="/booking"
                         className="font-geist mt-8 inline-flex rounded-full bg-wine-700 px-6 py-3 text-[15px] font-500 text-white no-underline"
                     >
-                        Back to booking
+                        {t('checkout.sessionExpired.restart')}
                     </Link>
                 </div>
             </SiteLayout>
@@ -519,7 +521,7 @@ export default function Checkout() {
                                 <button
                                     type="button"
                                     onClick={backToBooking}
-                                    aria-label="Go back to previous page"
+                                    aria-label={t('checkout.backAria')}
                                     className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#d8d4cc] bg-white text-ink-text transition hover:bg-page"
                                 >
                                     <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" aria-hidden="true">
@@ -527,18 +529,18 @@ export default function Checkout() {
                                     </svg>
                                 </button>
                                 <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
-                                    Confirm your reservation
+                                    {t('checkout.title')}
                                 </h1>
                             </div>
 
                             <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
                                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 text-ink-text">
-                                    Payment preferences
+                                    {t('checkout.payment.title')}
                                 </h2>
                                 <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
                                     {payWithWallet
-                                        ? 'This booking will be paid from your wallet balance. The amount is verified on the server.'
-                                        : 'You can save a card now, or pay with wallet if your balance covers the total.'}
+                                        ? t('checkout.payment.walletPaid')
+                                        : t('checkout.payment.cardOrWallet')}
                                 </p>
 
                                 {wallet ? (
@@ -558,13 +560,19 @@ export default function Checkout() {
                                         />
                                         <span>
                                             <span className="font-geist block text-[15px] font-500 text-ink-text">
-                                                Pay with wallet
+                                                {t('checkout.payment.payWithWallet')}
                                             </span>
                                             <span className="font-geist mt-0.5 block text-[13px] text-muted">
-                                                Balance: {wallet.currency} {walletBalance.toFixed(2)}
+                                                {t('checkout.payment.balance', {
+                                                    currency: wallet.currency,
+                                                    amount: walletBalance.toFixed(2),
+                                                })}
                                                 {!walletSufficient
-                                                    ? ' — not enough for this trip'
-                                                    : ` — covers ${vehicle?.currency || wallet.currency} ${tripTotal.toFixed(2)}`}
+                                                    ? t('checkout.payment.notEnough')
+                                                    : t('checkout.payment.covers', {
+                                                          currency: vehicle?.currency || wallet.currency,
+                                                          amount: tripTotal.toFixed(2),
+                                                      })}
                                             </span>
                                         </span>
                                     </label>
@@ -574,11 +582,11 @@ export default function Checkout() {
                                     {cards.length === 0 ? (
                                         <div className="rounded-xl border border-dashed border-[#d8d4cc] bg-page px-4 py-8 text-center">
                                             <p className="font-geist m-0 text-[15px] text-muted">
-                                                You haven&apos;t added any payment methods yet.
+                                                {t('checkout.payment.noCards')}
                                             </p>
                                         </div>
                                     ) : (
-                                        <div role="radiogroup" aria-label="Payment cards" className="flex flex-col gap-2">
+                                        <div role="radiogroup" aria-label={t('checkout.payment.cardsAria')} className="flex flex-col gap-2">
                                             {cards.map((card) => {
                                                 const on = card.id === selectedCardId;
                                                 return (
@@ -602,7 +610,7 @@ export default function Checkout() {
                                                                 {card.brand} •••• {card.last4}
                                                             </span>
                                                             <span className="font-geist block text-[13px] text-muted">
-                                                                {card.name} · Exp {card.expiry}
+                                                                {card.name} · {t('checkout.payment.exp', { expiry: card.expiry })}
                                                             </span>
                                                         </span>
                                                     </label>
@@ -616,7 +624,7 @@ export default function Checkout() {
                                         onClick={() => setAddCardOpen(true)}
                                         className="font-geist mt-4 inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2.5 text-[16px] font-500 text-ink-text transition hover:bg-page sm:w-auto sm:min-w-[160px]"
                                     >
-                                        Add card
+                                        {t('checkout.payment.addCard')}
                                     </button>
                                 </div>
 
@@ -624,7 +632,7 @@ export default function Checkout() {
 
                                 <div>
                                     <h3 className="font-geist m-0 text-[15px] font-500 text-ink-text">
-                                        Billing information
+                                        {t('checkout.billing.title')}
                                     </h3>
                                     {billing ? (
                                         <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
@@ -632,11 +640,11 @@ export default function Checkout() {
                                         </p>
                                     ) : isPartnerAdmin(user) ? (
                                         <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
-                                            Optional for partners — guest pays via the payment link.
+                                            {t('checkout.billing.partnerOptional')}
                                         </p>
                                     ) : (
                                         <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
-                                            Add a billing address before you book.
+                                            {t('checkout.billing.addBefore')}
                                         </p>
                                     )}
                                     <button
@@ -644,7 +652,7 @@ export default function Checkout() {
                                         onClick={() => setBillingModalOpen(true)}
                                         className="font-geist mt-3 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white px-4 py-2.5 text-[16px] font-500 text-ink-text transition hover:bg-page"
                                     >
-                                        {billing ? 'Edit billing information' : 'Add billing information'}
+                                        {billing ? t('checkout.billing.edit') : t('checkout.billing.add')}
                                     </button>
                                 </div>
 
@@ -652,17 +660,17 @@ export default function Checkout() {
 
                                 <div>
                                     <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-ref">
-                                        Reference code
+                                        {t('checkout.reference.label')}
                                     </label>
                                     <input
                                         id="co-ref"
-                                        value="Assigned when you book"
+                                        value={t('checkout.reference.assigned')}
                                         readOnly
                                         className={`${fieldClass} cursor-default bg-page text-muted`}
                                         aria-describedby="co-ref-help"
                                     />
                                     <p id="co-ref-help" className="font-geist mt-2 m-0 text-[13px] text-muted">
-                                        A unique reference is created on the server and appears on your journey.
+                                        {t('checkout.reference.help')}
                                     </p>
                                 </div>
 
@@ -670,13 +678,13 @@ export default function Checkout() {
                                     <div className="flex gap-2.5">
                                         <LockIcon />
                                         <span className="font-geist text-[14px] leading-5 text-muted">
-                                            Our servers are encrypted with TLS/SSL to ensure security and privacy.
+                                            {t('checkout.security.tls')}
                                         </span>
                                     </div>
                                     <div className="flex gap-2.5">
                                         <InfoIcon />
                                         <span className="font-geist text-[14px] leading-5 text-muted">
-                                            Online payment is not available yet. Nothing is charged when you book.
+                                            {t('checkout.security.noCharge')}
                                         </span>
                                     </div>
                                 </div>
@@ -684,13 +692,13 @@ export default function Checkout() {
 
                             <section className="mt-6 rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
                                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 text-ink-text">
-                                    Pickup preferences
+                                    {t('checkout.pickupPrefs.title')}
                                 </h2>
 
                                 {preferredChauffeurLabel ? (
                                     <div className="mt-5 rounded-xl border border-[#e8e6e1] bg-page px-4 py-3">
                                         <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                                            Chauffeur preference
+                                            {t('checkout.pickupPrefs.chauffeurPreference')}
                                         </p>
                                         <p className="font-geist mt-1 m-0 text-[15px] font-500 text-ink-text">
                                             {preferredChauffeurLabel}
@@ -700,15 +708,15 @@ export default function Checkout() {
 
                                 <div className={preferredChauffeurLabel ? 'mt-6' : 'mt-5'}>
                                     <p className="font-geist m-0 text-[14px] text-muted">
-                                        Preferred language{' '}
-                                        <span className="text-muted/80">(optional)</span>
+                                        {t('checkout.pickupPrefs.preferredLanguage')}{' '}
+                                        <span className="text-muted/80">{t('checkout.pickupPrefs.optional')}</span>
                                     </p>
                                     <p className="font-geist mt-1 m-0 text-[13px] leading-5 text-muted">
-                                        Language you&apos;d like your chauffeur to speak with you.
+                                        {t('checkout.pickupPrefs.languageHelp')}
                                     </p>
                                     <div
                                         role="radiogroup"
-                                        aria-label="Preferred chauffeur language"
+                                        aria-label={t('checkout.pickupPrefs.languageAria')}
                                         className="mt-3 flex flex-wrap gap-2"
                                     >
                                         <label
@@ -742,7 +750,7 @@ export default function Checkout() {
                                                     }`}
                                                 />
                                             </span>
-                                            No preference
+                                            {t('checkout.pickupPrefs.noPreference')}
                                         </label>
                                         {PREFERRED_LANGUAGES.map((lang) => {
                                             const on = preferredLanguage === lang.id;
@@ -785,7 +793,7 @@ export default function Checkout() {
 
                                 <div className="mt-6">
                                     <label className="font-geist mb-1.5 block text-[14px] text-muted" htmlFor="co-notes">
-                                        Additional details (optional)
+                                        {t('checkout.pickupPrefs.additionalDetails')}
                                     </label>
                                     <textarea
                                         id="co-notes"
@@ -795,11 +803,11 @@ export default function Checkout() {
                                         onChange={(e) => setNotes(e.target.value)}
                                         className={`${fieldClass} min-h-[88px] resize-y`}
                                         maxLength={2000}
-                                        placeholder="Special instructions for your journey"
+                                        placeholder={t('checkout.pickupPrefs.notesPlaceholder')}
                                         aria-describedby="co-notes-help"
                                     />
                                     <p id="co-notes-help" className="font-geist mt-2 m-0 text-[13px] text-muted">
-                                        Additional wait time or distance requests may incur additional charges.
+                                        {t('checkout.pickupPrefs.notesHelp')}
                                     </p>
                                 </div>
                             </section>

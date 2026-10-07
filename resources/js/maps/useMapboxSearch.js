@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchMapConfig, getMapboxToken } from './mapboxClient';
+import i18n from '../i18n';
+import { fetchMapConfig, getMapboxToken, mapboxLanguage } from './mapboxClient';
 import { getSearchScope } from './searchScopes';
 
 function metersBetween(a, b) {
@@ -77,7 +78,7 @@ export function useMapboxSearch({ scope = 'qatar', proximity } = {}) {
                     q,
                     access_token: token,
                     session_token: sessionRef.current,
-                    language: config.language || 'en',
+                    language: mapboxLanguage() || config.language || 'en',
                     limit: '8',
                 });
 
@@ -128,7 +129,7 @@ export function useMapboxSearch({ scope = 'qatar', proximity } = {}) {
                 setLoading(false);
             }
         },
-        [scope, proximity?.lat, proximity?.lng],
+        [scope, proximity?.lat, proximity?.lng, i18n.language],
     );
 
     const suggestDebounced = useCallback(
@@ -200,7 +201,7 @@ export async function forwardGeocodeClient(query, scope = 'qatar') {
         q,
         access_token: token,
         limit: '1',
-        language: config.language || 'en',
+        language: mapboxLanguage() || config.language || 'en',
     });
     if (sc.countries?.length) params.set('country', sc.countries.join(','));
     if (sc.proximity?.lng != null && sc.proximity?.lat != null) {
@@ -234,7 +235,7 @@ export async function reverseGeocodeClient(lng, lat) {
         longitude: String(lng),
         latitude: String(lat),
         access_token: token,
-        language: config.language || 'en',
+        language: mapboxLanguage() || config.language || 'en',
         limit: '1',
         types: 'address,street,poi',
     });

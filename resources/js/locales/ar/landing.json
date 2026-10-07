@@ -1,0 +1,196 @@
+{
+  "hero": {
+    "ariaLabel": "قسم البطل",
+    "title": "سائقك بانتظارك.",
+    "subtitle": "تنقل خاص فاخر في قطر وخارجها."
+  },
+  "services": {
+    "sectionTitle": "كيف يعمل المجد",
+    "airport": {
+      "tag": "تنقلات المطار",
+      "title": "هبوط سلس في كل مرة.",
+      "copy": "تأخرت الرحلة؟ يتابع السائقون مواعيد الوصول ويعدّلون وفقها. إضافةً إلى ساعة انتظار مجانية للاطمئنان."
+    },
+    "hourly": {
+      "tag": "حجز بالساعة واليوم الكامل",
+      "title": "استثمر يومك.",
+      "copy": "احجز سائقاً مخصصاً من ساعتين إلى ٢٤ ساعة. سيكون على استعداد طوال المدة التي تحتاجها."
+    },
+    "cityToCity": {
+      "tag": "من مدينة إلى مدينة",
+      "title": "بين المدن، بطريقة أفضل.",
+      "copy": "حوّل الرحلات الطويلة إلى وقت مثمر. وصل منتعشاً لا مرهقاً."
+    },
+    "enterprise": {
+      "tag": "حلول الشركات والوكالات",
+      "title": "سفر الأعمال، ببساطة.",
+      "copy": "منصة واحدة للشركات والوكالات لحجز وتتبع ومحاسبة كل رحلة."
+    },
+    "headline": "صل بأفضل حال.",
+    "subhead": "رحلات بلا عناء، مصممة لك.",
+    "learnMore": "اعرف المزيد",
+    "bookAria": "خدمات الحجز",
+    "goToSlide": "الانتقال إلى الشريحة {{n}}"
+  },
+  "experience": {
+    "sectionTitle": "تجربة المجد",
+    "headline": "اصعد. تنفّس بعمق.",
+    "subhead": "تفاصيل مدروسة وخدمة مكتومة تحوّل كل رحلة إلى ملاذك الشخصي.",
+    "welcome": {
+      "title": "ترحيب لا مثيل له",
+      "copy": "يُفتح الباب لك. تُرتَّب أمتعتك. كل شيء مُعتنى به."
+    },
+    "tone": {
+      "title": "أنت تحدد الأجواء",
+      "copy": "استرخِ. تُضبط الموسيقى ودرجة الحرارة حسب تفضيلاتك."
+    },
+    "recharge": {
+      "title": "اشحن طاقتك",
+      "copy": "ابقَ متصلاً أثناء التنقل مع شواحن عالمية لـ iOS وAndroid."
+    }
+  },
+  "excellence": {
+    "sectionTitle": "التميز في كل تفصيل",
+    "worldwide": {
+      "title": "متاح حول العالم",
+      "copy": "سائقون محليون خبراء في أكثر من ٥٠٠ مدينة"
+    },
+    "vehicles": {
+      "title": "مركبات راقية",
+      "copy": "أحدث الموديلات فقط"
+    },
+    "safe": {
+      "title": "سفر آمن",
+      "copy": "محترفون مدرَّبون واستلام موثوق"
+    },
+    "headline": "توقّع التميز.",
+    "subhead": "غادر السيارة منتعشاً وجاهزاً لما يلي."
+  },
+  "fleet": {
+    "titleBefore": "فقط أرقى",
+    "titleAccent": "المركبات.",
+    "businessVan": {
+      "name": "فان الأعمال",
+      "line": "مرسيدس-بنز V-Class أو ما يعادلها",
+      "seats": "٥ ضيوف · ٥ حقائب"
+    },
+    "businessClass": {
+      "name": "درجة الأعمال",
+      "line": "مرسيدس-بنز E-Class أو ما يعادلها"
+    },
+    "firstClass": {
+      "name": "الدرجة الأولى",
+      "line": "مرسيدس-بنز S-Class أو ما يعادلها"
+    },
+    "viewFleet": "استكشف الأسطول",
+    "eyebrow": "الأسطول"
+  },
+  "appBand": {
+    "title": "نتحرك معك.",
+    "subtitle": "كل رحلاتك في راحة يدك مع تطبيق المجد.",
+    "appStore": "حمّل من App Store",
+    "googlePlay": "احصل عليه من Google Play",
+    "platformAlt": "منصة المجد"
+  },
+  "cta": {
+    "titleBefore": "فندق أو مطار —",
+    "titleAccent": "سنكون هناك.",
+    "bookTransfer": "احجز تنقلاً",
+    "learnMore": "اعرف المزيد",
+    "eyebrow": "احجز تنقلك في قطر",
+    "subtitle": "احجز تنقل فندق الدوحة ↔ مطار حمد في لحظات. اختبر فرق المجد.",
+    "exploreServices": "استكشف الخدمات",
+    "imageAlt": "سيارة فاخرة على الطريق المفتوح"
+  },
+  "sustainability": {
+    "title": "شركاء الاستدامة",
+    "climatePledge": "Climate Pledge",
+    "leaders": "Leaders",
+    "southPole": "South Pole"
+  },
+  "marquee": {
+    "places": {
+      "hamadAirport": "مطار حمد",
+      "westBay": "الخليج الغربي",
+      "thePearl": "اللؤلؤة",
+      "lusail": "لوسيل",
+      "msheireb": "مشيرب",
+      "corniche": "الكورنيش",
+      "katara": "كتارا",
+      "alWaab": "الوعب",
+      "educationCity": "المدينة التعليمية",
+      "souqWaqif": "سوق واقف",
+      "alSadd": "السد",
+      "dohaHotels": "فنادق الدوحة"
+    }
+  },
+  "footer": {
+    "company": {
+      "title": "الشركة",
+      "howItWorks": "كيف يعمل المجد",
+      "career": "الوظائف",
+      "press": "الصحافة",
+      "blog": "المدونة",
+      "greenInitiatives": "مبادرات خضراء",
+      "becomeChauffeurPartner": "انضم كشريك سائق"
+    },
+    "business": {
+      "title": "المجد للأعمال",
+      "overview": "نظرة عامة",
+      "corporations": "الشركات",
+      "travelAgencies": "وكالات السفر",
+      "strategicPartnerships": "شراكات استراتيجية"
+    },
+    "topCities": {
+      "title": "أبرز المدن",
+      "doha": "الدوحة",
+      "alRayyan": "الريان",
+      "lusail": "لوسيل",
+      "alWakrah": "الوكرة",
+      "alKhor": "الخور",
+      "mesaieed": "مسيعيد",
+      "allCities": "كل المدن"
+    },
+    "explore": {
+      "title": "اكتشف",
+      "cityToCityRides": "رحلات بين المدن",
+      "limousineService": "خدمة الليموزين",
+      "chauffeurService": "خدمة السائق الخاص",
+      "privateCarService": "خدمة السيارة الخاصة",
+      "groundTransportation": "النقل البري",
+      "airportTransfer": "تنقل المطار",
+      "allCountries": "كل الدول"
+    },
+    "cityRoutes": {
+      "title": "رحلات بين المدن",
+      "nyEastHampton": "نيويورك - إيست هامبتون",
+      "laSanDiego": "لوس أنجلوس - سان دييغو",
+      "miamiPalmBeach": "ميامي - بالم بيتش",
+      "londonBristol": "لندن - بريستول",
+      "dubaiAbuDhabi": "دبي - أبوظبي",
+      "parisReims": "باريس - ريمس"
+    },
+    "legal": {
+      "terms": "الشروط",
+      "privacy": "سياسة الخصوصية",
+      "legalNotice": "إشعار قانوني",
+      "accessibility": "إمكانية الوصول"
+    },
+    "social": {
+      "linkedin": "LinkedIn",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "youtube": "YouTube"
+    },
+    "copyright": "©{{year}} المجد",
+    "appStore": "حمّل من App Store",
+    "googlePlay": "احصل عليه من Google Play"
+  },
+  "globalReach": {
+    "title": "أينما ذهبت",
+    "subtitle": "سائقون محليون جاهزون عبر الخليج والوجهات الرئيسية.",
+    "line1": "حدّد استلامك في أكثر من ٦٤ دولة.",
+    "line2": "سنكون هناك في الوقت."
+  }
+}

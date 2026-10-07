@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatPayout, sumPayouts } from '../../data/chauffeurPortal';
 
 function StatusDot({ tone = 'wine' }) {
@@ -13,24 +14,24 @@ function StatusDot({ tone = 'wine' }) {
     return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${color}`} aria-hidden="true" />;
 }
 
-const HISTORY_PERIODS = [
-    { id: 'all', label: 'All time' },
-    { id: 'week', label: 'This week' },
-    { id: 'month', label: 'This month' },
+const HISTORY_PERIOD_KEYS = [
+    { id: 'all', key: 'rides.filters.allTime' },
+    { id: 'week', key: 'rides.filters.thisWeek' },
+    { id: 'month', key: 'rides.filters.thisMonth' },
 ];
 
-const HISTORY_STATUS = [
-    { id: 'all', label: 'All' },
-    { id: 'past', label: 'Completed' },
-    { id: 'upcoming', label: 'Upcoming' },
-    { id: 'canceled', label: 'Canceled' },
+const HISTORY_STATUS_KEYS = [
+    { id: 'all', key: 'rides.filters.all' },
+    { id: 'past', key: 'rides.filters.completed' },
+    { id: 'upcoming', key: 'rides.filters.upcoming' },
+    { id: 'canceled', key: 'rides.filters.canceled' },
 ];
 
-const HISTORY_MODES = [
-    { id: 'all', label: 'All services' },
-    { id: 'airport', label: 'Airport' },
-    { id: 'city', label: 'City' },
-    { id: 'hourly', label: 'Hourly' },
+const HISTORY_MODE_KEYS = [
+    { id: 'all', key: 'rides.filters.allServices' },
+    { id: 'airport', key: 'rides.filters.airport' },
+    { id: 'city', key: 'rides.filters.city' },
+    { id: 'hourly', key: 'rides.filters.hourly' },
 ];
 
 function daysBetween(aIso, bIso) {
@@ -66,6 +67,8 @@ function FilterChip({ selected, onClick, children }) {
 }
 
 export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
+    const { t } = useTranslation('chauffeur');
+
     return (
         <article className="overflow-hidden rounded-2xl border border-[#e8e6e1] bg-white transition hover:border-wine-700/35 hover:shadow-[0_12px_40px_rgba(91,5,32,0.08)]">
             <div className="p-4 sm:p-5">
@@ -81,7 +84,7 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                             </span>
                             {offer.expires_in ? (
                                 <span className="font-geist text-[12px] font-500 text-muted">
-                                    Expires in {offer.expires_in}
+                                    {t('offers.expiresIn', { time: offer.expires_in })}
                                 </span>
                             ) : null}
                         </div>
@@ -91,13 +94,13 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                             <span className="text-wine-700">{offer.time_label}</span>
                         </p>
                         <p className="font-geist mt-1 m-0 text-[13px] text-muted">
-                            Booking {offer.booking_id}
+                            {t('offers.booking', { id: offer.booking_id })}
                             {offer.booking_number ? ` · ${offer.booking_number}` : ''}
                         </p>
                     </div>
                     <div className="text-right">
                         <p className="font-geist m-0 text-[12px] font-500 tracking-wide text-muted uppercase">
-                            Payout
+                            {t('offers.payout')}
                         </p>
                         <p className="font-geist m-0 text-[20px] font-600 tracking-[-0.02em] text-ink-text">
                             {formatPayout(offer.payout, offer.currency)}
@@ -118,7 +121,9 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                             <p className="font-geist mt-0.5 m-0 text-[15px] font-500 text-ink-text">{offer.pickup}</p>
                             {offer.distance_to_pickup_km != null ? (
                                 <p className="font-geist mt-1 m-0 text-[13px] font-500 text-wine-700">
-                                    {Number(offer.distance_to_pickup_km).toFixed(1)} km from you
+                                    {t('offers.kmFromYou', {
+                                        distance: Number(offer.distance_to_pickup_km).toFixed(1),
+                                    })}
                                 </p>
                             ) : null}
                             {offer.flight ? (
@@ -142,10 +147,12 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
 
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#f0eee9] pt-4 text-[13px]">
                     <span className="font-geist text-muted">
-                        Class <span className="font-500 text-ink-text">{offer.vehicle_class}</span>
+                        {t('offers.classLabel')}{' '}
+                        <span className="font-500 text-ink-text">{offer.vehicle_class}</span>
                     </span>
                     <span className="font-geist text-muted">
-                        Passenger <span className="font-500 text-ink-text">{offer.passenger_name}</span>
+                        {t('offers.passenger')}{' '}
+                        <span className="font-500 text-ink-text">{offer.passenger_name}</span>
                     </span>
                 </div>
 
@@ -155,14 +162,14 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
                         onClick={() => onAccept?.(offer)}
                         className="font-geist cursor-pointer rounded-full bg-wine-700 px-4 py-2.5 text-[13px] font-500 text-white transition hover:bg-wine-600"
                     >
-                        Accept offer
+                        {t('actions.acceptOffer')}
                     </button>
                     <button
                         type="button"
                         onClick={() => onDecline?.(offer)}
                         className="font-geist cursor-pointer rounded-full border border-[#d8d8dc] px-4 py-2.5 text-[13px] font-500 text-ink-text transition hover:border-wine-700"
                     >
-                        Decline
+                        {t('actions.decline')}
                     </button>
                 </div>
             </div>
@@ -171,6 +178,8 @@ export function ChauffeurOfferCard({ offer, onAccept, onDecline }) {
 }
 
 export function ChauffeurRideCard({ ride }) {
+    const { t } = useTranslation('chauffeur');
+    const isCanceled = ride.phase === 'canceled' || ride.status_label === 'Canceled';
     const tone =
         ride.phase === 'canceled' || ride.status_label === 'Canceled'
             ? 'red'
@@ -221,14 +230,17 @@ export function ChauffeurRideCard({ ride }) {
                     </p>
                     {isCanceled && ride.cancel_reason ? (
                         <p className="font-geist mt-2 m-0 text-[13px] text-muted">
-                            {ride.cancelled_by === 'customer' ? 'Passenger' : 'You'}: {ride.cancel_reason}
+                            {ride.cancelled_by === 'customer'
+                                ? t('rides.cancelledByPassenger')
+                                : t('rides.cancelledByYou')}
+                            : {ride.cancel_reason}
                         </p>
                     ) : null}
                 </div>
 
                 {ride.rating ? (
                     <p className="font-geist mt-3 m-0 text-[13px] text-muted">
-                        Passenger rating · <span className="font-500 text-wine-700">★ {ride.rating}</span>
+                        {t('rides.passengerRating', { rating: ride.rating })}
                     </p>
                 ) : null}
             </div>
@@ -237,6 +249,7 @@ export function ChauffeurRideCard({ ride }) {
 }
 
 function HistoryRow({ ride }) {
+    const { t } = useTranslation('chauffeur');
     const isCanceled = ride.phase === 'canceled' || ride.status_label === 'Canceled';
     const tone = isCanceled ? 'red' : ride.status === 'past' ? 'green' : 'wine';
 
@@ -273,7 +286,10 @@ function HistoryRow({ ride }) {
                 </p>
                 {isCanceled && ride.cancel_reason ? (
                     <p className="font-geist mt-1 m-0 text-[12px] text-muted">
-                        {ride.cancelled_by === 'customer' ? 'Passenger' : 'You'}: {ride.cancel_reason}
+                        {ride.cancelled_by === 'customer'
+                            ? t('rides.cancelledByPassenger')
+                            : t('rides.cancelledByYou')}
+                        : {ride.cancel_reason}
                     </p>
                 ) : null}
             </div>
@@ -300,6 +316,7 @@ function HistoryRow({ ride }) {
  * Profile ride history — payouts + period / status / service filters.
  */
 export function RideHistorySection({ rides, currency = 'US$' }) {
+    const { t } = useTranslation('chauffeur');
     const [period, setPeriod] = useState('all');
     const [status, setStatus] = useState('all');
     const [mode, setMode] = useState('all');
@@ -339,16 +356,16 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <h3 className="font-fragment m-0 text-[22px] font-400 text-ink-text sm:text-[26px]">
-                            Ride history
+                            {t('rides.history')}
                         </h3>
                         <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                            Payouts for each ride — filter by period, status, or service.
+                            {t('rides.historySubtitle')}
                         </p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         <div className="rounded-xl bg-page px-3 py-2.5 sm:px-4">
                             <p className="font-geist m-0 text-[11px] font-500 tracking-wide text-muted uppercase">
-                                Total
+                                {t('rides.total')}
                             </p>
                             <p className="font-geist mt-0.5 m-0 text-[16px] font-600 tabular-nums text-ink-text sm:text-[18px]">
                                 {formatPayout(total, currency)}
@@ -356,7 +373,7 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
                         </div>
                         <div className="rounded-xl bg-page px-3 py-2.5 sm:px-4">
                             <p className="font-geist m-0 text-[11px] font-500 tracking-wide text-muted uppercase">
-                                Rides
+                                {t('tabs.rides')}
                             </p>
                             <p className="font-geist mt-0.5 m-0 text-[16px] font-600 tabular-nums text-ink-text sm:text-[18px]">
                                 {filtered.length}
@@ -364,7 +381,7 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
                         </div>
                         <div className="rounded-xl bg-page px-3 py-2.5 sm:px-4">
                             <p className="font-geist m-0 text-[11px] font-500 tracking-wide text-muted uppercase">
-                                Avg
+                                {t('rides.avg')}
                             </p>
                             <p className="font-geist mt-0.5 m-0 text-[16px] font-600 tabular-nums text-ink-text sm:text-[18px]">
                                 {formatPayout(avg, currency)}
@@ -374,34 +391,34 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3">
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Period">
-                        {HISTORY_PERIODS.map((p) => (
+                    <div className="flex flex-wrap gap-2" role="group" aria-label={t('rides.filters.periodAria')}>
+                        {HISTORY_PERIOD_KEYS.map((p) => (
                             <FilterChip key={p.id} selected={period === p.id} onClick={() => setPeriod(p.id)}>
-                                {p.label}
+                                {t(p.key)}
                             </FilterChip>
                         ))}
                     </div>
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Status">
-                        {HISTORY_STATUS.map((s) => (
+                    <div className="flex flex-wrap gap-2" role="group" aria-label={t('rides.filters.statusAria')}>
+                        {HISTORY_STATUS_KEYS.map((s) => (
                             <FilterChip key={s.id} selected={status === s.id} onClick={() => setStatus(s.id)}>
-                                {s.label}
+                                {t(s.key)}
                             </FilterChip>
                         ))}
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-wrap gap-2" role="group" aria-label="Service">
-                            {HISTORY_MODES.map((m) => (
+                        <div className="flex flex-wrap gap-2" role="group" aria-label={t('rides.filters.serviceAria')}>
+                            {HISTORY_MODE_KEYS.map((m) => (
                                 <FilterChip key={m.id} selected={mode === m.id} onClick={() => setMode(m.id)}>
-                                    {m.label}
+                                    {t(m.key)}
                                 </FilterChip>
                             ))}
                         </div>
                         <label className="relative block w-full sm:max-w-[280px]">
-                            <span className="sr-only">Search history</span>
+                            <span className="sr-only">{t('rides.searchHistory')}</span>
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value.slice(0, 120))}
-                                placeholder="Search booking or place"
+                                placeholder={t('rides.searchHistoryPlaceholder')}
                                 className="font-geist w-full rounded-full border border-[#d8d8dc] bg-white py-2.5 pr-4 pl-4 text-[14px] text-ink-text outline-none transition placeholder:text-muted focus:border-wine-700"
                             />
                         </label>
@@ -411,9 +428,9 @@ export function RideHistorySection({ rides, currency = 'US$' }) {
 
             {filtered.length === 0 ? (
                 <div className="px-4 py-14 text-center sm:px-6">
-                    <p className="font-fragment m-0 text-[18px] text-ink-text">No rides match</p>
+                    <p className="font-fragment m-0 text-[18px] text-ink-text">{t('rides.noMatchTitle')}</p>
                     <p className="font-geist mt-1 m-0 text-[14px] text-muted">
-                        Try another period, status, or search.
+                        {t('rides.noMatchBody')}
                     </p>
                 </div>
             ) : (

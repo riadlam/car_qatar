@@ -62,6 +62,7 @@ class PartnerForm
                 Section::make('Commercial — partner fee on guest bookings')
                     ->description('Fee is merged into the guest total (no separate line on their receipt). Partners see it in their portal; only completed rides earn it.')
                     ->columns(2)
+                    ->visible(fn (): bool => auth()->user()?->canManageFinance() ?? false)
                     ->schema([
                         Select::make('commission_type')
                             ->label('Fee type')

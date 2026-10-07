@@ -1,10 +1,25 @@
-const PLACES = [
-    'Hamad Airport', 'West Bay', 'The Pearl', 'Lusail', 'Msheireb', 'Corniche',
-    'Katara', 'Al Waab', 'Education City', 'Souq Waqif', 'Al Sadd', 'Doha Hotels',
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+const PLACE_KEYS = [
+    'hamadAirport',
+    'westBay',
+    'thePearl',
+    'lusail',
+    'msheireb',
+    'corniche',
+    'katara',
+    'alWaab',
+    'educationCity',
+    'souqWaqif',
+    'alSadd',
+    'dohaHotels',
 ];
 
 export default function Marquee() {
-    const items = [...PLACES, ...PLACES];
+    const { t } = useTranslation('landing');
+    const places = useMemo(() => PLACE_KEYS.map((key) => t(`marquee.places.${key}`)), [t]);
+    const items = [...places, ...places];
 
     return (
         <div className="relative overflow-hidden border-y border-white/5 bg-ink-soft py-4 sm:py-6">

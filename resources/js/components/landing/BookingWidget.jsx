@@ -2,14 +2,19 @@ import { createContext, useCallback, useContext, useEffect, useId, useMemo, useR
 import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import MapboxLocationField from '../booking/MapboxLocationField';
 import {
     CITY_TOUR_HOUR_OPTIONS,
+    GULF_I18N_KEYS,
     HOUR_OPTIONS,
+    localizedDurationLabel,
     MAX_STOPS,
     PASSENGER_OPTIONS,
     SCHOOL_TERMS,
+    SERVICE_I18N_KEYS,
     STUDENT_OPTIONS,
+    TERM_I18N_KEYS,
 } from '../../data/bookingServices';
 import { fetchGulfDestinations, fetchServiceTypes } from '../../api/catalog';
 import { heroSearchScope } from '../../maps/searchScopes';
@@ -220,16 +225,58 @@ export function BookingForm({
     termOptions = SCHOOL_TERMS,
     tone = 'dark',
     initial = null,
-    submitLabel = 'View options',
+    submitLabel = null,
     layout = 'default',
     serviceOptions = null,
     onServiceChange = null,
 }) {
+    const { t, i18n } = useTranslation('booking');
     const uid = `${useId().replace(/:/g, '')}-${stacked ? 'm' : 'd'}`;
     const compact = layout === 'bar';
     const inputCls = inputClass(tone, compact);
     const scheme = tone === 'light' ? 'light' : 'dark';
     const fieldVariant = tone === 'light' ? 'light' : 'dark';
+    const resolvedSubmitLabel = submitLabel ?? t('actions.viewOptions');
+
+    const localizedDurationOptions = useMemo(
+        () =>
+            (durationOptions.length ? durationOptions : HOUR_OPTIONS).map((o) => ({
+                ...o,
+                label: localizedDurationLabel(o.value, t),
+            })),
+        [durationOptions, t, i18n.language],
+    );
+
+    const localizedTermOptions = useMemo(
+        () =>
+            (termOptions.length ? termOptions : SCHOOL_TERMS).map((o) => ({
+                ...o,
+                label: TERM_I18N_KEYS[o.value] ? t(`terms.${TERM_I18N_KEYS[o.value]}`) : o.label,
+            })),
+        [termOptions, t, i18n.language],
+    );
+
+    const localizedGulfDestinations = useMemo(
+        () =>
+            gulfDestinations.map((d) => ({
+                ...d,
+                label: GULF_I18N_KEYS[d.value || d.slug]
+                    ? t(`gulf.${GULF_I18N_KEYS[d.value || d.slug]}`)
+                    : d.label,
+            })),
+        [gulfDestinations, t, i18n.language],
+    );
+
+    const localizedServiceOptions = useMemo(
+        () =>
+            (serviceOptions || []).map((o) => ({
+                ...o,
+                label: SERVICE_I18N_KEYS[o.value]
+                    ? t(`services.${SERVICE_I18N_KEYS[o.value]}`)
+                    : o.label,
+            })),
+        [serviceOptions, t, i18n.language],
+    );
 
     const [pickup, setPickup] = useState(initial?.pickup || '');
     const [dropoff, setDropoff] = useState(initial?.dropoff || '');
@@ -238,7 +285,7 @@ export function BookingForm({
     const [duration, setDuration] = useState(initial?.duration || durationOptions[0]?.value || '2');
     const [passengers, setPassengers] = useState(initial?.passengers || passengerOptions[0]?.value || '1');
     const [destination, setDestination] = useState(
-        initial?.destination || gulfDestinations[0]?.value || '',
+        initial?.destination || localizedGulfDestinations[0]?.value || gulfDestinations[0]?.value || '',
     );
     const [schoolLocation, setSchoolLocation] = useState(initial?.schoolLocation || '');
     const [students, setStudents] = useState(initial?.students || studentOptions[0]?.value || '1');
@@ -332,53 +379,53 @@ export function BookingForm({
 
     const missingMessage = () => {
         const needsSchedule = () => {
-            if (!date) return 'Choose a pick-up date.';
-            if (date < todayLocal()) return 'Choose a pick-up date that is today or later.';
-            if (!time) return 'Choose a pick-up time.';
+            if (!date) return t('validation.pickupDate');
+            if (date < todayLocal()) return t('validation.pickupDateFuture');
+            if (!time) return t('validation.pickupTime');
             return '';
         };
 
         if (isMultiStops) {
-            if (!legs.length) return 'Add at least one stop.';
+            if (!legs.length) return t('validation.addStop');
             for (let i = 0; i < legs.length; i += 1) {
                 if (!hasCoords(legs[i].pickupCoords)) {
-                    return `Choose pick-up ${i + 1} from the suggestions.`;
+                    return t('validation.pickupN', { n: i + 1 });
                 }
                 if (!hasCoords(legs[i].dropoffCoords)) {
-                    return `Choose drop-off ${i + 1} from the suggestions.`;
+                    return t('validation.dropoffN', { n: i + 1 });
                 }
             }
             return needsSchedule();
         }
 
-        if (!hasCoords(pickupCoords)) return 'Choose a pick-up location from the suggestions.';
+        if (!hasCoords(pickupCoords)) return t('validation.pickupSuggest');
 
         if (tab === 'by_hour') {
-            if (!duration) return 'Choose a duration.';
+            if (!duration) return t('validation.duration');
             return needsSchedule();
         }
 
         if (tab === 'city_tour') {
-            if (!duration) return 'Choose a duration.';
-            if (!passengers) return 'Choose the number of passengers.';
+            if (!duration) return t('validation.duration');
+            if (!passengers) return t('validation.passengers');
             return needsSchedule();
         }
 
         if (tab === 'arab_gulf_trips') {
-            if (!gulfOption?.slug && !gulfOption?.value) return 'Choose a destination.';
-            if (!hasCoords(gulfOption)) return 'This destination has no map location yet.';
-            if (!passengers) return 'Choose the number of passengers.';
+            if (!gulfOption?.slug && !gulfOption?.value) return t('validation.destination');
+            if (!hasCoords(gulfOption)) return t('validation.destinationMap');
+            if (!passengers) return t('validation.passengers');
             return needsSchedule();
         }
 
         if (isSchool) {
-            if (!hasCoords(schoolCoords)) return 'Choose a school location from the suggestions.';
-            if (!students) return 'Choose the number of students.';
-            if (!term) return 'Choose a school term.';
+            if (!hasCoords(schoolCoords)) return t('validation.schoolSuggest');
+            if (!students) return t('validation.students');
+            if (!term) return t('validation.term');
             return '';
         }
 
-        if (!hasCoords(dropoffCoords)) return 'Choose a drop-off location from the suggestions.';
+        if (!hasCoords(dropoffCoords)) return t('validation.dropoffSuggest');
         return needsSchedule();
     };
 
@@ -433,7 +480,7 @@ export function BookingForm({
     };
 
     const dateField = (
-        <Field id={`${uid}-date`} label="Pick up date" endAdornment={Chevron}>
+        <Field id={`${uid}-date`} label={t('fields.pickupDate')} endAdornment={Chevron}>
             <input
                 id={`${uid}-date`}
                 type="date"
@@ -442,14 +489,14 @@ export function BookingForm({
                 onChange={(e) => setDate(e.target.value)}
                 className={`${inputCls} cursor-pointer`}
                 style={{ colorScheme: scheme }}
-                aria-label="Select a date"
+                aria-label={t('fields.dateAria')}
                 data-cy="date-picker-input"
             />
         </Field>
     );
 
     const timeField = (
-        <Field id={`${uid}-time`} label="Pick up time" endAdornment={Chevron}>
+        <Field id={`${uid}-time`} label={t('fields.pickupTime')} endAdornment={Chevron}>
             <input
                 id={`${uid}-time`}
                 type="time"
@@ -457,7 +504,7 @@ export function BookingForm({
                 onChange={(e) => setTime(e.target.value)}
                 className={`${inputCls} cursor-pointer`}
                 style={{ colorScheme: scheme }}
-                aria-label="Pickup time"
+                aria-label={t('fields.timeAria')}
             />
         </Field>
     );
@@ -468,7 +515,7 @@ export function BookingForm({
     const pickupField = (
         <MapboxLocationField
             id={`${uid}-pickup`}
-            label="Pick up location"
+            label={t('fields.pickupLocation')}
             value={pickup}
             coords={pickupCoords}
             onChange={(v) => {
@@ -489,7 +536,7 @@ export function BookingForm({
                 data-cy="search-button"
                 className="font-geist flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 py-3 text-[16px] leading-6 font-500 tracking-[0.15px] whitespace-nowrap text-white transition hover:bg-wine-600 lg:min-h-10 lg:min-w-[9.5rem] lg:py-2"
             >
-                {submitLabel}
+                {resolvedSubmitLabel}
             </button>
         </div>
     );
@@ -519,7 +566,7 @@ export function BookingForm({
                     >
                         <MapboxLocationField
                             id={`${uid}-leg-${index}-pickup`}
-                            label={`Pick up location ${index + 1}`}
+                            label={t('fields.pickupLocationN', { n: index + 1 })}
                             value={leg.pickup}
                             coords={leg.pickupCoords}
                             onChange={(v) => updateLeg(index, 'pickup', v)}
@@ -530,7 +577,7 @@ export function BookingForm({
                         />
                         <MapboxLocationField
                             id={`${uid}-leg-${index}-dropoff`}
-                            label={`Drop off location ${index + 1}`}
+                            label={t('fields.dropoffLocationN', { n: index + 1 })}
                             value={leg.dropoff}
                             coords={leg.dropoffCoords}
                             onChange={(v) => updateLeg(index, 'dropoff', v)}
@@ -549,7 +596,7 @@ export function BookingForm({
                                         : 'border-white/25 text-white hover:bg-white/10'
                                 }`}
                             >
-                                Remove
+                                {t('actions.remove')}
                             </button>
                         )}
                     </div>
@@ -565,7 +612,7 @@ export function BookingForm({
                                 : 'border-white/25 text-white hover:bg-white/10'
                         }`}
                     >
-                        Add stop
+                        {t('actions.addStop')}
                     </button>
                 )}
 
@@ -587,29 +634,35 @@ export function BookingForm({
                 <SelectField
                     key="duration"
                     id={`${uid}-duration`}
-                    label="Duration"
+                    label={t('fields.duration')}
                     value={duration}
                     onChange={setDuration}
-                    options={durationOptions.length ? durationOptions : HOUR_OPTIONS}
+                    options={localizedDurationOptions}
                 />,
             ];
         }
 
         if (tab === 'city_tour') {
+            const cityTourOptions = durationOptions.length
+                ? localizedDurationOptions
+                : CITY_TOUR_HOUR_OPTIONS.map((o) => ({
+                      ...o,
+                      label: localizedDurationLabel(o.value, t),
+                  }));
             return [
                 pickupField,
                 <SelectField
                     key="duration"
                     id={`${uid}-duration`}
-                    label="Duration"
+                    label={t('fields.duration')}
                     value={duration}
                     onChange={setDuration}
-                    options={durationOptions.length ? durationOptions : CITY_TOUR_HOUR_OPTIONS}
+                    options={cityTourOptions}
                 />,
                 <SelectField
                     key="passengers"
                     id={`${uid}-passengers`}
-                    label="Number of passengers"
+                    label={t('fields.passengers')}
                     value={passengers}
                     onChange={setPassengers}
                     options={passengerOptions.length ? passengerOptions : PASSENGER_OPTIONS}
@@ -623,15 +676,15 @@ export function BookingForm({
                 <SelectField
                     key="destination"
                     id={`${uid}-destination`}
-                    label="Destination"
+                    label={t('fields.destination')}
                     value={destination}
                     onChange={setDestination}
-                    options={gulfDestinations}
+                    options={localizedGulfDestinations}
                 />,
                 <SelectField
                     key="passengers"
                     id={`${uid}-passengers`}
-                    label="Number of passengers"
+                    label={t('fields.passengers')}
                     value={passengers}
                     onChange={setPassengers}
                     options={passengerOptions.length ? passengerOptions : PASSENGER_OPTIONS}
@@ -645,7 +698,7 @@ export function BookingForm({
                 <MapboxLocationField
                     key="school"
                     id={`${uid}-school`}
-                    label="School / university location"
+                    label={t('fields.schoolLocation')}
                     value={schoolLocation}
                     coords={schoolCoords}
                     onChange={(v) => {
@@ -660,7 +713,7 @@ export function BookingForm({
                 <SelectField
                     key="students"
                     id={`${uid}-students`}
-                    label="Number of students"
+                    label={t('fields.students')}
                     value={students}
                     onChange={setStudents}
                     options={studentOptions.length ? studentOptions : STUDENT_OPTIONS}
@@ -673,7 +726,7 @@ export function BookingForm({
             <MapboxLocationField
                 key="dropoff"
                 id={`${uid}-dropoff`}
-                label="Drop off location"
+                label={t('fields.dropoffLocation')}
                 value={dropoff}
                 coords={dropoffCoords}
                 onChange={(v) => {
@@ -698,7 +751,7 @@ export function BookingForm({
                       <div key={`bar-leg-${index}-pickup`} className={slot}>
                           <MapboxLocationField
                               id={`${uid}-leg-${index}-pickup`}
-                              label={`Pick up ${index + 1}`}
+                              label={t('fields.pickupN', { n: index + 1 })}
                               value={leg.pickup}
                               coords={leg.pickupCoords}
                               onChange={(v) => updateLeg(index, 'pickup', v)}
@@ -711,7 +764,7 @@ export function BookingForm({
                       <div key={`bar-leg-${index}-dropoff`} className={slot}>
                           <MapboxLocationField
                               id={`${uid}-leg-${index}-dropoff`}
-                              label={`Drop off ${index + 1}`}
+                              label={t('fields.dropoffN', { n: index + 1 })}
                               value={leg.dropoff}
                               coords={leg.dropoffCoords}
                               onChange={(v) => updateLeg(index, 'dropoff', v)}
@@ -730,7 +783,7 @@ export function BookingForm({
                               onClick={() => removeLeg(index)}
                               className="font-geist mb-1 shrink-0 cursor-pointer self-end rounded-full border border-ink-text/20 px-3 py-1.5 text-[12px] font-500 text-ink-text"
                           >
-                              Remove
+                              {t('actions.remove')}
                           </button>,
                       );
                   }
@@ -749,14 +802,14 @@ export function BookingForm({
                         onSubmit={submit}
                         className="mx-auto flex w-full max-w-5xl flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center sm:gap-3"
                     >
-                        {serviceOptions?.length ? (
+                        {localizedServiceOptions?.length ? (
                             <div className="flex w-full min-w-0 sm:w-[9.5rem] sm:max-w-[12rem] sm:flex-1">
                                 <SelectField
                                     id={`${uid}-service`}
-                                    label="Service"
+                                    label={t('services.service')}
                                     value={tab}
                                     onChange={onServiceChange}
-                                    options={serviceOptions}
+                                    options={localizedServiceOptions}
                                 />
                             </div>
                         ) : null}
@@ -767,7 +820,7 @@ export function BookingForm({
                                 onClick={addLeg}
                                 className="font-geist mb-1 shrink-0 cursor-pointer self-end rounded-full border border-ink-text/20 px-3 py-1.5 text-[12px] font-500 text-ink-text"
                             >
-                                Add stop
+                                {t('actions.addStop')}
                             </button>
                         ) : null}
                         {hasSchedule ? (
@@ -779,10 +832,10 @@ export function BookingForm({
                             <div className="flex w-full min-w-0 sm:w-[9.5rem] sm:max-w-[12rem] sm:flex-1">
                                 <SelectField
                                     id={`${uid}-term`}
-                                    label="Duration"
+                                    label={t('fields.term')}
                                     value={term}
                                     onChange={setTerm}
-                                    options={termOptions.length ? termOptions : SCHOOL_TERMS}
+                                    options={localizedTermOptions}
                                 />
                             </div>
                         )}
@@ -790,7 +843,7 @@ export function BookingForm({
                             type="submit"
                             className="font-geist flex h-11 w-full shrink-0 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-4 text-[14px] font-500 whitespace-nowrap text-white transition hover:bg-wine-600 sm:mb-0.5 sm:h-9 sm:w-auto"
                         >
-                            {submitLabel}
+                            {resolvedSubmitLabel}
                         </button>
                         {error ? (
                             <p className="font-geist m-0 w-full text-[12px] leading-4 text-wine-700" role="alert">
@@ -840,10 +893,10 @@ export function BookingForm({
                 ) : (
                     <SelectField
                         id={`${uid}-term`}
-                        label="Duration"
+                        label={t('fields.term')}
                         value={term}
                         onChange={setTerm}
-                        options={termOptions.length ? termOptions : SCHOOL_TERMS}
+                        options={localizedTermOptions}
                     />
                 )}
             </div>
@@ -858,25 +911,36 @@ export function BookingForm({
 }
 
 export function TabPills({ tab, setTab, tabs, className = '', tone = 'dark' }) {
+    const { t, i18n } = useTranslation('booking');
     const light = tone === 'light';
+    const localizedTabs = useMemo(
+        () =>
+            tabs.map((item) => ({
+                ...item,
+                label: SERVICE_I18N_KEYS[item.id]
+                    ? t(`services.${SERVICE_I18N_KEYS[item.id]}`)
+                    : item.label,
+            })),
+        [tabs, t, i18n.language],
+    );
     return (
         <div
             role="radiogroup"
-            aria-label="Trip type selection"
+            aria-label={t('services.aria')}
             className={`relative w-full max-w-full rounded-2xl border p-1.5 ${
                 light ? 'border-ink-text/15 bg-page' : 'bl-glass-dark border-white/25'
             } ${className}`}
         >
             <div className="-mx-0.5 flex gap-1 overflow-x-auto px-0.5 py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden">
-                {tabs.map((t) => {
-                    const active = tab === t.id;
+                {localizedTabs.map((item) => {
+                    const active = tab === item.id;
                     return (
                         <button
-                            key={t.id}
+                            key={item.id}
                             type="button"
                             role="radio"
                             aria-checked={active}
-                            onClick={() => setTab(t.id)}
+                            onClick={() => setTab(item.id)}
                             className={`font-geist shrink-0 rounded-full px-3 py-2.5 text-center text-[13px] leading-4 font-500 tracking-[0.15px] whitespace-nowrap transition sm:px-3.5 sm:text-[14px] sm:leading-5 lg:px-4 lg:text-[15px] ${
                                 active
                                     ? 'bg-wine-700 text-white shadow-sm'
@@ -885,7 +949,7 @@ export function TabPills({ tab, setTab, tabs, className = '', tone = 'dark' }) {
                                       : 'text-white hover:bg-white/10'
                             }`}
                         >
-                            {t.label}
+                            {item.label}
                         </button>
                     );
                 })}

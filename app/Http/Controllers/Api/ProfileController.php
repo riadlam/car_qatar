@@ -77,7 +77,7 @@ class ProfileController extends Controller
         $token = $user->createToken($request->input('device_name', 'web'))->plainTextToken;
 
         return response()->json([
-            'message' => 'Password updated successfully.',
+            'message' => __('api.profile.password_updated'),
             'user' => (new UserResource($user->fresh()))->resolve(),
             'token' => $token,
             'token_type' => 'Bearer',
@@ -93,7 +93,7 @@ class ProfileController extends Controller
         $user->delete();
 
         return response()->json([
-            'message' => 'Account deleted successfully.',
+            'message' => __('api.profile.account_deleted'),
         ]);
     }
 }

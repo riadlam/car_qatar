@@ -29,6 +29,6 @@ class EnsureCustomerOrPartner
             }
         }
 
-        abort(403, 'Only a customer or partner account can book.');
+        abort(403, __('api.middleware.customer_or_partner'));
     }
 }

@@ -1,35 +1,40 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { BIZ_IMG } from './assets';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const CARDS = [
-    {
-        title: 'Corporate travel',
-        body: 'Arrange business journeys for your employees, clients, or yourself with ease.',
-        href: '/corporations',
-        img: BIZ_IMG.corporate,
-    },
-    {
-        title: 'Travel agencies',
-        body: 'Earn more with a top-tier travel provider, integrated in your GDS.',
-        href: '/travel-agencies',
-        img: BIZ_IMG.agencies,
-    },
-    {
-        title: 'Strategic partnerships',
-        body: 'Gift your valuable customers our services via a bespoke business solution.',
-        href: '/strategic-partnerships',
-        img: BIZ_IMG.partnerships,
-    },
-];
-
 export default function Services() {
+    const { t } = useTranslation('marketing');
     const rootRef = useRef(null);
     const titleRef = useRef(null);
     const cardsRef = useRef(null);
+
+    const cards = useMemo(
+        () => [
+            {
+                title: t('business.services.corporate.title'),
+                body: t('business.services.corporate.body'),
+                href: '/corporations',
+                img: BIZ_IMG.corporate,
+            },
+            {
+                title: t('business.services.agencies.title'),
+                body: t('business.services.agencies.body'),
+                href: '/travel-agencies',
+                img: BIZ_IMG.agencies,
+            },
+            {
+                title: t('business.services.partnerships.title'),
+                body: t('business.services.partnerships.body'),
+                href: '/strategic-partnerships',
+                img: BIZ_IMG.partnerships,
+            },
+        ],
+        [t],
+    );
 
     useLayoutEffect(() => {
         const root = rootRef.current;
@@ -52,9 +57,9 @@ export default function Services() {
                         },
                     });
                 }
-                const cards = cardsRef.current?.children ? [...cardsRef.current.children] : [];
-                if (cards.length) {
-                    gsap.from(cards, {
+                const els = cardsRef.current?.children ? [...cardsRef.current.children] : [];
+                if (els.length) {
+                    gsap.from(els, {
                         y: 80,
                         opacity: 0,
                         stagger: 0.2,
@@ -77,28 +82,28 @@ export default function Services() {
     return (
         <section ref={rootRef} className="bg-page px-6 py-16 lg:px-12 lg:py-16">
             <div className="mx-auto max-w-[1440px]">
-                <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center justify-center gap-2 text-[14px] leading-5 text-muted">
+                <nav
+                    aria-label={t('common.breadcrumb')}
+                    className="mb-8 flex flex-wrap items-center justify-center gap-2 text-[14px] leading-5 text-muted"
+                >
                     <a href="/" className="cursor-pointer hover:text-ink-text">
-                        Home
+                        {t('common.home')}
                     </a>
                     <span aria-hidden="true">›</span>
-                    <span>Discover Reliable Corporate Transportation Services</span>
+                    <span>{t('business.services.breadcrumbCurrent')}</span>
                 </nav>
 
                 <h2
                     ref={titleRef}
                     className="font-fragment mb-10 text-center text-[48px] leading-[56px] font-400 tracking-[0.25px] text-wine-400 lg:mb-12 lg:text-[64px] lg:leading-[72px]"
                 >
-                    Tailored to you
+                    {t('business.services.title')}
                 </h2>
 
-                <div
-                    ref={cardsRef}
-                    className="flex flex-col gap-5 lg:flex-row lg:gap-5"
-                >
-                    {CARDS.map((c) => (
+                <div ref={cardsRef} className="flex flex-col gap-5 lg:flex-row lg:gap-5">
+                    {cards.map((c) => (
                         <article
-                            key={c.title}
+                            key={c.href}
                             className="flex min-w-0 flex-1 flex-col gap-2 rounded-2xl bg-white p-2 transition hover:bg-white lg:bg-transparent lg:hover:bg-white"
                         >
                             <div className="h-[340px] overflow-hidden rounded-lg lg:h-[256px]">
@@ -113,10 +118,10 @@ export default function Services() {
                                 </p>
                                 <a
                                     href={c.href}
-                                    aria-label={`Learn more about ${c.title}`}
+                                    aria-label={t('business.services.learnMoreAbout', { title: c.title })}
                                     className="font-geist mt-2 inline-flex min-h-11 w-fit cursor-pointer items-center justify-center rounded-full border border-wine-700 px-5 py-2 text-[16px] font-500 text-wine-700 transition hover:bg-page"
                                 >
-                                    Learn more
+                                    {t('business.services.learnMore')}
                                 </a>
                             </div>
                         </article>

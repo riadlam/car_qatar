@@ -1,0 +1,63 @@
+{
+  "eyebrow": "Partner portal",
+  "titleFallback": "Your partnership",
+  "sectionsAria": "Partner sections",
+  "tabs": {
+    "overview": "Overview",
+    "book": "Book a ride",
+    "rides": "Rides",
+    "wallet": "Wallet",
+    "earnings": "Earnings"
+  },
+  "actions": {
+    "logOut": "Log out",
+    "signingOut": "Signing out…",
+    "bookForGuest": "Book for a guest",
+    "startBooking": "Start booking",
+    "viewWalletHistory": "View wallet history",
+    "copyLink": "Copy guest payment link",
+    "preparing": "Preparing…",
+    "linkCopied": "Link copied"
+  },
+  "overview": {
+    "wallet": "Wallet",
+    "walletHint": "Use at checkout when balance covers the trip",
+    "earned": "Earned",
+    "earnedHint": "Completed rides only",
+    "unpaid": "Unpaid balance",
+    "unpaidHint": "Settled by AL MAJD admin",
+    "completedRides": "Completed rides",
+    "fee": "Fee: {{value}}"
+  },
+  "book": {
+    "title": "Book a ride for a guest",
+    "body": "Use the booking flow, enter the guest's details (not yourself), and checkout. You'll get a secure payment link to share with the guest."
+  },
+  "rides": {
+    "empty": "No partner bookings yet.",
+    "guest": "Guest",
+    "yourFee": "Your fee {{amount}}",
+    "status": {
+      "pendingPayment": "Pending payment",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "wallet": {
+    "helper": "Funds added by AL MAJD and trip payments from this wallet. Partner commission earnings are tracked separately under Earnings."
+  },
+  "earnings": {
+    "earned": "Earned",
+    "paidOut": "Paid out",
+    "balance": "Balance",
+    "settlementsNote": "Settlements are processed by AL MAJD — there is no claim button here.",
+    "empty": "No earnings yet. Fees appear after successful completed rides.",
+    "settlementPaid": "Settlement paid",
+    "ride": "Ride {{number}}"
+  },
+  "errors": {
+    "load": "Could not load partner portal.",
+    "refreshLink": "Could not refresh payment link."
+  }
+}

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import Hero from '../components/corporations/Hero';
 import Breadcrumb from '../components/corporations/Breadcrumb';
@@ -13,121 +15,132 @@ import Faqs from '../components/corporations/Faqs';
 import ScrollTop from '../components/corporations/ScrollTop';
 import { CORP_IMG, REGISTER_HREF } from '../components/corporations/assets';
 
-const SERVICE_CARDS = [
-    {
-        title: 'Business trips & meetings',
-        body: 'Ensure punctual arrivals, seamless departures, and foster strong professional relationships at every meeting.',
-        img: CORP_IMG.serviceBusiness,
-    },
-    {
-        title: 'City-to-City travel',
-        body: 'Effortlessly work while traveling City to City. Seamlessly travel between London to Manchester or Paris to Lyon, and more.',
-        img: CORP_IMG.serviceCity,
-        cta: 'Explore City-to-City',
-        href: '#',
-    },
-    {
-        title: 'Global airport transfers',
-        body: 'Experience seamless airport pick-ups and drop-offs, making your corporate travels hassle-free.',
-        img: CORP_IMG.serviceAirport,
-    },
-    {
-        title: 'Client & partner travel',
-        body: 'Impress clients and partners with exceptional chauffeur service, elevating their travel experience.',
-        img: CORP_IMG.servicePartner,
-    },
-];
-
-const SUSTAIN_CARDS = [
-    {
-        title: 'The new normal',
-        body: 'Electric vehicles are naturally incorporated into our Business Class and First Class in many cities. Our goal is to continue making sustainable travel more easily accessible by growing our electric vehicle fleet.',
-        img: CORP_IMG.sustainEv,
-    },
-    {
-        title: '100% carbon offset',
-        body: 'Whichever vehicle class you choose, we automatically offset the emissions with our carbon offset program.',
-        img: CORP_IMG.sustainCarbon,
-    },
-];
-
-const ARTICLE_CARDS = [
-    {
-        title: 'AL MAJD X Hudson Yards',
-        body: "Discover AL MAJD's partnership with Hudson Yards in NYC.",
-        img: CORP_IMG.articleHudson,
-        cta: 'Read the story',
-        href: '#',
-        badge: 'NEW',
-    },
-    {
-        title: 'Finding Flow in Business Travel: Report',
-        body: 'Why better business travel improves performance.',
-        img: CORP_IMG.articleFlow,
-        cta: 'Read the whitepaper',
-        href: '#',
-    },
-    {
-        title: 'Travel trends report',
-        body: 'Get an insight into how travel impacts productivity, backed with real data.',
-        img: CORP_IMG.articleTrends,
-        cta: 'Read the report',
-        href: '#',
-    },
-];
-
 export default function Corporations() {
+    const { t } = useTranslation('marketing');
+
+    const serviceCards = useMemo(
+        () => [
+            {
+                title: t('corporations.useCases.meetings.title'),
+                body: t('corporations.useCases.meetings.body'),
+                img: CORP_IMG.serviceBusiness,
+            },
+            {
+                title: t('corporations.useCases.cityToCity.title'),
+                body: t('corporations.useCases.cityToCity.body'),
+                img: CORP_IMG.serviceCity,
+                cta: t('corporations.useCases.cityToCity.cta'),
+                href: '#',
+            },
+            {
+                title: t('corporations.useCases.airport.title'),
+                body: t('corporations.useCases.airport.body'),
+                img: CORP_IMG.serviceAirport,
+            },
+            {
+                title: t('corporations.useCases.clients.title'),
+                body: t('corporations.useCases.clients.body'),
+                img: CORP_IMG.servicePartner,
+            },
+        ],
+        [t],
+    );
+
+    const sustainCards = useMemo(
+        () => [
+            {
+                title: t('corporations.sustainability.newNormal.title'),
+                body: t('corporations.sustainability.newNormal.body'),
+                img: CORP_IMG.sustainEv,
+            },
+            {
+                title: t('corporations.sustainability.offset.title'),
+                body: t('corporations.sustainability.offset.body'),
+                img: CORP_IMG.sustainCarbon,
+            },
+        ],
+        [t],
+    );
+
+    const articleCards = useMemo(
+        () => [
+            {
+                title: t('corporations.stories.hudson.title'),
+                body: t('corporations.stories.hudson.body'),
+                img: CORP_IMG.articleHudson,
+                cta: t('corporations.stories.hudson.cta'),
+                href: '#',
+                badge: t('common.newBadge'),
+            },
+            {
+                title: t('corporations.stories.flow.title'),
+                body: t('corporations.stories.flow.body'),
+                img: CORP_IMG.articleFlow,
+                cta: t('corporations.stories.flow.cta'),
+                href: '#',
+            },
+            {
+                title: t('corporations.stories.trends.title'),
+                body: t('corporations.stories.trends.body'),
+                img: CORP_IMG.articleTrends,
+                cta: t('corporations.stories.trends.cta'),
+                href: '#',
+            },
+        ],
+        [t],
+    );
+
     return (
         <SiteLayout>
             <Hero />
             <Breadcrumb />
-            <CardCarousel title="Corporate chauffeur services for every occasion" cards={SERVICE_CARDS} />
-            <CtaStrip label="Try our award-winning service" href="#get-in-touch" />
+            <CardCarousel title={t('corporations.carouselServices')} cards={serviceCards} />
+            <CtaStrip label={t('corporations.ctaTry')} href="#get-in-touch" />
             <Testimonial />
             <SeoSplit
-                title="A new level of chauffeur reliability"
-                body="Our global network of locally licensed and insured chauffeurs ensures a seamless transportation experience for corporate travel. Check out our case studies of happy corporate customers to hear more."
+                title={t('corporations.seo.reliability.title')}
+                body={t('corporations.seo.reliability.body')}
                 bullets={[
-                    'Availability in 60+ countries',
-                    'Skilled English-speaking chauffeurs',
-                    'Real-time tracking and notifications',
-                    'Modern fleet for a professional and productive travel',
+                    t('corporations.benefits.availability'),
+                    t('corporations.benefits.chauffeurs'),
+                    t('corporations.benefits.tracking'),
+                    t('corporations.benefits.fleet'),
                 ]}
                 image={CORP_IMG.seoReliability}
-                alt="A suited chauffeur looks out the open window of the limo he is driving."
+                alt={t('corporations.seo.reliability.alt')}
             />
             <SeoSplit
-                title="A relief from chasing invoices"
-                body="Simplify your bill management. Our automated invoicing system streamlines the process, while dedicated corporate support are ready to assist."
+                title={t('corporations.seo.invoicing.title')}
+                body={t('corporations.seo.invoicing.body')}
                 bullets={[
-                    'All-in-one platform for booking and reporting',
-                    'Automated invoicing that saves time',
-                    'Dedicated support & account managers',
-                    'Enjoy corporate rebates & login access for 500+ travelers',
+                    t('corporations.benefits.platform'),
+                    t('corporations.benefits.invoicing'),
+                    t('corporations.benefits.support'),
+                    t('corporations.benefits.rebates'),
                 ]}
                 image={CORP_IMG.seoInvoicing}
-                alt="Female passenger in backseat with phone; chauffeur holds door"
+                alt={t('corporations.seo.invoicing.alt')}
             />
-            <CtaStrip label="Create an account" href={REGISTER_HREF} />
+            <CtaStrip label={t('corporations.ctaCreate')} href={REGISTER_HREF} />
             <SeoSplit
-                title="Booking for your executives"
-                body="If you're a PA/EA or corporate booker that wants to manage your executive travel with ease using a booking platform designed for your fast-paced world, then you're in luck. We've dedicated a page to answer all your queries."
+                title={t('corporations.seo.bookers.title')}
+                body={t('corporations.seo.bookers.body')}
                 image={CORP_IMG.seoBookers}
-                alt="Stylish woman in back seat with shopping bags"
-                link={{ label: 'Learn more here', href: '/business' }}
+                alt={t('corporations.seo.bookers.alt')}
+                link={{ label: t('corporations.learnMore'), href: '/business' }}
             />
             <SeoSplit
-                title="By the hour"
-                body="This service helps businesses globally. No more waiting for different taxis. Maximize your productivity with our by-the-hour service."
+                title={t('corporations.seo.hourly.title')}
+                body={t('corporations.seo.hourly.body')}
                 image={CORP_IMG.seoHourly}
-                alt="Chauffeur smiles and adjusts control while driving"
-                link={{ label: 'by-the-hour service', href: '#' }}
+                alt={t('corporations.seo.hourly.alt')}
+                link={{ label: t('corporations.seo.hourly.link'), href: '#' }}
             />
             <Awards />
             <CalloutBanner />
-            <CardCarousel title="Sustainability initiatives" cards={SUSTAIN_CARDS} />
+            <CardCarousel title={t('corporations.carouselSustainability')} cards={sustainCards} />
             <Benefits />
-            <CardCarousel title="Check out our latest articles" cards={ARTICLE_CARDS} panel={false} />
+            <CardCarousel title={t('corporations.carouselArticles')} cards={articleCards} panel={false} />
             <ContactForm />
             <Faqs />
             <ScrollTop />

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { isActiveChauffeur, isCustomer, isPartnerAdmin, isPendingChauffeur } from './utils/roles';
 import { ToastProvider } from './context/ToastContext';
+import LocaleSync from './components/LocaleSync';
 import Skeleton from './components/ui/Skeleton';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -81,6 +82,7 @@ export default function App() {
     return (
         <AuthProvider>
             <ToastProvider>
+                <LocaleSync />
                 <BrowserRouter>
                     <Suspense fallback={<Skeleton variant="page" />}>
                         <Routes>

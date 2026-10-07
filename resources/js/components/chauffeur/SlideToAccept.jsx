@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const THUMB = 52;
 const PAD = 4;
@@ -14,6 +15,7 @@ export default function SlideToAccept({
     disabled = false,
     className = '',
 }) {
+    const { t } = useTranslation('chauffeur');
     const trackRef = useRef(null);
     const draggingRef = useRef(false);
     const startXRef = useRef(0);
@@ -103,7 +105,7 @@ export default function SlideToAccept({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(progress * 100)}
-            aria-label={`Slide to accept for ${amountLabel}`}
+            aria-label={t('slideAccept.aria', { amount: amountLabel })}
             aria-disabled={disabled || done}
         >
             {/* Fill wash as you drag */}
@@ -120,7 +122,7 @@ export default function SlideToAccept({
                     progress > 0.35 || done ? 'opacity-35' : 'opacity-100'
                 }`}
             >
-                {done ? 'Accepted' : amountLabel}
+                {done ? t('slideAccept.accepted') : amountLabel}
             </p>
 
             <button

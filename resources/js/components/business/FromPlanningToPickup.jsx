@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { BIZ_IMG, CREATE_ACCOUNT_HREF } from './assets';
@@ -6,6 +7,7 @@ import { BIZ_IMG, CREATE_ACCOUNT_HREF } from './assets';
 gsap.registerPlugin(ScrollTrigger);
 
 export default function FromPlanningToPickup() {
+    const { t } = useTranslation('marketing');
     const rootRef = useRef(null);
     const textRef = useRef(null);
     const imgRef = useRef(null);
@@ -55,23 +57,22 @@ export default function FromPlanningToPickup() {
                     className="w-full max-w-none flex-1 text-center lg:max-w-[33.33%] lg:text-left"
                 >
                     <h2 className="font-fragment m-0 mb-8 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[48px] sm:leading-[56px] lg:mb-10 lg:text-[64px] lg:leading-[72px]">
-                        From planning to pickup.
+                        {t('business.planning.title')}
                     </h2>
                     <h3 className="font-geist m-0 mb-8 text-[18px] leading-[26px] font-500 tracking-[0.15px] text-ink-text lg:text-[24px] lg:leading-8">
-                        Our platforms are built to make your airport transfers, commutes, and
-                        city-to-city journeys a breeze.
+                        {t('business.planning.body')}
                     </h3>
                     <a
                         href={CREATE_ACCOUNT_HREF}
                         className="font-geist inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-8 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
                     >
-                        Create a business account
+                        {t('business.planning.cta')}
                     </a>
                 </div>
                 <div ref={imgRef} className="w-full min-w-0 flex-[2]">
                     <img
                         src={BIZ_IMG.portal}
-                        alt="booking"
+                        alt={t('business.planning.imageAlt')}
                         width={2767}
                         height={1691}
                         className="h-auto w-full max-w-full object-contain"

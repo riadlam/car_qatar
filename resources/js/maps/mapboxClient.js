@@ -1,4 +1,5 @@
 import api from '../bootstrap';
+import i18n from '../i18n';
 
 const DEFAULT_CONFIG = {
     style_uri: 'mapbox://styles/mapbox/standard',
@@ -14,6 +15,12 @@ const DEFAULT_CONFIG = {
     status: 'active',
     has_public_token: false,
 };
+
+/** Mapbox Search / Geocoding language from active UI locale. */
+export function mapboxLanguage() {
+    const lng = String(i18n.language || 'en').split('-')[0].toLowerCase();
+    return lng === 'ar' ? 'ar' : 'en';
+}
 
 let cachedConfig = null;
 let configPromise = null;

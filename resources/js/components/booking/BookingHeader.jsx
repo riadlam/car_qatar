@@ -1,20 +1,16 @@
 import { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../landing/Logo';
 import TripEditor from './TripEditor';
-import { durationLabel, SCHOOL_TERMS, serviceLabel } from '../../data/bookingServices';
+import {
+    localizedDurationLabel,
+    localizedServiceLabel,
+    localizedTermLabel,
+    SCHOOL_TERMS,
+} from '../../data/bookingServices';
 import { useAuth } from '../../context/AuthContext';
-
-const SERVICES = [
-    { label: 'City-to-City rides', href: '/#services' },
-    { label: 'Chauffeur hailing', href: '/#services' },
-    { label: 'Airport transfers', href: '/#services' },
-    { label: 'Hourly hire', href: '/#services' },
-    { label: 'Chauffeur service', href: '/#services' },
-    { label: 'Limousine service', href: '/#services' },
-];
-
 
 function Chevron({ open }) {
     return (
@@ -92,16 +88,16 @@ function DateTimeIcon() {
     );
 }
 
-function formatTripDate(dateStr) {
+function formatTripDate(dateStr, locale) {
     const d = dateStr ? new Date(`${dateStr}T12:00:00`) : new Date();
     if (Number.isNaN(d.getTime())) {
-        return new Date().toLocaleDateString('en-US', {
+        return new Date().toLocaleDateString(locale, {
             weekday: 'short',
             month: 'long',
             day: 'numeric',
         });
     }
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleDateString(locale, {
         weekday: 'short',
         month: 'long',
         day: 'numeric',
@@ -122,6 +118,7 @@ function formatTripTime(timeStr) {
  * Booking-only header: trip chips + hamburger (menu like tablet, all breakpoints).
  */
 export default function BookingHeader() {
+    const { t, i18n } = useTranslation(['booking', 'common']);
     const [params, setParams] = useSearchParams();
     const location = useLocation();
     const { isAuthenticated, user } = useAuth();
@@ -131,35 +128,55 @@ export default function BookingHeader() {
     const [logoWidth, setLogoWidth] = useState(160);
     const [editorOpen, setEditorOpen] = useState(false);
     const [mobileAcc, setMobileAcc] = useState(null);
+    const dateLocale = i18n.language?.startsWith('ar') ? 'ar' : 'en-US';
     const profileLabel =
         user?.first_name?.trim() ||
         user?.name?.split?.(' ')?.[0] ||
-        'Profile';
+        t('header.profile');
+
+    const services = useMemo(
+        () => [
+            { label: t('header.cityToCity'), href: '/#services' },
+            { label: t('header.chauffeurHailing'), href: '/#services' },
+            { label: t('header.airportTransfers'), href: '/#services' },
+            { label: t('header.hourlyHire'), href: '/#services' },
+            { label: t('header.chauffeurService'), href: '/#services' },
+            { label: t('header.limousineService'), href: '/#services' },
+        ],
+        [t],
+    );
 
     const trip = useMemo(() => {
         const service = params.get('service') || '';
         const mode = params.get('mode') || '';
-        const pickup = params.get('pickup') || 'Pickup';
+        const pickup = params.get('pickup') || t('checkout.defaults.pickup');
         const dropoff = params.get('dropoff') || '';
         const duration = params.get('duration') || '';
-        const term = SCHOOL_TERMS.find((item) => item.value === params.get('term'))?.label;
+        const termValue = params.get('term');
+        const term = termValue
+            ? localizedTermLabel(
+                  termValue,
+                  t,
+                  SCHOOL_TERMS.find((item) => item.value === termValue)?.label,
+              )
+            : '';
         let destination = dropoff;
         if (!destination && (service === 'by_hour' || service === 'city_tour' || mode === 'hourly')) {
-            destination = duration ? durationLabel(duration) : 'Duration';
+            destination = duration ? localizedDurationLabel(duration, t) : t('fields.duration');
         }
         if (service === 'school_chauffeured') {
-            destination = dropoff || term || 'School';
+            destination = dropoff || term || t('header.school');
         }
-        if (!destination) destination = serviceLabel(service || 'one_way');
+        if (!destination) destination = localizedServiceLabel(service || 'one_way', t);
         const date = params.get('date');
         const time = params.get('time');
         return {
             pickup,
             destination,
-            dateLabel: date ? formatTripDate(date) : 'Date',
-            timeLabel: time ? formatTripTime(time) : term || 'Time',
+            dateLabel: date ? formatTripDate(date, dateLocale) : t('header.date'),
+            timeLabel: time ? formatTripTime(time) : term || t('header.time'),
         };
-    }, [params]);
+    }, [params, t, dateLocale]);
 
     useEffect(() => {
         document.body.classList.toggle('menu-open', open);
@@ -243,7 +260,7 @@ export default function BookingHeader() {
             <div className="relative mx-auto flex h-[72px] w-full max-w-[100vw] items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:h-[80px] lg:px-8">
                 <motion.a
                     href="/"
-                    aria-label="Go to Homepage"
+                    aria-label={t('header.homepage')}
                     aria-hidden={editorOpen}
                     tabIndex={editorOpen ? -1 : 0}
                     initial={false}
@@ -296,7 +313,7 @@ export default function BookingHeader() {
                     )}
                     {editorOpen && (
                         <p className="font-geist m-0 text-[13px] font-500 tracking-[0.15px] text-ink-text/60">
-                            Edit this trip
+                            {t('header.editThisTrip')}
                         </p>
                     )}
                     </AnimatePresence>
@@ -312,7 +329,7 @@ export default function BookingHeader() {
                         setOpen((v) => !v);
                     }}
                     className="nav-burger nav-burger--light relative z-10 flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border border-ink-text/12"
-                    aria-label={editorOpen ? 'Close trip editor' : 'Toggle menu'}
+                    aria-label={editorOpen ? t('header.closeEditor') : t('header.toggleMenu')}
                     aria-expanded={open}
                 >
                     <span className={`h-px w-5 bg-ink-text transition-all ${open || editorOpen ? 'translate-y-[7px] rotate-45' : ''}`} />
@@ -371,7 +388,7 @@ export default function BookingHeader() {
                     >
                         <ul className="mx-auto flex max-h-[calc(100svh-72px)] max-w-lg flex-col overflow-y-auto px-4 py-4 sm:px-6 lg:max-w-xl">
                             {[
-                                { key: 'services', label: 'Our services', items: SERVICES },
+                                { key: 'services', label: t('header.ourServices'), items: services },
                             ].map((group) => (
                                 <li key={group.key} className="border-b border-ink-text/8">
                                     <button
@@ -413,7 +430,7 @@ export default function BookingHeader() {
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    Business solutions
+                                    {t('common:footer.businessSolutions')}
                                 </a>
                             </li>
                             <li>
@@ -422,7 +439,7 @@ export default function BookingHeader() {
                                     onClick={() => setOpen(false)}
                                     className="font-geist block border-b border-ink-text/8 py-3.5 text-[16px] text-ink-text"
                                 >
-                                    About us
+                                    {t('common:nav.aboutUs')}
                                 </a>
                             </li>
                             <li className="mt-3 flex flex-col gap-3 pb-2">
@@ -442,7 +459,7 @@ export default function BookingHeader() {
                                         className="font-geist flex items-center justify-center gap-2 rounded-full border border-ink-text/15 py-3 text-ink-text"
                                     >
                                         <UserIcon />
-                                        Sign in / Sign up
+                                        {t('header.signInUp')}
                                     </Link>
                                 )}
                                 <button
@@ -450,7 +467,7 @@ export default function BookingHeader() {
                                     onClick={openEditor}
                                     className="font-geist rounded-full bg-wine-700 py-3 text-center font-500 text-white"
                                 >
-                                    Edit trip
+                                    {t('page.editTrip')}
                                 </button>
                             </li>
                         </ul>

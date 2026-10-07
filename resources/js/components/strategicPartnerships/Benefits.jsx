@@ -1,42 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SP_IMG } from './assets';
-
-const ROWS = [
-    [
-        {
-            icon: SP_IMG.iconGlobal,
-            title: 'Global coverage',
-            body: 'Consistent and reliable service in over 60 countries worldwide. Local expertise guaranteed.',
-        },
-        {
-            icon: SP_IMG.iconShield,
-            title: 'Compliance and safety',
-            body: 'Travel confidently in clean, premium vehicles driven by licensed and insured professionals.',
-        },
-        {
-            icon: SP_IMG.iconTeam,
-            title: 'Priority support',
-            body: 'Dedicated support team available 24/7 for any day-to-day needs and on-site requirements.',
-        },
-    ],
-    [
-        {
-            icon: SP_IMG.iconCurrency,
-            title: 'Competitive pricing',
-            body: 'All-inclusive pricing based on the shortest possible distance and fixed at the time of booking.',
-        },
-        {
-            icon: SP_IMG.iconKey,
-            title: 'Custom business solutions',
-            body: 'Easily integrate custom turn-key solutions through an API to manage complimentary services.',
-        },
-        {
-            icon: SP_IMG.iconFootprint,
-            title: 'Sustainable travel',
-            body: 'We proudly offer an array of EVs in select cities, and ensure our carbon footprint is offset!',
-        },
-    ],
-];
 
 function BenefitRow({ items }) {
     const scrollerRef = useRef(null);
@@ -99,14 +63,56 @@ function BenefitRow({ items }) {
 }
 
 export default function Benefits() {
+    const { t } = useTranslation('marketing');
+
+    const rows = useMemo(
+        () => [
+            [
+                {
+                    icon: SP_IMG.iconGlobal,
+                    title: t('strategicPartnerships.benefitsGrid.coverage.title'),
+                    body: t('strategicPartnerships.benefitsGrid.coverage.body'),
+                },
+                {
+                    icon: SP_IMG.iconShield,
+                    title: t('strategicPartnerships.benefitsGrid.compliance.title'),
+                    body: t('strategicPartnerships.benefitsGrid.compliance.body'),
+                },
+                {
+                    icon: SP_IMG.iconTeam,
+                    title: t('strategicPartnerships.benefitsGrid.support.title'),
+                    body: t('strategicPartnerships.benefitsGrid.support.body'),
+                },
+            ],
+            [
+                {
+                    icon: SP_IMG.iconCurrency,
+                    title: t('strategicPartnerships.benefitsGrid.pricing.title'),
+                    body: t('strategicPartnerships.benefitsGrid.pricing.body'),
+                },
+                {
+                    icon: SP_IMG.iconKey,
+                    title: t('strategicPartnerships.benefitsGrid.custom.title'),
+                    body: t('strategicPartnerships.benefitsGrid.custom.body'),
+                },
+                {
+                    icon: SP_IMG.iconFootprint,
+                    title: t('strategicPartnerships.benefitsGrid.sustain.title'),
+                    body: t('strategicPartnerships.benefitsGrid.sustain.body'),
+                },
+            ],
+        ],
+        [t],
+    );
+
     return (
         <section className="bg-page px-6 py-12 lg:px-12 lg:py-16">
             <div className="mx-auto max-w-[1170px]">
                 <h2 className="font-fragment m-0 mb-10 text-center text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10 lg:mb-12 lg:text-[40px] lg:leading-[48px]">
-                    Experience our corporate benefits
+                    {t('strategicPartnerships.benefitsGrid.title')}
                 </h2>
                 <div className="flex flex-col gap-8 lg:gap-12">
-                    {ROWS.map((row, i) => (
+                    {rows.map((row, i) => (
                         <BenefitRow key={i} items={row} />
                     ))}
                 </div>

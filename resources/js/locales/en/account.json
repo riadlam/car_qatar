@@ -1,0 +1,107 @@
+{
+  "title": "Account",
+  "subtitle": "Manage your profile, payments, and preferences.",
+  "chauffeurPortal": "Chauffeur portal",
+  "partnerPortal": "Partner portal",
+  "logOut": "Log out",
+  "signingOut": "Signing out…",
+  "edit": "Edit",
+  "empty": "—",
+  "sections": {
+    "personal": "Personal information",
+    "email": "Email address",
+    "password": "Password",
+    "wallet": "Wallet",
+    "paymentMethods": "Payment methods",
+    "notifications": "Notifications",
+    "communicationLanguage": "Communication language",
+    "danger": "Delete account"
+  },
+  "fields": {
+    "accountType": "Account type",
+    "name": "Name",
+    "mobile": "Mobile number",
+    "company": "Company",
+    "preferredLanguage": "Preferred language",
+    "streetAddress": "Street address",
+    "email": "Email address",
+    "password": "Password",
+    "passwordMasked": "••••••••",
+    "marketingEmails": "Marketing emails",
+    "bookingNotifications": "Booking notifications",
+    "language": "Language",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password"
+  },
+  "accountTypes": {
+    "individual": "Individual",
+    "company": "Company",
+    "chauffeur": "Chauffeur"
+  },
+  "notifications": {
+    "on": "On",
+    "off": "Off",
+    "onEmail": "On (Email)",
+    "onSms": "On (SMS)",
+    "onEmailSms": "On (Email & SMS)"
+  },
+  "languages": {
+    "en": "English",
+    "ar": "العربية",
+    "noPreference": "No preference"
+  },
+  "titles": {
+    "mr": "Mr.",
+    "mrs": "Mrs.",
+    "ms": "Ms.",
+    "mx": "Mx."
+  },
+  "modals": {
+    "closeAria": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "editName": "Edit name",
+    "editMobile": "Edit mobile number",
+    "editCompany": "Edit company",
+    "preferredLanguage": "Preferred language",
+    "editAddress": "Edit street address",
+    "editEmail": "Edit email address",
+    "changePassword": "Change password",
+    "updatePassword": "Update password",
+    "marketingEmails": "Marketing emails",
+    "bookingNotifications": "Booking notifications",
+    "communicationLanguage": "Communication language",
+    "deleteAccount": "Delete account",
+    "companyPlaceholder": "Company name",
+    "addressPlaceholder": "Street address"
+  },
+  "wallet": {
+    "balance": "Balance",
+    "helper": "Only AL MAJD admin can add funds to your wallet.",
+    "viewHistory": "View history"
+  },
+  "cards": {
+    "add": "Add card",
+    "remove": "Remove",
+    "empty": "No payment methods saved yet.",
+    "removeError": "Could not remove this card.",
+    "exp": "Exp {{expiry}}"
+  },
+  "delete": {
+    "warning": "This permanently deletes your account. This action cannot be undone.",
+    "confirm": "Delete account"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "passwordLength": "Password must be at least 8 characters.",
+    "passwordMatch": "New passwords do not match."
+  },
+  "chauffeurStatus": {
+    "pending": "Application pending",
+    "active": "Active",
+    "declined": "Declined",
+    "inactive": "Inactive"
+  }
+}

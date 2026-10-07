@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PricingRules;
 
+use App\Filament\Concerns\RequiresFinanceRole;
 use App\Filament\Resources\PricingRules\Pages\CreatePricingRule;
 use App\Filament\Resources\PricingRules\Pages\EditPricingRule;
 use App\Filament\Resources\PricingRules\Pages\ListPricingRules;
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PricingRuleResource extends Resource
 {
+    use RequiresFinanceRole;
+
     protected static ?string $model = PricingRule::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pricing';

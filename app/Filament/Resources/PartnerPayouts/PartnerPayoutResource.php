@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PartnerPayouts;
 
+use App\Filament\Concerns\RequiresFinanceRole;
 use App\Filament\Resources\PartnerPayouts\Pages\CreatePartnerPayout;
 use App\Filament\Resources\PartnerPayouts\Pages\EditPartnerPayout;
 use App\Filament\Resources\PartnerPayouts\Pages\ListPartnerPayouts;
@@ -17,6 +18,8 @@ use UnitEnum;
 
 class PartnerPayoutResource extends Resource
 {
+    use RequiresFinanceRole;
+
     protected static ?string $model = PartnerPayout::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

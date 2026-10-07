@@ -4,7 +4,6 @@ namespace App\Filament\Resources\RideOffers\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -22,9 +21,20 @@ class RideOfferForm
                             ->relationship('booking', 'booking_number')
                             ->searchable()
                             ->required(),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'offered' => 'Offered',
+                                'accepted' => 'Accepted',
+                                'declined' => 'Declined',
+                                'rejected' => 'Rejected',
+                                'expired' => 'Expired',
+                                'withdrawn' => 'Withdrawn',
+                                'cancelled' => 'Cancelled',
+                            ])
                             ->required()
-                            ->default('pending'),
+                            ->default('pending')
+                            ->native(false),
                         Select::make('chauffeur_id')
                             ->relationship('chauffeur', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) => $record->user?->name ?: 'Chauffeur #'.$record->id)
@@ -38,9 +48,13 @@ class RideOfferForm
                 Section::make('Timing')
                     ->columns(2)
                     ->schema([
-                        DateTimePicker::make('offered_at'),
+                        DateTimePicker::make('offered_at')
+                            ->disabled()
+                            ->dehydrated(false),
                         DateTimePicker::make('expires_at'),
-                        DateTimePicker::make('responded_at'),
+                        DateTimePicker::make('responded_at')
+                            ->disabled()
+                            ->dehydrated(false),
                         Textarea::make('notes')
                             ->default(null)
                             ->columnSpanFull(),

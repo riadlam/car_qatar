@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Countries\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -18,20 +19,33 @@ class CountryForm
                         TextInput::make('name')
                             ->required(),
                         TextInput::make('iso2')
-                            ->required(),
-                        TextInput::make('iso3')
-                            ->required(),
-                        TextInput::make('phone_code')
-                            ->tel()
-                            ->default(null),
-                        TextInput::make('default_currency')
+                            ->label('ISO2')
                             ->required()
-                            ->default('QAR'),
+                            ->maxLength(2)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (?string $state, callable $set, callable $get): void {
+                                if (filled($get('iso3')) || blank($state)) {
+                                    return;
+                                }
+
+                                $iso2 = strtoupper((string) $state);
+                                $set('iso3', strlen($iso2) === 2 ? $iso2.'X' : null);
+                            }),
+                        TextInput::make('iso3')
+                            ->maxLength(3)
+                            ->required()
+                            ->dehydrated()
+                            ->hidden(),
                         TextInput::make('timezone')
                             ->default(null),
-                        TextInput::make('status')
+                        Select::make('status')
+                            ->options([
+                                'active' => 'Active',
+                                'inactive' => 'Inactive',
+                            ])
                             ->required()
-                            ->default('active'),
+                            ->default('active')
+                            ->native(false),
                     ]),
             ]);
     }

@@ -23,7 +23,7 @@ class SeatAddonsTable
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('default_price')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable(),
                 TextColumn::make('currency')
                     ->searchable()

@@ -1,0 +1,107 @@
+{
+  "title": "الحساب",
+  "subtitle": "أدِر ملفك الشخصي والمدفوعات والتفضيلات.",
+  "chauffeurPortal": "بوابة السائق",
+  "partnerPortal": "بوابة الشريك",
+  "logOut": "تسجيل الخروج",
+  "signingOut": "جاري تسجيل الخروج…",
+  "edit": "تعديل",
+  "empty": "—",
+  "sections": {
+    "personal": "المعلومات الشخصية",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "wallet": "المحفظة",
+    "paymentMethods": "وسائل الدفع",
+    "notifications": "الإشعارات",
+    "communicationLanguage": "لغة التواصل",
+    "danger": "حذف الحساب"
+  },
+  "fields": {
+    "accountType": "نوع الحساب",
+    "name": "الاسم",
+    "mobile": "رقم الجوال",
+    "company": "الشركة",
+    "preferredLanguage": "اللغة المفضلة",
+    "streetAddress": "عنوان الشارع",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "passwordMasked": "••••••••",
+    "marketingEmails": "رسائل التسويق",
+    "bookingNotifications": "إشعارات الحجز",
+    "language": "اللغة",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة"
+  },
+  "accountTypes": {
+    "individual": "فرد",
+    "company": "شركة",
+    "chauffeur": "سائق"
+  },
+  "notifications": {
+    "on": "تشغيل",
+    "off": "إيقاف",
+    "onEmail": "تشغيل (البريد)",
+    "onSms": "تشغيل (SMS)",
+    "onEmailSms": "تشغيل (البريد وSMS)"
+  },
+  "languages": {
+    "en": "English",
+    "ar": "العربية",
+    "noPreference": "بدون تفضيل"
+  },
+  "titles": {
+    "mr": "السيد",
+    "mrs": "السيدة",
+    "ms": "الآنسة",
+    "mx": "Mx."
+  },
+  "modals": {
+    "closeAria": "إغلاق",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "saving": "جاري الحفظ…",
+    "editName": "تعديل الاسم",
+    "editMobile": "تعديل رقم الجوال",
+    "editCompany": "تعديل الشركة",
+    "preferredLanguage": "اللغة المفضلة",
+    "editAddress": "تعديل عنوان الشارع",
+    "editEmail": "تعديل البريد الإلكتروني",
+    "changePassword": "تغيير كلمة المرور",
+    "updatePassword": "تحديث كلمة المرور",
+    "marketingEmails": "رسائل التسويق",
+    "bookingNotifications": "إشعارات الحجز",
+    "communicationLanguage": "لغة التواصل",
+    "deleteAccount": "حذف الحساب",
+    "companyPlaceholder": "اسم الشركة",
+    "addressPlaceholder": "عنوان الشارع"
+  },
+  "wallet": {
+    "balance": "الرصيد",
+    "helper": "يمكن لإدارة المجد فقط إضافة رصيد إلى محفظتك.",
+    "viewHistory": "عرض السجل"
+  },
+  "cards": {
+    "add": "إضافة بطاقة",
+    "remove": "إزالة",
+    "empty": "لا توجد وسائل دفع محفوظة بعد.",
+    "removeError": "تعذر إزالة هذه البطاقة.",
+    "exp": "انتهاء {{expiry}}"
+  },
+  "delete": {
+    "warning": "سيؤدي هذا إلى حذف حسابك نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+    "confirm": "حذف الحساب"
+  },
+  "errors": {
+    "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "passwordLength": "يجب أن تكون كلمة المرور ٨ أحرف على الأقل.",
+    "passwordMatch": "كلمتا المرور الجديدتان غير متطابقتين."
+  },
+  "chauffeurStatus": {
+    "pending": "الطلب قيد المراجعة",
+    "active": "نشط",
+    "declined": "مرفوض",
+    "inactive": "غير نشط"
+  }
+}

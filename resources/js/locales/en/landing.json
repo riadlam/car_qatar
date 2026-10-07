@@ -1,0 +1,196 @@
+{
+  "hero": {
+    "ariaLabel": "Hero section",
+    "title": "Your chauffeur awaits.",
+    "subtitle": "Premium private travel across Qatar and beyond."
+  },
+  "services": {
+    "sectionTitle": "How AL MAJD works",
+    "airport": {
+      "tag": "Airport transfers",
+      "title": "Smooth landings, every time.",
+      "copy": "Delayed flight? Chauffeurs track arrivals and adjust accordingly. Plus, you have 1 hour of complimentary wait time just in case."
+    },
+    "hourly": {
+      "tag": "Hourly and full day hire",
+      "title": "Seize the day.",
+      "copy": "Reserve a dedicated chauffeur from 2 to 24 hours. They'll be on standby as long as you need them."
+    },
+    "cityToCity": {
+      "tag": "City-to-city",
+      "title": "Between cities, done better.",
+      "copy": "Turn long-distance journeys into time well spent. Arrive refreshed, not stressed."
+    },
+    "enterprise": {
+      "tag": "Enterprise and agency solutions",
+      "title": "Corporate travel, simplified.",
+      "copy": "One platform for companies and agencies to book, track, and account for every journey."
+    },
+    "headline": "Arrive at your best.",
+    "subhead": "Effortless journeys, tailored to you.",
+    "learnMore": "Learn more",
+    "bookAria": "Book services",
+    "goToSlide": "Go to slide {{n}}"
+  },
+  "experience": {
+    "sectionTitle": "The AL MAJD experience",
+    "headline": "Step in. Breathe out.",
+    "subhead": "Thoughtful details and discreet service transform every journey into your personal sanctuary.",
+    "welcome": {
+      "title": "A welcome like no other",
+      "copy": "The door is opened for you. Your luggage is stowed. Everything is taken care of."
+    },
+    "tone": {
+      "title": "You set the tone",
+      "copy": "Sit back and relax. Music and temperature will be adjusted to your preferences."
+    },
+    "recharge": {
+      "title": "Recharge your batteries",
+      "copy": "Stay connected on the go with universal chargers for iOS and Android."
+    }
+  },
+  "excellence": {
+    "sectionTitle": "Excellence in every detail",
+    "worldwide": {
+      "title": "Available worldwide",
+      "copy": "Expert local chauffeurs in 500+ cities"
+    },
+    "vehicles": {
+      "title": "High-end vehicles",
+      "copy": "Only the best recent models"
+    },
+    "safe": {
+      "title": "Safe travels",
+      "copy": "Trained professionals and reliable pickups"
+    },
+    "headline": "Expect excellence.",
+    "subhead": "Leave the car refreshed and ready for what's next."
+  },
+  "fleet": {
+    "titleBefore": "Only the finest",
+    "titleAccent": "machines.",
+    "businessVan": {
+      "name": "Business Van",
+      "line": "Mercedes-Benz V-Class or similar",
+      "seats": "5 guests · 5 bags"
+    },
+    "businessClass": {
+      "name": "Business Class",
+      "line": "Mercedes-Benz E-Class or similar"
+    },
+    "firstClass": {
+      "name": "First Class",
+      "line": "Mercedes-Benz S-Class or similar"
+    },
+    "viewFleet": "Explore the fleet",
+    "eyebrow": "The fleet"
+  },
+  "appBand": {
+    "title": "We move with you.",
+    "subtitle": "Have all your journeys in the palm of your hand with the AL MAJD app.",
+    "appStore": "Download on the App Store",
+    "googlePlay": "Get it on Google Play",
+    "platformAlt": "AL MAJD platform"
+  },
+  "cta": {
+    "titleBefore": "Hotel or airport —",
+    "titleAccent": "we'll be there.",
+    "bookTransfer": "Book a transfer",
+    "learnMore": "Learn more",
+    "eyebrow": "Book your Qatar transfer",
+    "subtitle": "Reserve your Doha hotel ↔ Hamad Airport transfer in moments. Experience the AL MAJD difference.",
+    "exploreServices": "Explore services",
+    "imageAlt": "Luxury car on the open road"
+  },
+  "sustainability": {
+    "title": "Sustainability partners",
+    "climatePledge": "Climate Pledge",
+    "leaders": "Leaders",
+    "southPole": "South Pole"
+  },
+  "marquee": {
+    "places": {
+      "hamadAirport": "Hamad Airport",
+      "westBay": "West Bay",
+      "thePearl": "The Pearl",
+      "lusail": "Lusail",
+      "msheireb": "Msheireb",
+      "corniche": "Corniche",
+      "katara": "Katara",
+      "alWaab": "Al Waab",
+      "educationCity": "Education City",
+      "souqWaqif": "Souq Waqif",
+      "alSadd": "Al Sadd",
+      "dohaHotels": "Doha Hotels"
+    }
+  },
+  "footer": {
+    "company": {
+      "title": "Company",
+      "howItWorks": "How AL MAJD works",
+      "career": "Career",
+      "press": "Press",
+      "blog": "Blog",
+      "greenInitiatives": "Green initiatives",
+      "becomeChauffeurPartner": "Become a chauffeur partner"
+    },
+    "business": {
+      "title": "AL MAJD for Business",
+      "overview": "Overview",
+      "corporations": "Corporations",
+      "travelAgencies": "Travel agencies",
+      "strategicPartnerships": "Strategic partnerships"
+    },
+    "topCities": {
+      "title": "Top cities",
+      "doha": "Doha",
+      "alRayyan": "Al Rayyan",
+      "lusail": "Lusail",
+      "alWakrah": "Al Wakrah",
+      "alKhor": "Al Khor",
+      "mesaieed": "Mesaieed",
+      "allCities": "All cities"
+    },
+    "explore": {
+      "title": "Explore",
+      "cityToCityRides": "City-to-city rides",
+      "limousineService": "Limousine service",
+      "chauffeurService": "Chauffeur service",
+      "privateCarService": "Private car service",
+      "groundTransportation": "Ground transportation",
+      "airportTransfer": "Airport transfer",
+      "allCountries": "All countries"
+    },
+    "cityRoutes": {
+      "title": "City-to-City rides",
+      "nyEastHampton": "New York - East Hampton",
+      "laSanDiego": "Los Angeles - San Diego",
+      "miamiPalmBeach": "Miami - Palm Beach",
+      "londonBristol": "London - Bristol",
+      "dubaiAbuDhabi": "Dubai - Abu Dhabi",
+      "parisReims": "Paris - Reims"
+    },
+    "legal": {
+      "terms": "Terms",
+      "privacy": "Privacy policy",
+      "legalNotice": "Legal notice",
+      "accessibility": "Accessibility"
+    },
+    "social": {
+      "linkedin": "LinkedIn",
+      "instagram": "Instagram",
+      "facebook": "Facebook",
+      "tiktok": "TikTok",
+      "youtube": "YouTube"
+    },
+    "copyright": "©{{year}} AL MAJD",
+    "appStore": "Download on the App Store",
+    "googlePlay": "Get it on Google Play"
+  },
+  "globalReach": {
+    "title": "Wherever you go",
+    "subtitle": "Local chauffeurs ready across the Gulf and major destinations.",
+    "line1": "Set your pickup in over 64 countries.",
+    "line2": "We'll be there on time."
+  }
+}

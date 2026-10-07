@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Wallets;
 
+use App\Filament\Concerns\RequiresFinanceRole;
 use App\Filament\Resources\Wallets\Pages\ListWallets;
 use App\Filament\Resources\Wallets\Pages\ViewWallet;
 use App\Filament\Resources\Wallets\RelationManagers\TransactionsRelationManager;
@@ -17,6 +18,8 @@ use UnitEnum;
 
 class WalletResource extends Resource
 {
+    use RequiresFinanceRole;
+
     protected static ?string $model = Wallet::class;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

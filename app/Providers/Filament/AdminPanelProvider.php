@@ -9,6 +9,7 @@ use App\Filament\Widgets\LiveTripsWidget;
 use App\Filament\Widgets\NeedsAttentionWidget;
 use App\Filament\Widgets\RevenueTrendChart;
 use App\Filament\Widgets\StatsOverview;
+use App\Http\Middleware\ForceFilamentLocale;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -92,6 +93,7 @@ class AdminPanelProvider extends PanelProvider
                 LatestBookings::class,
             ])
             ->middleware([
+                ForceFilamentLocale::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

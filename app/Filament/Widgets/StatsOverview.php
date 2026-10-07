@@ -47,22 +47,12 @@ class StatsOverview extends StatsOverviewWidget
             ->whereIn('status', ['pending', 'offered'])
             ->count();
 
-        $revenue7d = Booking::query()
-            ->where('status', BookingStatus::Completed)
-            ->where(function ($query) {
-                $query
-                    ->where('payment_status', PaymentStatus::Paid)
-                    ->orWhere('payment_status', PaymentStatus::Authorized);
-            })
-            ->where('completed_at', '>=', $weekAgo)
-            ->sum('total_amount');
-
         $cancelled7d = Booking::query()
             ->where('status', BookingStatus::Cancelled)
             ->where('cancelled_at', '>=', $weekAgo)
             ->count();
 
-        return [
+        $stats = [
             Stat::make('Live trips', (string) $liveTrips)
                 ->description('Assigned or in progress')
                 ->descriptionIcon('heroicon-m-truck')
@@ -83,15 +73,32 @@ class StatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-bell-alert')
                 ->color('info')
                 ->url(BookingResource::getUrl('index')),
-            Stat::make('Revenue (7 days)', number_format((float) $revenue7d, 2).' QAR')
-                ->description('Completed & paid')
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color('success'),
             Stat::make('Cancelled (7 days)', (string) $cancelled7d)
                 ->description('Last seven days')
                 ->descriptionIcon('heroicon-m-x-circle')
                 ->color('danger')
                 ->url(BookingResource::getUrl('index')),
         ];
+
+        if (auth()->user()?->canManageFinance()) {
+            $revenue7d = Booking::query()
+                ->where('status', BookingStatus::Completed)
+                ->where(function ($query) {
+                    $query
+                        ->where('payment_status', PaymentStatus::Paid)
+                        ->orWhere('payment_status', PaymentStatus::Authorized);
+                })
+                ->where('completed_at', '>=', $weekAgo)
+                ->sum('total_amount');
+
+            array_splice($stats, 4, 0, [
+                Stat::make('Revenue (7 days)', number_format((float) $revenue7d, 2).' QAR')
+                    ->description('Completed & paid')
+                    ->descriptionIcon('heroicon-m-banknotes')
+                    ->color('success'),
+            ]);
+        }
+
+        return $stats;
     }
 }

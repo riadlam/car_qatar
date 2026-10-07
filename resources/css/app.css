@@ -308,6 +308,18 @@
         font-family: var(--font-ar-modern);
     }
 
+    /* App-wide Arabic UI: prefer Arabic webfonts when dir=rtl */
+    html.lang-ar .font-geist,
+    html.lang-ar .font-fragment,
+    html[dir='rtl'] .font-geist,
+    html[dir='rtl'] .font-fragment {
+        font-family: var(--font-ar-body), 'Amiri', serif;
+    }
+    html.lang-ar .font-fragment,
+    html[dir='rtl'] .font-fragment {
+        font-family: var(--font-ar-display), 'Aref Ruqaa', serif;
+    }
+
     .gold-border-glow {
         box-shadow:
             0 0 0 1px rgba(201, 162, 75, 0.25),
