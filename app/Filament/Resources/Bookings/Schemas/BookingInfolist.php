@@ -164,22 +164,130 @@ class BookingInfolist
                             ->state(fn (Booking $record): ?string => self::cancelLine($record, 'chauffeur')),
                     ]),
                 Section::make('Timeline')
-                    ->columns(3)
-                    ->collapsed()
+                    ->description('When the chauffeur tapped each status button in the app — use gaps to spot delays or misuse.')
+                    ->columns(2)
                     ->schema([
-                        TextEntry::make('completed_at')
-                            ->dateTime('M j, Y H:i')
-                            ->placeholder('—'),
                         TextEntry::make('created_at')
-                            ->label('Created')
-                            ->dateTime('M j, Y H:i')
+                            ->label('Booking created')
+                            ->dateTime('M j, Y H:i:s')
                             ->placeholder('—'),
-                        TextEntry::make('updated_at')
-                            ->label('Updated')
-                            ->dateTime('M j, Y H:i')
+                        TextEntry::make('rideAssignment.assigned_at')
+                            ->label('Offer accepted')
+                            ->dateTime('M j, Y H:i:s')
                             ->placeholder('—'),
+                        TextEntry::make('tap_en_route')
+                            ->label('En route (tap)')
+                            ->placeholder('—')
+                            ->state(fn (Booking $record): ?string => self::eventTime($record, 'en_route')),
+                        TextEntry::make('tap_arrived')
+                            ->label('Arrived at pickup (tap)')
+                            ->placeholder('—')
+                            ->state(fn (Booking $record): ?string => self::eventTime($record, 'arrived')),
+                        TextEntry::make('tap_in_progress')
+                            ->label('Trip started (tap)')
+                            ->placeholder('—')
+                            ->state(fn (Booking $record): ?string => self::eventTime($record, 'in_progress')),
+                        TextEntry::make('tap_completed')
+                            ->label('Completed (tap)')
+                            ->placeholder('—')
+                            ->state(fn (Booking $record): ?string => self::eventTime($record, 'completed')),
+                        TextEntry::make('completed_at')
+                            ->label('Booking completed_at')
+                            ->dateTime('M j, Y H:i:s')
+                            ->placeholder('—'),
+                        TextEntry::make('cancelled_at')
+                            ->label('Canceled at')
+                            ->dateTime('M j, Y H:i:s')
+                            ->placeholder('—')
+                            ->visible(fn (Booking $record): bool => $record->cancelled_at !== null),
+                        TextEntry::make('tap_gaps')
+                            ->label('Gaps between taps')
+                            ->placeholder('—')
+                            ->columnSpanFull()
+                            ->state(fn (Booking $record): ?string => self::eventGaps($record)),
                     ]),
             ]);
+    }
+
+    private static function eventTime(Booking $record, string $type): ?string
+    {
+        $at = self::eventMoment($record, $type);
+        if (! $at) {
+            return null;
+        }
+
+        return $at->timezone(config('app.timezone'))->format('M j, Y H:i:s');
+    }
+
+    private static function eventMoment(Booking $record, string $type): ?\Carbon\CarbonInterface
+    {
+        $events = $record->relationLoaded('rideEvents')
+            ? $record->rideEvents
+            : $record->rideEvents()->orderBy('recorded_at')->get();
+
+        $row = $events->firstWhere('event_type', $type);
+        if (! $row?->recorded_at) {
+            // Fallbacks from assignment columns when older rows lack a matching event.
+            $assignment = $record->relationLoaded('rideAssignment')
+                ? $record->rideAssignment
+                : $record->rideAssignment()->first();
+
+            return match ($type) {
+                'en_route' => $assignment?->started_at ?? $assignment?->assigned_at,
+                'completed' => $assignment?->completed_at ?? $record->completed_at,
+                default => null,
+            };
+        }
+
+        return $row->recorded_at;
+    }
+
+    private static function eventGaps(Booking $record): ?string
+    {
+        $steps = [
+            'en_route' => 'En route',
+            'arrived' => 'Arrived',
+            'in_progress' => 'Trip started',
+            'completed' => 'Completed',
+        ];
+
+        $times = [];
+        foreach ($steps as $type => $label) {
+            $at = self::eventMoment($record, $type);
+            if ($at) {
+                $times[] = [$label, $at];
+            }
+        }
+
+        if (count($times) < 2) {
+            return null;
+        }
+
+        $bits = [];
+        for ($i = 1; $i < count($times); $i++) {
+            [$fromLabel, $from] = $times[$i - 1];
+            [$toLabel, $to] = $times[$i];
+            $seconds = max(0, $from->diffInSeconds($to));
+            $bits[] = "{$fromLabel} → {$toLabel}: ".self::humanDuration($seconds);
+        }
+
+        return implode(' · ', $bits);
+    }
+
+    private static function humanDuration(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds.'s';
+        }
+        $minutes = intdiv($seconds, 60);
+        $rem = $seconds % 60;
+        if ($minutes < 60) {
+            return $rem > 0 ? "{$minutes}m {$rem}s" : "{$minutes}m";
+        }
+        $hours = intdiv($minutes, 60);
+        $mins = $minutes % 60;
+
+        return $mins > 0 ? "{$hours}h {$mins}m" : "{$hours}h";
     }
 
     private static function statusLabel(BookingStatus | string | null $state): string

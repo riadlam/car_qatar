@@ -8,10 +8,19 @@ use App\Models\Booking;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewBooking extends ViewRecord
 {
     protected static string $resource = BookingResource::class;
+
+    protected function resolveRecord(int|string $key): Model
+    {
+        return parent::resolveRecord($key)->load([
+            'rideEvents' => fn ($q) => $q->orderBy('recorded_at'),
+            'rideAssignment',
+        ]);
+    }
 
     public function getHeading(): string | Htmlable
     {

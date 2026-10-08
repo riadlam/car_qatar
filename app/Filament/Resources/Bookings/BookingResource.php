@@ -54,6 +54,7 @@ class BookingResource extends Resource
             RelationManagers\GuestsRelationManager::class,
             RelationManagers\StopsRelationManager::class,
             RelationManagers\PriceItemsRelationManager::class,
+            RelationManagers\RideEventsRelationManager::class,
         ];
     }
 

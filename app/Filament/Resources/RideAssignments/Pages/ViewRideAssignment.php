@@ -7,10 +7,21 @@ use App\Models\RideAssignment;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 
 class ViewRideAssignment extends ViewRecord
 {
     protected static string $resource = RideAssignmentResource::class;
+
+    protected function resolveRecord(int|string $key): Model
+    {
+        return parent::resolveRecord($key)->load([
+            'events' => fn ($q) => $q->orderBy('recorded_at'),
+            'booking',
+            'chauffeur.user',
+            'vehicle',
+        ]);
+    }
 
     public function getHeading(): string | Htmlable
     {
