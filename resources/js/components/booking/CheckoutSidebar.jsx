@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import BookingMap from './BookingMap';
+import PartnerGuestPayLink from './PartnerGuestPayLink';
 import { normalizeCurrency } from '../../utils/currency';
 
 /**
@@ -15,6 +16,10 @@ export default function CheckoutSidebar({
     canBook,
     onBook,
     booking,
+    isPartner = false,
+    payWithWallet = false,
+    quoteId = null,
+    draftId = '',
 }) {
     const { t } = useTranslation('booking');
     const currency = normalizeCurrency(vehicle?.currency);
@@ -67,6 +72,9 @@ export default function CheckoutSidebar({
 
                 <div className="mt-auto pt-5">
                     <hr className="mb-4 border-0 border-t border-[#e8e6e1]" />
+                    {isPartner && !payWithWallet ? (
+                        <PartnerGuestPayLink compact quoteId={quoteId} draftId={draftId} />
+                    ) : null}
                     <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="font-geist m-0 inline-flex items-center gap-2 text-[14px] font-500 text-ink-text">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-wine-700">

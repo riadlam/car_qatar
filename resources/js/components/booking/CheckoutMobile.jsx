@@ -8,6 +8,7 @@ import { IconChevronDown, IconPassengers, IconPerson } from './icons';
 import { durationHours, localizedDurationLabel } from '../../data/bookingServices';
 import { useSavedGuests } from '../../hooks/useSavedGuests';
 import Skeleton from '../ui/Skeleton';
+import PartnerGuestPayLink from './PartnerGuestPayLink';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -108,6 +109,10 @@ export default function CheckoutMobile({
     billingLine = '',
     onEditBilling,
     bookError = '',
+    isPartner = false,
+    payWithWallet = false,
+    quoteId = null,
+    draftId = '',
 }) {
     const { t, i18n } = useTranslation(['booking', 'journeys', 'common']);
     const resolvedPassengerLabel = passengerLabel || t('checkout.defaults.forMyself');
@@ -256,6 +261,12 @@ export default function CheckoutMobile({
                     {vehicle.name}
                 </h2>
                 <p className="font-geist mt-1 m-0 text-[13px] text-muted">{vehicle.similar}</p>
+
+                {isPartner && !payWithWallet ? (
+                    <div className="mt-5">
+                        <PartnerGuestPayLink quoteId={quoteId} draftId={draftId} />
+                    </div>
+                ) : null}
 
                 <button
                     type="button"
@@ -414,6 +425,18 @@ export default function CheckoutMobile({
             {/* Sticky footer */}
             <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#eeebe4] bg-white/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <div className="flex items-center gap-2.5">
+                    {isPartner && !payWithWallet ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const el = document.getElementById('partner-guest-pay-link');
+                                el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                            className="font-geist flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-wine-700 bg-white px-4 text-[14px] font-500 text-wine-700"
+                        >
+                            {t('checkout.partnerPayLink.copy')}
+                        </button>
+                    ) : null}
                     <button
                         type="button"
                         disabled={!canBook || booking}

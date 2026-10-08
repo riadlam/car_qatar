@@ -6,6 +6,7 @@ import AddCardModal from '../components/account/AddCardModal';
 import BillingModal, { billingSummary } from '../components/checkout/BillingModal';
 import CheckoutSidebar from '../components/booking/CheckoutSidebar';
 import CheckoutMobile from '../components/booking/CheckoutMobile';
+import PartnerGuestPayLink from '../components/booking/PartnerGuestPayLink';
 import { guestDisplayName } from '../components/booking/AddGuestModal';
 import { useAuth } from '../context/AuthContext';
 import { isPartnerAdmin } from '../utils/roles';
@@ -377,6 +378,7 @@ export default function Checkout() {
     const preferredChauffeurLabel = chauffeurGenderLabel(preferredChauffeurGender, t);
 
     const canBook = Boolean(billing) || isPartnerAdmin(user);
+    const isPartner = isPartnerAdmin(user);
     const billingLine = billingSummary(billing);
 
     const onBook = async () => {
@@ -511,6 +513,10 @@ export default function Checkout() {
                 billingLine={billingLine}
                 onEditBilling={() => setBillingModalOpen(true)}
                 bookError={bookError}
+                isPartner={isPartner}
+                payWithWallet={payWithWallet}
+                quoteId={quote?.id}
+                draftId={draftId}
             />
 
             {/* Desktop layout */}
@@ -536,13 +542,23 @@ export default function Checkout() {
 
                             <section className="rounded-2xl border border-[#e8e6e1] bg-white p-5 sm:p-6">
                                 <h2 className="font-fragment m-0 text-[22px] leading-8 font-400 text-ink-text">
-                                    {t('checkout.payment.title')}
+                                    {isPartner
+                                        ? t('checkout.payment.partnerTitle')
+                                        : t('checkout.payment.title')}
                                 </h2>
                                 <p className="font-geist mt-2 m-0 text-[14px] leading-6 text-muted">
-                                    {payWithWallet
-                                        ? t('checkout.payment.walletPaid')
-                                        : t('checkout.payment.cardOrWallet')}
+                                    {isPartner
+                                        ? t('checkout.payment.partnerIntro')
+                                        : payWithWallet
+                                          ? t('checkout.payment.walletPaid')
+                                          : t('checkout.payment.cardOrWallet')}
                                 </p>
+
+                                {isPartner && !payWithWallet ? (
+                                    <div className="mt-5">
+                                        <PartnerGuestPayLink quoteId={quote?.id} draftId={draftId} />
+                                    </div>
+                                ) : null}
 
                                 {wallet ? (
                                     <label
@@ -830,6 +846,10 @@ export default function Checkout() {
                                 canBook={canBook}
                                 onBook={onBook}
                                 booking={booking}
+                                isPartner={isPartner}
+                                payWithWallet={payWithWallet}
+                                quoteId={quote?.id}
+                                draftId={draftId}
                             />
                         </div>
                     </div>

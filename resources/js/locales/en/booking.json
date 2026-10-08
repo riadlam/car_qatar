@@ -94,6 +94,8 @@
       "title": "Payment preferences",
       "walletPaid": "This booking will be paid from your wallet balance. The amount is verified on the server.",
       "cardOrWallet": "You can save a card now, or pay with wallet if your balance covers the total.",
+      "partnerTitle": "Guest payment",
+      "partnerIntro": "Send your guest a payment link so they can pay first. You can also cover the trip from wallet if you prefer.",
       "payWithWallet": "Pay with wallet",
       "balance": "Balance: {{currency}} {{amount}}",
       "notEnough": " — not enough for this trip",
@@ -102,6 +104,17 @@
       "cardsAria": "Payment cards",
       "addCard": "Add card",
       "exp": "Exp {{expiry}}"
+    },
+    "partnerPayLink": {
+      "eyebrow": "Guest payment link",
+      "title": "Copy payment link for your guest",
+      "body": "Share this link with the traveler so they can pay before the ride. Confirm the booking when you’re ready — the real link is issued with the booking.",
+      "previewNote": "Preview only — online payment is not live yet. Copying works for handoff demos.",
+      "compactHint": "Copy a guest pay link to send before confirming.",
+      "linkAria": "Guest payment link",
+      "copy": "Copy payment link",
+      "copying": "Copying…",
+      "copied": "Link copied"
     },
     "billing": {
       "title": "Billing information",
