@@ -79,11 +79,11 @@
     --font-fragment: 'PP Fragment', ui-serif, Georgia, serif;
     --font-geist: 'Geist', ui-sans-serif, system-ui, sans-serif;
 
-    /* Arabic (V2) — vintage calligraphic + premium */
-    --font-ar-display: 'Aref Ruqaa', 'Amiri', serif;
-    --font-ar-body: 'Amiri', serif;
-    --font-ar-kufi: 'Reem Kufi', sans-serif;
-    --font-ar-modern: 'Marhey', 'Reem Kufi', sans-serif;
+    /* Arabic — Cairo: the most common readable UI face across Arab-world sites */
+    --font-ar-display: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    --font-ar-body: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    --font-ar-kufi: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    --font-ar-modern: 'Cairo', ui-sans-serif, system-ui, sans-serif;
 
     /* Editorial (V3) — magazine luxury */
     --font-editorial: 'Playfair Display', ui-serif, Georgia, serif;
@@ -308,16 +308,26 @@
         font-family: var(--font-ar-modern);
     }
 
-    /* App-wide Arabic UI: prefer Arabic webfonts when dir=rtl */
+    /* App-wide Arabic UI: Cairo when lang=ar / dir=rtl */
+    html.lang-ar body,
+    html[dir='rtl'] body {
+        font-family: var(--font-ar-body);
+    }
     html.lang-ar .font-geist,
     html.lang-ar .font-fragment,
+    html.lang-ar .font-sans,
+    html.lang-ar .font-display,
+    html.lang-ar .font-serif-lux,
+    html.lang-ar .font-editorial,
+    html.lang-ar .font-grotesk,
     html[dir='rtl'] .font-geist,
-    html[dir='rtl'] .font-fragment {
-        font-family: var(--font-ar-body), 'Amiri', serif;
-    }
-    html.lang-ar .font-fragment,
-    html[dir='rtl'] .font-fragment {
-        font-family: var(--font-ar-display), 'Aref Ruqaa', serif;
+    html[dir='rtl'] .font-fragment,
+    html[dir='rtl'] .font-sans,
+    html[dir='rtl'] .font-display,
+    html[dir='rtl'] .font-serif-lux,
+    html[dir='rtl'] .font-editorial,
+    html[dir='rtl'] .font-grotesk {
+        font-family: var(--font-ar-body);
     }
 
     .gold-border-glow {
@@ -677,8 +687,15 @@ body.menu-open {
 }
 
 .almajd-phone .react-international-phone-input {
-    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-geist);
     width: 100%;
+}
+
+html.lang-ar .almajd-phone .react-international-phone-input,
+html[dir='rtl'] .almajd-phone .react-international-phone-input,
+html.lang-ar .almajd-phone .react-international-phone-country-selector-dropdown__list-item,
+html[dir='rtl'] .almajd-phone .react-international-phone-country-selector-dropdown__list-item {
+    font-family: var(--font-ar-body);
 }
 
 .almajd-phone .react-international-phone-country-selector-button {
@@ -693,7 +710,7 @@ body.menu-open {
 }
 
 .almajd-phone .react-international-phone-country-selector-dropdown__list-item {
-    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-geist);
     padding: 10px 12px;
 }
 
@@ -757,13 +774,20 @@ body.menu-open {
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.95);
     padding: 2px 6px;
-    font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-geist);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: #0f1319;
     box-shadow: 0 1px 4px rgba(15, 19, 25, 0.12);
+}
+
+html.lang-ar .almajd-mb-pin-label,
+html[dir='rtl'] .almajd-mb-pin-label {
+    font-family: var(--font-ar-body);
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .almajd-mb-pin-b {

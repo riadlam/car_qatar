@@ -134,9 +134,8 @@ function PinnedSlides({ details }) {
                                 style={GLASS}
                             >
                                 <h3
-                                    className="m-0 text-white"
+                                    className="m-0 font-geist text-white"
                                     style={{
-                                        fontFamily: 'Geist, sans-serif',
                                         fontWeight: 500,
                                         fontSize: 28,
                                         lineHeight: '36px',
@@ -146,9 +145,8 @@ function PinnedSlides({ details }) {
                                     {item.title}
                                 </h3>
                                 <div
-                                    className="mt-1 text-white"
+                                    className="mt-1 font-geist text-white"
                                     style={{
-                                        fontFamily: 'Geist, sans-serif',
                                         fontWeight: 400,
                                         fontSize: 18,
                                         lineHeight: '26px',
@@ -266,14 +264,14 @@ export default function Experience() {
                         />
                         <div className="absolute right-0 bottom-0 left-0 m-4 rounded-lg p-5" style={GLASS}>
                             <h3
-                                className="m-0 text-white"
-                                style={{ fontFamily: 'Geist, sans-serif', fontWeight: 500, fontSize: 24 }}
+                                className="m-0 font-geist text-white"
+                                style={{ fontWeight: 500, fontSize: 24 }}
                             >
                                 {item.title}
                             </h3>
                             <p
-                                className="mt-1 mb-0 text-white"
-                                style={{ fontFamily: 'Geist, sans-serif', fontSize: 16, lineHeight: '24px' }}
+                                className="mt-1 mb-0 font-geist text-white"
+                                style={{ fontSize: 16, lineHeight: '24px' }}
                             >
                                 {item.copy}
                             </p>
