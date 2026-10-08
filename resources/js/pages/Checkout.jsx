@@ -256,7 +256,6 @@ export default function Checkout() {
     const [booking, setBooking] = useState(false);
     const [notes, setNotes] = useState('');
     const [preferredLanguage, setPreferredLanguage] = useState('');
-    const [appliedOffer, setAppliedOffer] = useState('');
     const [bookError, setBookError] = useState('');
     const [billing, setBilling] = useState(null);
     const [wallet, setWallet] = useState(null);
@@ -508,8 +507,6 @@ export default function Checkout() {
                 onUpdateTrip={onUpdateTrip}
                 onAddCard={() => setAddCardOpen(true)}
                 onSelectCard={setSelectedCardId}
-                onApplyOffer={setAppliedOffer}
-                appliedOffer={appliedOffer}
                 billingLine={billingLine}
                 onEditBilling={() => setBillingModalOpen(true)}
                 bookError={bookError}

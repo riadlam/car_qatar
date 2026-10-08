@@ -104,8 +104,6 @@ export default function CheckoutMobile({
     onUpdateTrip,
     onAddCard,
     onSelectCard,
-    onApplyOffer,
-    appliedOffer,
     billingLine = '',
     onEditBilling,
     bookError = '',
@@ -121,8 +119,6 @@ export default function CheckoutMobile({
     const [notesOpen, setNotesOpen] = useState(true);
     const [langOpen, setLangOpen] = useState(false);
     const [cardsOpen, setCardsOpen] = useState(false);
-    const [offerOpen, setOfferOpen] = useState(false);
-    const [offerCode, setOfferCode] = useState('');
     const [passengerOpen, setPassengerOpen] = useState(false);
     const [guestListOpen, setGuestListOpen] = useState(Boolean(guestId));
     const [addGuestOpen, setAddGuestOpen] = useState(false);
@@ -346,14 +342,6 @@ export default function CheckoutMobile({
                         <span className={`transition ${langOpen ? 'rotate-180' : ''}`}>
                             <IconChevronDown />
                         </span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setOfferOpen(true)}
-                        className="font-geist inline-flex cursor-pointer items-center gap-1 text-[14px] font-500 text-ink-text"
-                    >
-                        <span className="text-wine-700">+</span>
-                        {appliedOffer ? appliedOffer : t('mobile.applyPromotion')}
                     </button>
                 </div>
 
@@ -692,36 +680,6 @@ export default function CheckoutMobile({
                     document.body,
                 )}
 
-            {offerOpen &&
-                createPortal(
-                    <div className="fixed inset-0 z-[200] flex items-end bg-ink/45 p-0 sm:items-center sm:justify-center sm:p-4">
-                        <button type="button" className="absolute inset-0 border-0" aria-label={t('common:actions.close')} onClick={() => setOfferOpen(false)} />
-                        <form
-                            className="relative z-[1] w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                if (offerCode.trim()) onApplyOffer(offerCode.trim().toUpperCase());
-                                setOfferOpen(false);
-                            }}
-                        >
-                            <h3 className="font-fragment m-0 text-[20px] text-ink-text">{t('mobile.applyPromotion')}</h3>
-                            <input
-                                value={offerCode}
-                                onChange={(e) => setOfferCode(e.target.value)}
-                                className="font-geist mt-4 w-full rounded-lg border border-[#d8d8dc] px-4 py-3 text-[16px] outline-none focus:border-wine-700"
-                                placeholder={t('mobile.offerCode')}
-                                autoFocus
-                            />
-                            <button
-                                type="submit"
-                                className="font-geist mt-4 w-full cursor-pointer rounded-full bg-wine-700 py-3 text-[15px] font-500 text-white"
-                            >
-                                {t('mobile.apply')}
-                            </button>
-                        </form>
-                    </div>,
-                    document.body,
-                )}
         </div>
     );
 }
