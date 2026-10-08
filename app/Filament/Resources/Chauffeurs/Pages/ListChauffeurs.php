@@ -29,20 +29,16 @@ class ListChauffeurs extends ListRecords
     public function getTabs(): array
     {
         return [
-            'pending' => Tab::make('Pending')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending'))
-                ->badge(Chauffeur::query()->where('status', 'pending')->count())
-                ->badgeColor('warning'),
             'all' => Tab::make('All')
                 ->badge(Chauffeur::query()->count()),
             'active' => Tab::make('Active')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active'))
                 ->badge(Chauffeur::query()->where('status', 'active')->count())
                 ->badgeColor('success'),
-            'declined' => Tab::make('Declined')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'declined'))
-                ->badge(Chauffeur::query()->where('status', 'declined')->count())
-                ->badgeColor('danger'),
+            'paused' => Tab::make('Paused')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'paused'))
+                ->badge(Chauffeur::query()->where('status', 'paused')->count())
+                ->badgeColor('warning'),
         ];
     }
 }

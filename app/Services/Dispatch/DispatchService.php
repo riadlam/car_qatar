@@ -635,7 +635,10 @@ class DispatchService
             ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
     }
 
-    private function withdrawChauffeurOffers(Chauffeur $chauffeur): void
+    /**
+     * Pull open offers for a chauffeur (e.g. when admin pauses them).
+     */
+    public function withdrawChauffeurOffers(Chauffeur $chauffeur): void
     {
         RideOffer::query()
             ->where('chauffeur_id', $chauffeur->id)

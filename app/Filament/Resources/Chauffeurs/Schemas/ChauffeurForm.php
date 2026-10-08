@@ -35,15 +35,13 @@ class ChauffeurForm
                             ->default(null),
                         Select::make('status')
                             ->options([
-                                'pending' => 'Pending',
                                 'active' => 'Active',
-                                'inactive' => 'Inactive',
-                                'suspended' => 'Suspended',
-                                'declined' => 'Declined',
+                                'paused' => 'Paused',
                             ])
                             ->required()
-                            ->default('pending')
-                            ->native(false),
+                            ->default('active')
+                            ->native(false)
+                            ->helperText('Paused chauffeurs stay signed in but cannot receive or accept offers.'),
                         Select::make('gender')
                             ->options([
                                 'male' => 'Male',

@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 import { useAuth } from '../../context/AuthContext';
 import { useChangeLanguage } from '../../hooks/useChangeLanguage';
-import { isActiveChauffeur, isCustomer, isPartnerAdmin, chauffeurStatusLabel } from '../../utils/roles';
+import {
+    canAccessChauffeurPortal,
+    isCustomer,
+    isPartnerAdmin,
+    chauffeurStatusLabel,
+} from '../../utils/roles';
 import { fetchContactChannels } from '../../api/catalog';
 
 import BookingHeader from '../booking/BookingHeader';
@@ -665,7 +670,7 @@ export default function Navbar() {
                                         </p>
                                     </li>
                                 ) : null}
-                                {isActiveChauffeur(user) ? (
+                                {canAccessChauffeurPortal(user) ? (
                                     <li>
                                         <Link
                                             to="/chauffeur"

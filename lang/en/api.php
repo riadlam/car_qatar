@@ -32,6 +32,10 @@ return [
         'chauffeur_only' => 'Only an approved chauffeur can access this.',
     ],
 
+    'chauffeur' => [
+        'paused_offers' => 'Your account is paused. You cannot receive or accept ride offers until an admin resumes you.',
+    ],
+
     'wallet' => [
         'credit_amount_positive' => 'Credit amount must be greater than zero.',
         'credit_super_admin_only' => 'Only a Super Admin can credit wallets.',

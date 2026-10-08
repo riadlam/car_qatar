@@ -28,7 +28,14 @@
     "loadRides": "Could not load rides",
     "oneTripTitle": "One trip at a time",
     "oneTripBody": "Finish or cancel your current trip before taking another.",
+    "pausedTitle": "Account paused",
+    "pausedBody": "Your account is paused. You cannot receive or accept ride offers until an admin resumes you.",
     "locationNeeded": "Location needed"
+  },
+  "paused": {
+    "bannerTitle": "Account paused",
+    "bannerBody": "You are signed in but disabled for dispatch. You cannot accept passenger offers until an admin resumes your account.",
+    "badge": "Paused"
   },
   "actions": {
     "logOut": "Log out",

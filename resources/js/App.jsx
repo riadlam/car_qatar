@@ -1,7 +1,12 @@
 import { lazy, Suspense, useRef } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { isActiveChauffeur, isCustomer, isPartnerAdmin, isPendingChauffeur } from './utils/roles';
+import {
+    canAccessChauffeurPortal,
+    isCustomer,
+    isPartnerAdmin,
+    isPendingChauffeur,
+} from './utils/roles';
 import { ToastProvider } from './context/ToastContext';
 import LocaleSync from './components/LocaleSync';
 import Skeleton from './components/ui/Skeleton';
@@ -54,7 +59,7 @@ function GuestRoute({ children }) {
 }
 
 function journeysRedirect(user) {
-    if (isActiveChauffeur(user)) return '/chauffeur';
+    if (canAccessChauffeurPortal(user)) return '/chauffeur';
     if (isPendingChauffeur(user)) return '/complete-profile';
     return '/account';
 }
@@ -157,7 +162,7 @@ export default function App() {
                                 path="/chauffeur"
                                 element={
                                     <RoleRoute
-                                        allow={isActiveChauffeur}
+                                        allow={canAccessChauffeurPortal}
                                         redirectTo={(user) =>
                                             isPendingChauffeur(user) ? '/complete-profile' : '/account'
                                         }
@@ -170,7 +175,7 @@ export default function App() {
                                 path="/chauffeur/:tab"
                                 element={
                                     <RoleRoute
-                                        allow={isActiveChauffeur}
+                                        allow={canAccessChauffeurPortal}
                                         redirectTo={(user) =>
                                             isPendingChauffeur(user) ? '/complete-profile' : '/account'
                                         }

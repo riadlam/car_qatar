@@ -19,6 +19,17 @@ class OfferController extends Controller
     {
         $chauffeur = $request->user()->chauffeur;
 
+        if ($chauffeur?->status === 'paused') {
+            $this->dispatch->withdrawChauffeurOffers($chauffeur);
+
+            return response()->json([
+                'data' => [],
+                'paused' => true,
+                'blocked' => true,
+                'message' => __('api.chauffeur.paused_offers'),
+            ]);
+        }
+
         if ($this->dispatch->hasOngoingTrip($chauffeur)) {
             $this->dispatch->syncChauffeur($chauffeur);
 
@@ -133,7 +144,14 @@ class OfferController extends Controller
 
     public function accept(Request $request, RideOffer $offer): JsonResponse
     {
-        $assignment = $this->dispatch->accept($offer, $request->user()->chauffeur);
+        $chauffeur = $request->user()->chauffeur;
+        if ($chauffeur?->status === 'paused') {
+            return response()->json([
+                'message' => __('api.chauffeur.paused_offers'),
+            ], 403);
+        }
+
+        $assignment = $this->dispatch->accept($offer, $chauffeur);
 
         return response()->json([
             'message' => 'Offer accepted.',
@@ -144,7 +162,14 @@ class OfferController extends Controller
 
     public function reject(Request $request, RideOffer $offer): JsonResponse
     {
-        $this->dispatch->reject($offer, $request->user()->chauffeur);
+        $chauffeur = $request->user()->chauffeur;
+        if ($chauffeur?->status === 'paused') {
+            return response()->json([
+                'message' => __('api.chauffeur.paused_offers'),
+            ], 403);
+        }
+
+        $this->dispatch->reject($offer, $chauffeur);
 
         return response()->json([
             'message' => 'Offer declined.',

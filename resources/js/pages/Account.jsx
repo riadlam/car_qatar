@@ -3,7 +3,7 @@ import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { isActiveChauffeur, isCustomer, isPartnerAdmin } from '../utils/roles';
+import { canAccessChauffeurPortal, isCustomer, isPartnerAdmin } from '../utils/roles';
 import SiteLayout from '../components/landing/SiteLayout';
 import AddCardModal from '../components/account/AddCardModal';
 import { deletePaymentMethod, firstApiError, getPaymentMethods } from '../api/checkout';
@@ -309,7 +309,7 @@ export default function Account() {
                                 {tCommon('nav.journeys')}
                             </Link>
                         ) : null}
-                        {isActiveChauffeur(user) ? (
+                        {canAccessChauffeurPortal(user) ? (
                             <Link
                                 to="/chauffeur"
                                 className="font-geist inline-flex min-h-10 cursor-pointer items-center rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-[14px] font-500 text-ink-text transition hover:border-ink-text/30"
@@ -412,7 +412,7 @@ export default function Account() {
                             />
                         </Section>
 
-                        {(isCustomer(user) || isPartnerAdmin(user) || isActiveChauffeur(user)) ? (
+                        {(isCustomer(user) || isPartnerAdmin(user) || canAccessChauffeurPortal(user)) ? (
                             <Section title={t('sections.wallet')}>
                                 <WalletHistory helperText={t('wallet.helper')} />
                             </Section>

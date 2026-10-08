@@ -65,7 +65,7 @@ class ChauffeurResource extends Resource
             return null;
         }
 
-        $count = Chauffeur::query()->where('status', 'pending')->count();
+        $count = Chauffeur::query()->where('status', 'paused')->count();
 
         return $count > 0 ? (string) $count : null;
     }

@@ -101,6 +101,7 @@
   "chauffeurStatus": {
     "pending": "الطلب قيد المراجعة",
     "active": "نشط",
+    "paused": "متوقف",
     "declined": "مرفوض",
     "inactive": "غير نشط"
   }

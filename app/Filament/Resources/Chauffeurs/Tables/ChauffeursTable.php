@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Chauffeurs\Tables;
 
 use App\Filament\Resources\Chauffeurs\ChauffeurResource;
 use App\Models\Chauffeur;
+use App\Services\Dispatch\DispatchService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -52,9 +53,7 @@ class ChauffeursTable
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'active' => 'success',
-                        'pending' => 'warning',
-                        'declined', 'suspended' => 'danger',
-                        'inactive' => 'gray',
+                        'paused' => 'warning',
                         default => 'gray',
                     })
                     ->searchable()
@@ -82,7 +81,7 @@ class ChauffeursTable
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 TextColumn::make('created_at')
-                    ->label('Submitted')
+                    ->label('Created')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(),
@@ -98,11 +97,8 @@ class ChauffeursTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
                         'active' => 'Active',
-                        'declined' => 'Declined',
-                        'inactive' => 'Inactive',
-                        'suspended' => 'Suspended',
+                        'paused' => 'Paused',
                     ]),
                 SelectFilter::make('gender')
                     ->options([
@@ -113,37 +109,36 @@ class ChauffeursTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                Action::make('accept')
-                    ->label('Accept')
-                    ->color('success')
-                    ->icon('heroicon-o-check')
+                Action::make('pause')
+                    ->label('Pause')
+                    ->color('warning')
+                    ->icon('heroicon-o-pause-circle')
                     ->requiresConfirmation()
-                    ->modalHeading('Accept chauffeur')
-                    ->modalDescription('This person will be able to sign in as a chauffeur.')
-                    ->visible(fn (Chauffeur $record): bool => $record->status === 'pending')
+                    ->modalHeading('Pause chauffeur')
+                    ->modalDescription('They stay signed in but cannot receive or accept ride offers. Open offers will be withdrawn.')
+                    ->visible(fn (Chauffeur $record): bool => $record->status === 'active')
                     ->action(function (Chauffeur $record): void {
-                        $record->forceFill(['status' => 'active'])->save();
-                        $record->user?->forceFill(['status' => 'active'])->save();
+                        $record->forceFill(['status' => 'paused'])->save();
+                        app(DispatchService::class)->withdrawChauffeurOffers($record);
 
                         Notification::make()
-                            ->title('Application accepted')
-                            ->success()
+                            ->title('Chauffeur paused')
+                            ->warning()
                             ->send();
                     }),
-                Action::make('decline')
-                    ->label('Decline')
-                    ->color('danger')
-                    ->icon('heroicon-o-x-mark')
+                Action::make('resume')
+                    ->label('Resume')
+                    ->color('success')
+                    ->icon('heroicon-o-play-circle')
                     ->requiresConfirmation()
-                    ->modalHeading('Decline chauffeur')
-                    ->modalDescription('This application will be closed. They will not be able to sign in.')
-                    ->visible(fn (Chauffeur $record): bool => $record->status === 'pending')
+                    ->modalHeading('Resume chauffeur')
+                    ->modalDescription('They will receive and accept ride offers again.')
+                    ->visible(fn (Chauffeur $record): bool => $record->status === 'paused')
                     ->action(function (Chauffeur $record): void {
-                        $record->forceFill(['status' => 'declined'])->save();
-                        $record->user?->forceFill(['status' => 'declined'])->save();
+                        $record->forceFill(['status' => 'active'])->save();
 
                         Notification::make()
-                            ->title('Application declined')
+                            ->title('Chauffeur resumed')
                             ->success()
                             ->send();
                     }),

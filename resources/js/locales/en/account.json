@@ -101,6 +101,7 @@
   "chauffeurStatus": {
     "pending": "Application pending",
     "active": "Active",
+    "paused": "Paused",
     "declined": "Declined",
     "inactive": "Inactive"
   }

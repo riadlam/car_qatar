@@ -14,7 +14,10 @@ class EnsureActiveChauffeur
         $user = $request->user();
         $chauffeur = $user?->chauffeur;
 
-        if ($user?->role !== UserRole::Chauffeur || $chauffeur?->status !== 'active') {
+        $status = $chauffeur?->status;
+        $allowed = in_array($status, ['active', 'paused'], true);
+
+        if ($user?->role !== UserRole::Chauffeur || ! $allowed) {
             abort(403, __('api.middleware.chauffeur_only'));
         }
 

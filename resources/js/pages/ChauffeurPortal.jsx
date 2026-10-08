@@ -21,6 +21,7 @@ import { subscribePrivate } from '../echo';
 import useChauffeurLocation from '../hooks/useChauffeurLocation';
 import useChauffeurOfferPresence from '../hooks/useChauffeurOfferPresence';
 import WalletHistory from '../components/wallet/WalletHistory';
+import { isPausedChauffeur } from '../utils/roles';
 
 function SearchIcon() {
     return (
@@ -102,7 +103,7 @@ function EmptyState({ title, body }) {
     );
 }
 
-function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
+function ProfilePanel({ profile, error, rides, onLogout, loggingOut, paused }) {
     const { t } = useTranslation('chauffeur');
 
     if (error && !profile) {
@@ -121,6 +122,7 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
             .slice(0, 2)
             .toUpperCase() || 'C';
     const vehicleBits = [profile.vehicle?.class, profile.vehicle?.color, profile.vehicle?.year].filter(Boolean);
+    const statusPaused = paused || profile.status === 'paused';
 
     return (
         <div className="flex flex-col gap-5">
@@ -145,9 +147,15 @@ function ProfilePanel({ profile, error, rides, onLogout, loggingOut }) {
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-geist inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-[13px] font-500 text-white">
+                            <span
+                                className={`font-geist inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-500 text-white ${
+                                    statusPaused ? 'bg-amber-600' : 'bg-emerald-600'
+                                }`}
+                            >
                                 <span className="h-2 w-2 rounded-full bg-white" />
-                                {profile.status_label || t('current.statusActive')}
+                                {statusPaused
+                                    ? t('paused.badge')
+                                    : profile.status_label || t('current.statusActive')}
                             </span>
                             {onLogout ? (
                                 <button
@@ -274,6 +282,7 @@ export default function ChauffeurPortal() {
     const { tab: tabParam } = useParams();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const paused = isPausedChauffeur(user);
     const baseId = useId();
     const [loggingOut, setLoggingOut] = useState(false);
 
@@ -330,6 +339,7 @@ export default function ChauffeurPortal() {
     const [offersReady, setOffersReady] = useState(false);
     const [offersError, setOffersError] = useState('');
     const [offersBlocked, setOffersBlocked] = useState('');
+    const [offersPaused, setOffersPaused] = useState(paused);
     const [tripDialogDismissed, setTripDialogDismissed] = useState(false);
     const [profile, setProfile] = useState(null);
     const [profileReady, setProfileReady] = useState(false);
@@ -362,7 +372,7 @@ export default function ChauffeurPortal() {
     }, [tabParam, TABS]);
 
     // Presence GPS while idle so offers are filtered to nearest pickups.
-    useChauffeurOfferPresence(!currentRide);
+    useChauffeurOfferPresence(!currentRide && !paused && !offersPaused);
 
     const q = query.trim().toLowerCase();
     const rides = profile?.rides || [];
@@ -396,7 +406,8 @@ export default function ChauffeurPortal() {
         profile: null,
     };
 
-    const assignedTrip = Boolean(currentRide) || Boolean(offersBlocked);
+    const accountPaused = offersPaused || (profile ? profile.status === 'paused' : paused);
+    const assignedTrip = Boolean(currentRide) || (Boolean(offersBlocked) && !accountPaused);
     const tripDialogOpen = activeTab.id === 'offers' && assignedTrip && !tripDialogDismissed;
 
     useEffect(() => {
@@ -427,12 +438,19 @@ export default function ChauffeurPortal() {
                 setOffersReady(true);
                 setTripDialogDismissed(false);
             }
+            if (error.response?.status === 403 && error.response?.data?.message) {
+                setOffersPaused(true);
+                setOffers([]);
+            }
             setToast(message);
             const fresh = await listChauffeurOffers(payoutQuery(filters)).catch(() => null);
             if (fresh) {
                 setOffers(fresh.data || []);
                 setOffersMeta(fresh.meta || null);
-                setOffersBlocked(fresh.blocked ? (fresh.message || message) : '');
+                setOffersPaused(Boolean(fresh.paused));
+                setOffersBlocked(
+                    fresh.blocked && !fresh.paused ? fresh.message || message : '',
+                );
             }
             throw error;
         }
@@ -466,7 +484,10 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers(res.data || []);
                         setOffersMeta(res.meta || null);
-                        setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
+                        setOffersPaused(Boolean(res.paused));
+                        setOffersBlocked(
+                            res.blocked && !res.paused ? res.message || blockedMessage : '',
+                        );
                         setOffersError('');
                     }
                 })
@@ -497,7 +518,10 @@ export default function ChauffeurPortal() {
                     if (!cancelled) {
                         setOffers(res.data || []);
                         setOffersMeta(res.meta || null);
-                        setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
+                        setOffersPaused(Boolean(res.paused));
+                        setOffersBlocked(
+                            res.blocked && !res.paused ? res.message || blockedMessage : '',
+                        );
                         setOffersError('');
                     }
                 })
@@ -558,7 +582,7 @@ export default function ChauffeurPortal() {
             `chauffeur.${user.chauffeur_id}`,
             {
                 OfferAvailable: (payload) => {
-                    if (currentRideRef.current) return;
+                    if (currentRideRef.current || paused) return;
                     const offer = payload?.offer;
                     if (!offer?.id) return;
                     const current = filtersRef.current;
@@ -597,7 +621,7 @@ export default function ChauffeurPortal() {
             cancelled = true;
             leave();
         };
-    }, [user?.chauffeur_id, blockedMessage, t]);
+    }, [user?.chauffeur_id, blockedMessage, paused, t]);
 
     const listCount =
         activeTab.id === 'offers' ? filteredOffers.length : activeTab.id === 'rides' ? filteredRides.length : null;
@@ -620,7 +644,7 @@ export default function ChauffeurPortal() {
                         <h1 className="font-fragment m-0 text-center text-[28px] leading-9 font-400 tracking-[0.2px] text-ink-text">
                             {mobileTitle}
                         </h1>
-                        {activeTab.id === 'offers' ? (
+                        {activeTab.id === 'offers' && !accountPaused ? (
                             <button
                                 type="button"
                                 onClick={() => setFilterOpen(true)}
@@ -630,6 +654,10 @@ export default function ChauffeurPortal() {
                             >
                                 <FilterIcon />
                             </button>
+                        ) : activeTab.id === 'offers' && accountPaused ? (
+                            <span className="font-geist absolute right-0 rounded-full bg-amber-600 px-3 py-1.5 text-[12px] font-500 text-white">
+                                {t('paused.badge')}
+                            </span>
                         ) : (
                             <button
                                 type="button"
@@ -642,8 +670,22 @@ export default function ChauffeurPortal() {
                         )}
                     </div>
 
+                    {accountPaused ? (
+                        <div
+                            className="mt-2 mb-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:px-5 sm:py-4"
+                            role="status"
+                        >
+                            <p className="font-geist m-0 text-[14px] font-600 text-amber-950 sm:text-[15px]">
+                                {t('paused.bannerTitle')}
+                            </p>
+                            <p className="font-geist mt-1 m-0 text-[13px] leading-5 text-amber-900/90 sm:text-[14px] sm:leading-6">
+                                {t('paused.bannerBody')}
+                            </p>
+                        </div>
+                    ) : null}
+
                     <OffersFilterBar
-                        open={activeTab.id === 'offers' && filterOpen}
+                        open={activeTab.id === 'offers' && filterOpen && !accountPaused}
                         onClose={() => setFilterOpen(false)}
                         filters={filters}
                         onChange={setFilters}
@@ -780,6 +822,7 @@ export default function ChauffeurPortal() {
                                     rides={rides}
                                     onLogout={onLogout}
                                     loggingOut={loggingOut}
+                                    paused={accountPaused}
                                 />
                             ) : activeTab.id === 'current' ? (
                                 !ridesReady ? (
@@ -805,7 +848,12 @@ export default function ChauffeurPortal() {
                                                 .then((res) => {
                                                     setOffers(res.data || []);
                                                     setOffersMeta(res.meta || null);
-                                                    setOffersBlocked(res.blocked ? (res.message || blockedMessage) : '');
+                                                    setOffersPaused(Boolean(res.paused));
+                                                    setOffersBlocked(
+                                                        res.blocked && !res.paused
+                                                            ? res.message || blockedMessage
+                                                            : '',
+                                                    );
                                                     setOffersError('');
                                                 })
                                                 .catch(() => {});
@@ -814,8 +862,13 @@ export default function ChauffeurPortal() {
                                 />
                                 )
                             ) : activeTab.id === 'offers' ? (
-                                !offersReady && !assignedTrip ? (
+                                !offersReady && !assignedTrip && !accountPaused ? (
                                     <Skeleton variant="list" />
+                                ) : accountPaused ? (
+                                    <EmptyState
+                                        title={t('empty.pausedTitle')}
+                                        body={t('empty.pausedBody')}
+                                    />
                                 ) : assignedTrip ? (
                                     <EmptyState
                                         title={t('empty.oneTripTitle')}

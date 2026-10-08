@@ -35,9 +35,7 @@ class ChauffeurInfolist
                             ->badge()
                             ->color(fn (?string $state): string => match ($state) {
                                 'active' => 'success',
-                                'pending' => 'warning',
-                                'declined', 'suspended' => 'danger',
-                                'inactive' => 'gray',
+                                'paused' => 'warning',
                                 default => 'gray',
                             }),
                         TextEntry::make('partner.display_name')
