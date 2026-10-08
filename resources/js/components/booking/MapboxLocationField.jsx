@@ -6,7 +6,17 @@ import { useMapboxSearch } from '../../maps/useMapboxSearch';
 import Skeleton from '../ui/Skeleton';
 
 /** Mapbox GL modal is heavy — load only when the pin picker opens. */
-const MapLocationModal = lazy(() => import('./MapLocationModal'));
+const MapLocationModal = lazy(() =>
+    import('./MapLocationModal').catch((error) => {
+        const key = 'almajd_chunk_reload';
+        if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            window.location.reload();
+            return new Promise(() => {});
+        }
+        throw error;
+    }),
+);
 
 const PinIcon = (
     <svg
