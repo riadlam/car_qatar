@@ -35,9 +35,9 @@ class CreateChauffeurAccount extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserPlus;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
+    protected static string|UnitEnum|null $navigationGroup = 'People';
 
-    protected static ?int $navigationSort = 19;
+    protected static ?int $navigationSort = 11;
 
     protected static ?string $navigationLabel = 'Create Chauffeur';
 
