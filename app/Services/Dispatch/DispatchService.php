@@ -85,11 +85,7 @@ class DispatchService
             return;
         }
 
-        $eligibleIds = $this->eligibleChauffeurs(
-            $booking,
-            (float) $pickup->latitude,
-            (float) $pickup->longitude,
-        )->pluck('id')->all();
+        $eligibleIds = $this->eligibleChauffeurs($booking)->pluck('id')->all();
 
         foreach ($eligibleIds as $chauffeurId) {
             $this->openOffer($booking, (int) $chauffeurId);
@@ -119,12 +115,14 @@ class DispatchService
                 ->pluck('id')
                 ->all();
 
-            RideOffer::query()
-                ->where('chauffeur_id', $chauffeur->id)
-                ->whereIn('status', ['pending', 'offered'])
-                ->when($matchingIds !== [], fn ($query) => $query->whereNotIn('booking_id', $matchingIds))
-                ->get()
-                ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
+            $this->withdrawChauffeurOffersExcept($chauffeur, $matchingIds);
+
+            return;
+        }
+
+        // Radius mode: no fresh GPS ⇒ no offers (never leave stale city-wide rows).
+        if (! $this->locationIsFresh($chauffeur)) {
+            $this->withdrawChauffeurOffers($chauffeur);
 
             return;
         }
@@ -138,12 +136,7 @@ class DispatchService
             }
         }
 
-        RideOffer::query()
-            ->where('chauffeur_id', $chauffeur->id)
-            ->whereIn('status', ['pending', 'offered'])
-            ->when($insideIds !== [], fn ($query) => $query->whereNotIn('booking_id', $insideIds))
-            ->get()
-            ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
+        $this->withdrawChauffeurOffersExcept($chauffeur, $insideIds);
     }
 
     public function ensureOffersFor(Chauffeur $chauffeur): void
@@ -161,15 +154,20 @@ class DispatchService
             return;
         }
 
-        if ($chauffeur->status !== 'active' || $this->hasOngoingTrip($chauffeur)) {
-            if ($this->hasOngoingTrip($chauffeur)) {
-                $this->withdrawChauffeurOffers($chauffeur);
-            }
+        // Always re-sync this chauffeur so Super Admin radius is applied on every poll.
+        $this->syncChauffeur($chauffeur);
+    }
 
-            return;
+    /**
+     * Whether this chauffeur may see / accept the booking under current dispatch settings.
+     */
+    public function chauffeurIsWithinOfferRadius(Chauffeur $chauffeur, Booking $booking): bool
+    {
+        if (! $this->radiusMatchingEnabled()) {
+            return $this->chauffeurMatchesGender($chauffeur, $booking);
         }
 
-        $this->syncChauffeur($chauffeur);
+        return $this->chauffeurCanSeeBooking($chauffeur, $booking);
     }
 
     public function accept(RideOffer $offer, Chauffeur $chauffeur): RideAssignment
@@ -210,7 +208,7 @@ class DispatchService
                     'offer' => ['This offer is not available for your profile.'],
                 ]);
             }
-            if ($this->radiusMatchingEnabled() && ! $this->chauffeurCanSeeBooking($chauffeur, $booking)) {
+            if (! $this->chauffeurIsWithinOfferRadius($chauffeur, $booking)) {
                 throw ValidationException::withMessages([
                     'offer' => ['This offer is no longer in your area.'],
                 ]);
@@ -649,40 +647,10 @@ class DispatchService
     /**
      * @return \Illuminate\Support\Collection<int, Chauffeur>
      */
-    private function eligibleChauffeurs(Booking $booking, float $pickupLat, float $pickupLng)
+    private function eligibleChauffeurs(Booking $booking)
     {
-        $radius = $this->radiusKm();
-
         return $this->activeChauffeurs()
-            ->filter(function (Chauffeur $chauffeur) use ($booking, $pickupLat, $pickupLng, $radius) {
-                if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
-                    return false;
-                }
-
-                if (! $this->locationIsFresh($chauffeur)) {
-                    return false;
-                }
-
-                $straight = $this->distanceKm(
-                    $pickupLat,
-                    $pickupLng,
-                    (float) $chauffeur->current_latitude,
-                    (float) $chauffeur->current_longitude,
-                );
-
-                if ($straight > $radius) {
-                    return false;
-                }
-
-                $driving = $this->drivingDistanceKm(
-                    (float) $chauffeur->current_latitude,
-                    (float) $chauffeur->current_longitude,
-                    $pickupLat,
-                    $pickupLng,
-                );
-
-                return $driving !== null && $driving <= $radius;
-            })
+            ->filter(fn (Chauffeur $chauffeur) => $this->chauffeurCanSeeBooking($chauffeur, $booking))
             ->values();
     }
 
@@ -695,32 +663,23 @@ class DispatchService
             return [];
         }
 
-        $radius = $this->radiusKm();
-        $lat = (float) $chauffeur->current_latitude;
-        $lng = (float) $chauffeur->current_longitude;
-
         return $this->openBookings()
-            ->filter(function (Booking $booking) use ($chauffeur, $lat, $lng, $radius) {
-                if (! $this->chauffeurMatchesGender($chauffeur, $booking)) {
-                    return false;
-                }
-
-                $pickup = $booking->pickupLocation;
-                if ($pickup?->latitude === null || $pickup?->longitude === null) {
-                    return false;
-                }
-
-                $straight = $this->distanceKm($lat, $lng, (float) $pickup->latitude, (float) $pickup->longitude);
-                if ($straight > $radius) {
-                    return false;
-                }
-
-                $driving = $this->drivingDistanceKm($lat, $lng, (float) $pickup->latitude, (float) $pickup->longitude);
-
-                return $driving !== null && $driving <= $radius;
-            })
+            ->filter(fn (Booking $booking) => $this->chauffeurCanSeeBooking($chauffeur, $booking))
             ->pluck('id')
             ->all();
+    }
+
+    /**
+     * @param  list<int>  $keepBookingIds
+     */
+    private function withdrawChauffeurOffersExcept(Chauffeur $chauffeur, array $keepBookingIds): void
+    {
+        RideOffer::query()
+            ->where('chauffeur_id', $chauffeur->id)
+            ->whereIn('status', ['pending', 'offered'])
+            ->when($keepBookingIds !== [], fn ($query) => $query->whereNotIn('booking_id', $keepBookingIds))
+            ->get()
+            ->each(fn (RideOffer $offer) => $this->withdrawOffer($offer));
     }
 
     private function offerAllOpenBookings(Chauffeur $chauffeur): void
@@ -776,19 +735,34 @@ class DispatchService
             return false;
         }
 
-        $pickup = $booking->pickupLocation;
+        $pickup = $booking->relationLoaded('pickupLocation')
+            ? $booking->pickupLocation
+            : $booking->pickupLocation()->first();
+
         if ($pickup?->latitude === null || $pickup?->longitude === null) {
             return false;
         }
 
-        $driving = $this->drivingDistanceKm(
-            (float) $chauffeur->current_latitude,
-            (float) $chauffeur->current_longitude,
-            (float) $pickup->latitude,
-            (float) $pickup->longitude,
-        );
+        $radius = $this->radiusKm();
+        $chauffeurLat = (float) $chauffeur->current_latitude;
+        $chauffeurLng = (float) $chauffeur->current_longitude;
+        $pickupLat = (float) $pickup->latitude;
+        $pickupLng = (float) $pickup->longitude;
 
-        return $driving !== null && $driving <= $this->radiusKm();
+        // Haversine gate — always respects Super Admin offer_radius_km.
+        $straight = $this->distanceKm($chauffeurLat, $chauffeurLng, $pickupLat, $pickupLng);
+        if ($straight > $radius) {
+            return false;
+        }
+
+        // When Mapbox driving distance is available, also require it within radius.
+        // If Mapbox fails, haversine alone still enforces the admin radius.
+        $driving = $this->drivingDistanceKm($chauffeurLat, $chauffeurLng, $pickupLat, $pickupLng);
+        if ($driving !== null && $driving > $radius) {
+            return false;
+        }
+
+        return true;
     }
 
     private function chauffeurMatchesGender(Chauffeur $chauffeur, Booking $booking): bool

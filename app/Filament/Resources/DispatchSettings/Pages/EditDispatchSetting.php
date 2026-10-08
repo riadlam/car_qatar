@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\DispatchSettings\Pages;
 
 use App\Enums\BookingStatus;
+use App\Enums\UserRole;
 use App\Filament\Resources\DispatchSettings\DispatchSettingResource;
 use App\Models\Booking;
+use App\Models\Chauffeur;
 use App\Models\DispatchSetting;
 use App\Services\Dispatch\DispatchService;
 use Filament\Resources\Pages\EditRecord;
@@ -33,10 +35,19 @@ class EditDispatchSetting extends EditRecord
 
     protected function afterSave(): void
     {
+        $dispatch = app(DispatchService::class);
+
         Booking::query()
             ->where('status', BookingStatus::Confirmed)
             ->whereDoesntHave('rideAssignment')
             ->get()
-            ->each(fn (Booking $booking) => app(DispatchService::class)->syncBooking($booking));
+            ->each(fn (Booking $booking) => $dispatch->syncBooking($booking));
+
+        // Re-apply radius to every active chauffeur so out-of-range offers drop immediately.
+        Chauffeur::query()
+            ->where('status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('role', UserRole::Chauffeur))
+            ->get()
+            ->each(fn (Chauffeur $chauffeur) => $dispatch->syncChauffeur($chauffeur));
     }
 }

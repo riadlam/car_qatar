@@ -14,11 +14,11 @@ class DispatchSettingForm
         return $schema
             ->components([
                 Section::make('Dispatch settings')
-                    ->description('When enabled, chauffeurs only see open bookings whose pickup is within the driving radius of their live location. Offers are sorted nearest-first.')
+                    ->description('When enabled, chauffeurs only see open bookings whose pickup is within this radius of their live GPS. Offers outside the radius are hidden and withdrawn. Sorted nearest-first.')
                     ->schema([
                         Toggle::make('radius_matching_enabled')
                             ->label('Limit offers by pickup radius')
-                            ->helperText('Recommended on. Chauffeurs need a fresh GPS location to receive nearby offers.')
+                            ->helperText('Keep ON in production. When off, every active chauffeur sees every open booking (legacy always-show). Chauffeurs need fresh GPS while this is on.')
                             ->default(true),
                         TextInput::make('offer_radius_km')
                             ->label('Offer radius (km)')
@@ -27,7 +27,7 @@ class DispatchSettingForm
                             ->maxValue(100)
                             ->required()
                             ->default(15)
-                            ->helperText('Driving distance from chauffeur to pickup. 1–100 km.'),
+                            ->helperText('Straight-line distance from chauffeur GPS to pickup (Mapbox driving distance also applied when available). 1–100 km. Saved value is enforced on every offers poll.'),
                     ]),
             ]);
     }

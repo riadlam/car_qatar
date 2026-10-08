@@ -65,6 +65,24 @@ class OfferController extends Controller
             ->orderByDesc('booking_id')
             ->get();
 
+        $radiusEnabled = $this->dispatch->radiusMatchingEnabled();
+        $radiusKm = $this->dispatch->radiusKm();
+
+        // Hard filter: never return offers outside Super Admin radius, even if a stale
+        // ride_offers row still exists from when matching was paused / GPS was off.
+        if ($radiusEnabled) {
+            $offers = $offers
+                ->filter(function (RideOffer $offer) use ($chauffeur) {
+                    $booking = $offer->booking;
+                    if (! $booking) {
+                        return false;
+                    }
+
+                    return $this->dispatch->chauffeurIsWithinOfferRadius($chauffeur, $booking);
+                })
+                ->values();
+        }
+
         // Nearest pickup first (server-side distance from chauffeur → client pickup).
         if ($locationFresh) {
             $offers = $offers
@@ -83,8 +101,19 @@ class OfferController extends Controller
 
                     return $offer;
                 })
+                ->filter(function (RideOffer $offer) use ($radiusEnabled, $radiusKm) {
+                    if (! $radiusEnabled) {
+                        return true;
+                    }
+                    $distance = $offer->distance_to_pickup_km;
+
+                    return $distance !== null && $distance <= $radiusKm;
+                })
                 ->sortBy(fn (RideOffer $offer) => $offer->distance_to_pickup_km ?? PHP_FLOAT_MAX)
                 ->values();
+        } elseif ($radiusEnabled) {
+            // Radius on + stale GPS ⇒ empty list (sync already withdrew DB rows).
+            $offers = $offers->filter(fn () => false)->values();
         }
 
         $response = ChauffeurOfferResource::collection($offers)->response();
