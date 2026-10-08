@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\CreateChauffeurAccount;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\BookingsTrendChart;
 use App\Filament\Widgets\LatestBookings;
@@ -64,7 +65,7 @@ class AdminPanelProvider extends PanelProvider
                     ->collapsed(false),
                 NavigationGroup::make('Fleet')
                     ->icon(Heroicon::OutlinedTruck)
-                    ->collapsed(),
+                    ->collapsed(false),
                 NavigationGroup::make('Geography')
                     ->icon(Heroicon::OutlinedGlobeAlt)
                     ->collapsed(),
@@ -82,6 +83,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
+                CreateChauffeurAccount::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

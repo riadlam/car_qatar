@@ -17,11 +17,12 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\View as SchemaView;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -36,7 +37,7 @@ class CreateChauffeurAccount extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'Fleet';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 19;
 
     protected static ?string $navigationLabel = 'Create Chauffeur';
 
@@ -58,6 +59,28 @@ class CreateChauffeurAccount extends Page
      */
     public ?array $handedCredentials = null;
 
+    public function getHeading(): string|Htmlable
+    {
+        return 'Create Chauffeur';
+    }
+
+    public function getSubheading(): string|Htmlable|null
+    {
+        return 'Create a login-ready chauffeur account and hand them the email + password.';
+    }
+
+    public function getHeader(): ?View
+    {
+        if (! is_array($this->handedCredentials)) {
+            return null;
+        }
+
+        return view('filament.create-chauffeur-credentials', [
+            'credentials' => $this->handedCredentials,
+            'listUrl' => ChauffeurResource::getUrl('index'),
+        ]);
+    }
+
     public function mount(): void
     {
         $this->form->fill([
@@ -67,103 +90,72 @@ class CreateChauffeurAccount extends Page
 
     public function defaultForm(Schema $schema): Schema
     {
-        return $schema
-            ->statePath('data');
+        return $schema->statePath('data');
     }
 
     public function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                Section::make('What the chauffeur needs to log in')
-                    ->description('Only these fields. The account is created as an active chauffeur so they can sign in on the website right away.')
-                    ->columns(2)
-                    ->schema([
-                        TextInput::make('first_name')
-                            ->label('First name')
-                            ->required()
-                            ->maxLength(80)
-                            ->autocomplete(false),
-                        TextInput::make('last_name')
-                            ->label('Last name')
-                            ->required()
-                            ->maxLength(80)
-                            ->autocomplete(false),
-                        TextInput::make('email')
-                            ->label('Login email')
-                            ->email()
-                            ->required()
-                            ->unique(User::class, 'email')
-                            ->maxLength(255)
-                            ->helperText('They will use this email on the login page.')
-                            ->columnSpanFull(),
-                        TextInput::make('phone')
-                            ->label('Phone')
-                            ->tel()
-                            ->required()
-                            ->maxLength(40)
-                            ->helperText('Ops contact number for this chauffeur.'),
-                        Select::make('gender')
-                            ->label('Gender')
-                            ->options([
-                                'male' => 'Male',
-                                'female' => 'Female',
-                            ])
-                            ->required()
-                            ->native(false),
-                        TextInput::make('password')
-                            ->label('Temporary password')
-                            ->password()
-                            ->revealable()
-                            ->required()
-                            ->rule(Password::defaults())
-                            ->helperText('Give this password to the chauffeur. They can change it later from Account.')
-                            ->suffixAction(
-                                Action::make('generatePassword')
-                                    ->icon(Heroicon::OutlinedArrowPath)
-                                    ->tooltip('Generate a strong password')
-                                    ->action(function (): void {
-                                        $this->data['password'] = Str::password(12);
-                                    })
-                            )
-                            ->columnSpanFull(),
-                    ]),
-            ]);
+        return $schema->components([
+            Section::make('Login details')
+                ->description('Only what the chauffeur needs to sign in. Account is created as active.')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('first_name')
+                        ->label('First name')
+                        ->required()
+                        ->maxLength(80)
+                        ->autocomplete(false),
+                    TextInput::make('last_name')
+                        ->label('Last name')
+                        ->required()
+                        ->maxLength(80)
+                        ->autocomplete(false),
+                    TextInput::make('email')
+                        ->label('Login email')
+                        ->email()
+                        ->required()
+                        ->unique(User::class, 'email')
+                        ->maxLength(255)
+                        ->helperText('Used on the website login page.')
+                        ->columnSpanFull(),
+                    TextInput::make('phone')
+                        ->label('Phone')
+                        ->tel()
+                        ->required()
+                        ->maxLength(40),
+                    Select::make('gender')
+                        ->label('Gender')
+                        ->options([
+                            'male' => 'Male',
+                            'female' => 'Female',
+                        ])
+                        ->required()
+                        ->native(false),
+                    TextInput::make('password')
+                        ->label('Temporary password')
+                        ->password()
+                        ->revealable()
+                        ->required()
+                        ->rule(Password::defaults())
+                        ->helperText('Share this with the chauffeur. Click the refresh icon to generate one.')
+                        ->suffixAction(
+                            Action::make('generatePassword')
+                                ->icon(Heroicon::OutlinedArrowPath)
+                                ->tooltip('Generate password')
+                                ->action(function (): void {
+                                    $this->data['password'] = Str::password(12);
+                                })
+                        )
+                        ->columnSpanFull(),
+                ]),
+        ]);
     }
 
     public function content(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                $this->getCredentialsBannerComponent(),
-                $this->getFormContentComponent(),
-            ]);
-    }
-
-    protected function getCredentialsBannerComponent(): Component
-    {
-        return Section::make('Hand these credentials to the chauffeur')
-            ->description('Copy email and password now — the password is only shown once here.')
-            ->icon(Heroicon::OutlinedKey)
-            ->visible(fn (): bool => filled($this->handedCredentials))
-            ->schema([
-                SchemaView::make('filament.create-chauffeur-credentials')
-                    ->viewData(fn (): array => [
-                        'credentials' => $this->handedCredentials,
-                    ]),
-                Actions::make([
-                    Action::make('viewChauffeur')
-                        ->label('Open chauffeur list')
-                        ->url(ChauffeurResource::getUrl('index'))
-                        ->color('gray'),
-                    Action::make('createAnother')
-                        ->label('Create another')
-                        ->action(function (): void {
-                            $this->handedCredentials = null;
-                            $this->form->fill(['gender' => 'male']);
-                        }),
-                ])->alignment(Alignment::Start),
-            ]);
+        return $schema->components([
+            $this->getFormContentComponent(),
+        ]);
     }
 
     public function getFormContentComponent(): Component
@@ -181,6 +173,12 @@ class CreateChauffeurAccount extends Page
                     ->alignment(Alignment::Start)
                     ->key('form-actions'),
             ]);
+    }
+
+    public function clearHandedCredentials(): void
+    {
+        $this->handedCredentials = null;
+        $this->form->fill(['gender' => 'male']);
     }
 
     public function create(): void
