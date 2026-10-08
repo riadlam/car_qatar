@@ -85,6 +85,8 @@ class BookingResource extends JsonResource
             'cancelled_at' => $this->cancelled_at,
             'completed_at' => $this->completed_at,
             'cancellation' => $this->cancellationPayload(),
+            'review' => $this->reviewPayload(),
+            'can_review' => $this->canReview(),
             'booker_name' => $this->bookerName(),
             'guest' => new BookingGuestResource($this->whenLoaded('guest')),
             'guests' => BookingGuestResource::collection($this->whenLoaded('guests')),
@@ -168,6 +170,41 @@ class BookingResource extends JsonResource
         }
 
         return $name !== '' ? $name : null;
+    }
+
+    /**
+     * @return array{id: int, rating: int, comment: ?string, created_at: mixed}|null
+     */
+    private function reviewPayload(): ?array
+    {
+        $review = $this->relationLoaded('review')
+            ? $this->review
+            : $this->review()->first();
+
+        if (! $review) {
+            return null;
+        }
+
+        return [
+            'id' => $review->id,
+            'rating' => (int) $review->rating,
+            'comment' => $review->comment,
+            'created_at' => $review->created_at,
+        ];
+    }
+
+    private function canReview(): bool
+    {
+        $status = $this->status?->value ?? $this->status;
+        if ($status !== 'completed') {
+            return false;
+        }
+
+        if ($this->relationLoaded('review')) {
+            return $this->review === null;
+        }
+
+        return ! $this->review()->exists();
     }
 
     /**

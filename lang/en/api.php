@@ -69,4 +69,11 @@ return [
         'quote_cannot_refresh' => 'This quote has expired and cannot be refreshed.',
     ],
 
+    'review' => [
+        'submitted' => 'Thank you for your review.',
+        'not_completed' => 'You can only review a completed trip.',
+        'already_submitted' => 'You already reviewed this trip.',
+        'no_chauffeur' => 'This trip has no chauffeur to review.',
+    ],
+
 ];

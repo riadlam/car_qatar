@@ -6,13 +6,18 @@ import TripLiveMap from '../components/journeys/TripLiveMap';
 import { IncludedIcon } from '../components/booking/icons';
 import JourneyRideSidebar, { ContactSheet } from '../components/journeys/JourneyRideSidebar';
 import { useAuth } from '../context/AuthContext';
-import { cancelBooking, getBooking } from '../api/bookings';
+import { cancelBooking, getBooking, submitBookingReview } from '../api/bookings';
 import CancelReasonModal from '../components/journeys/CancelReasonModal';
+import ReviewModal from '../components/journeys/ReviewModal';
 import { findJourney, formatMoney } from '../data/journeys';
 import { INCLUDED } from '../data/bookingVehicles';
 import { applyPositionToJourney, applyTrackToJourney, bookingToJourney } from '../utils/bookingMappers';
 import { subscribePrivate } from '../echo';
 import Skeleton from '../components/ui/Skeleton';
+
+function reviewDismissKey(bookingId) {
+    return `review_dismissed_${bookingId}`;
+}
 
 function mapStep(journey) {
     if (!journey) return 'waiting';
@@ -56,6 +61,8 @@ export default function JourneyRide({ mode = 'details' }) {
     const [journeyError, setJourneyError] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
     const [cancelBusy, setCancelBusy] = useState(false);
+    const [reviewOpen, setReviewOpen] = useState(false);
+    const [reviewBusy, setReviewBusy] = useState(false);
 
     const step = mapStep(journey);
     const showCar = step === 'to_pickup' || step === 'to_dropoff';
@@ -131,7 +138,15 @@ export default function JourneyRide({ mode = 'details' }) {
             {
                 BookingUpdated: (payload) => {
                     if (payload?.booking) {
-                        setJourney(bookingToJourney(payload.booking));
+                        const next = bookingToJourney(payload.booking);
+                        setJourney(next);
+                        if (
+                            (payload.reason === 'completed' || next.can_review) &&
+                            next.can_review &&
+                            !sessionStorage.getItem(reviewDismissKey(next.id))
+                        ) {
+                            setReviewOpen(true);
+                        }
                     }
                     if (payload?.track) {
                         setJourney((prev) => applyTrackToJourney(prev, payload.track));
@@ -162,6 +177,18 @@ export default function JourneyRide({ mode = 'details' }) {
             setParams(next, { replace: true });
         }
     }, [params, setParams, journey]);
+
+    useEffect(() => {
+        if (!journey?.api || !journey.can_review) return;
+        const forceReview = params.get('review') === '1';
+        if (!forceReview && sessionStorage.getItem(reviewDismissKey(journey.id))) return;
+        setReviewOpen(true);
+        if (forceReview) {
+            const next = new URLSearchParams(params);
+            next.delete('review');
+            setParams(next, { replace: true });
+        }
+    }, [journey?.id, journey?.api, journey?.can_review, params, setParams]);
 
     if (loading || !isAuthenticated || journeyLoading) {
         return <Skeleton variant="live" className="min-h-screen bg-page p-4 pt-24 sm:p-6 lg:p-10" />;
@@ -538,6 +565,28 @@ export default function JourneyRide({ mode = 'details' }) {
                         setCancelOpen(false);
                     } finally {
                         setCancelBusy(false);
+                    }
+                }}
+            />
+            <ReviewModal
+                open={reviewOpen && Boolean(journey.can_review)}
+                chauffeurName={journey.chauffeur?.name}
+                busy={reviewBusy}
+                onClose={() => {
+                    if (reviewBusy) return;
+                    sessionStorage.setItem(reviewDismissKey(journey.id), '1');
+                    setReviewOpen(false);
+                }}
+                onSubmit={async ({ rating, comment }) => {
+                    setReviewBusy(true);
+                    try {
+                        const res = await submitBookingReview(journey.id, { rating, comment });
+                        const booked = res.booking || res;
+                        setJourney(bookingToJourney(booked));
+                        sessionStorage.removeItem(reviewDismissKey(journey.id));
+                        setReviewOpen(false);
+                    } finally {
+                        setReviewBusy(false);
                     }
                 }}
             />

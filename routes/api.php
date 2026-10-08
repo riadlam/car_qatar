@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Partner\PortalController as PartnerPortalController
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\RealtimeConfigController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SavedGuestController;
 use App\Http\Controllers\Api\WalletController;
 use Illuminate\Support\Facades\Route;
@@ -119,6 +120,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/{booking}/track', [BookingController::class, 'track'])
         ->middleware(['customer.or.partner', 'throttle:60,1']);
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->middleware('customer.or.partner');
+    Route::post('/bookings/{booking}/review', [ReviewController::class, 'store'])
+        ->middleware('throttle:20,1');
 
     Route::apiResource('saved-guests', SavedGuestController::class)
         ->except(['show']);

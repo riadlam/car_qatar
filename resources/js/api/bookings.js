@@ -45,6 +45,11 @@ export async function cancelBooking(id, payload) {
     return data.booking || data;
 }
 
+export async function submitBookingReview(id, payload) {
+    const { data } = await api.post(`/bookings/${id}/review`, payload);
+    return data;
+}
+
 export async function listCancellationReasons() {
     const { data } = await api.get('/cancellation-reasons');
     return data.data || [];

@@ -37,6 +37,7 @@ class ProfileController extends Controller
                 'booking.serviceType',
                 'booking.guest',
                 'booking.user',
+                'booking.review',
                 'booking.cancellations.cancelledBy',
             ])
             ->orderByDesc('assigned_at')
@@ -155,6 +156,8 @@ class ProfileController extends Controller
             'status_label' => $canceled ? 'Canceled' : ($completed ? 'Completed' : 'Accepted'),
             'cancel_reason' => $canceled ? (string) ($this->latestCancellation($booking)?->reason ?: '') : '',
             'cancelled_by' => $canceled ? $this->cancelledByRole($booking) : '',
+            'rating' => $completed ? ($booking->review?->rating ?? null) : null,
+            'review_comment' => $completed ? ($booking->review?->comment ?? null) : null,
         ];
     }
 

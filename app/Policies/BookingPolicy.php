@@ -40,4 +40,10 @@ class BookingPolicy
         return (int) $booking->user_id === (int) $user->id
             || (int) $booking->booked_by_user_id === (int) $user->id;
     }
+
+    public function review(User $user, Booking $booking): bool
+    {
+        return (int) $booking->user_id === (int) $user->id
+            || (int) $booking->booked_by_user_id === (int) $user->id;
+    }
 }

@@ -51,7 +51,12 @@ export function bookingToJourney(booking) {
         status === 'cancelled'
             ? ['details']
             : status === 'past'
-              ? ['details', 'receipt', 'rebook']
+              ? [
+                    'details',
+                    ...(booking.can_review ? ['rate'] : []),
+                    'receipt',
+                    'rebook',
+                ]
               : canTrack
                 ? ['details', 'contact', 'cancel']
                 : chauffeur
@@ -138,6 +143,9 @@ export function bookingToJourney(booking) {
                 : null,
         ride_events: booking.ride_events || [],
         created_at: booking.created_at,
+        rating: booking.review?.rating ?? null,
+        review_comment: booking.review?.comment ?? null,
+        can_review: Boolean(booking.can_review),
     };
 }
 

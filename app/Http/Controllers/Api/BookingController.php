@@ -42,6 +42,7 @@ class BookingController extends Controller
                 'payments',
                 'user',
                 'paymentLinks',
+                'review',
             ])
             ->orderByDesc('pickup_at');
 
@@ -132,6 +133,7 @@ class BookingController extends Controller
             'rideAssignment.vehicle',
             'cancellations.cancelledBy',
             'user',
+            'review',
         ]);
 
         return response()->json([

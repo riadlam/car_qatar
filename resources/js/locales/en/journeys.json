@@ -57,5 +57,19 @@
     "passenger": "Passenger",
     "share": "Share details",
     "support": "Contact support"
+  },
+  "review": {
+    "title": "How was your ride?",
+    "subtitle": "Rate your chauffeur if you like. This helps keep service excellent.",
+    "subtitleNamed": "Rate {{name}} if you like. This helps keep service excellent.",
+    "starsAria": "Star rating",
+    "starLabel": "{{count}} stars",
+    "commentLabel": "Comment (optional)",
+    "commentPlaceholder": "Anything we should know?",
+    "skip": "Not now",
+    "submit": "Submit review",
+    "submitting": "Sending…",
+    "submitError": "Could not save your review.",
+    "rateTrip": "Rate this trip"
   }
 }

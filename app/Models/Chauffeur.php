@@ -77,4 +77,9 @@ class Chauffeur extends Model
     {
         return $this->hasMany(ChauffeurVehicleAssignment::class);
     }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

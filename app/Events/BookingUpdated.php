@@ -50,6 +50,7 @@ class BookingUpdated implements ShouldBroadcastNow
                 'rideAssignment.chauffeur.user',
                 'rideAssignment.vehicle',
                 'user',
+                'review',
             ])
             ->find($this->bookingId);
 

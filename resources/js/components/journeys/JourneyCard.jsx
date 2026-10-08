@@ -222,6 +222,17 @@ export default function JourneyCard({ journey: j, onCancelled }) {
                                     </Link>
                                 );
                             }
+                            if (action === 'rate') {
+                                return (
+                                    <Link
+                                        key={action}
+                                        to={`/journeys/ride/${j.id}?review=1`}
+                                        className="font-geist cursor-pointer rounded-full bg-wine-700 px-3.5 py-2 text-[13px] font-500 text-white transition hover:bg-wine-800"
+                                    >
+                                        {t('review.rateTrip')}
+                                    </Link>
+                                );
+                            }
                             if (action === 'edit') {
                                 return (
                                     <Link
