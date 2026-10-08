@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\CreateChauffeurAccount;
+use App\Filament\Pages\CreatePartnerAccount;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\BookingsTrendChart;
 use App\Filament\Widgets\LatestBookings;
@@ -84,6 +85,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 CreateChauffeurAccount::class,
+                CreatePartnerAccount::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

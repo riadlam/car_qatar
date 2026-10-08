@@ -31,12 +31,6 @@ class PartnersTable
                 TextColumn::make('phone')
                     ->searchable()
                     ->toggleable(),
-                TextColumn::make('country.name')
-                    ->searchable()
-                    ->toggleable(),
-                TextColumn::make('city.name')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
                     ->badge()
                     ->searchable()
@@ -48,33 +42,14 @@ class PartnersTable
                         'percent' => 'Percent',
                         default => (string) $state,
                     })
-                    ->badge(),
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('commission_value')
                     ->label('Fee value')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('address')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('tax_number')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('registration_number')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('approved_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('approved_by')
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -86,7 +61,6 @@ class PartnersTable
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
                         'active' => 'Active',
                         'inactive' => 'Inactive',
                         'suspended' => 'Suspended',

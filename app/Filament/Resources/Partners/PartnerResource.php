@@ -60,6 +60,12 @@ class PartnerResource extends Resource
         return $relations;
     }
 
+    public static function canCreate(): bool
+    {
+        // Use Create Partner page (credentials handout) instead of the bare resource form.
+        return false;
+    }
+
     public static function getPages(): array
     {
         return [

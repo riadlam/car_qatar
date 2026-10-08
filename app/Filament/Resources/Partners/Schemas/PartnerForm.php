@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Partners\Schemas;
 
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -22,19 +21,14 @@ class PartnerForm
                         TextInput::make('display_name')
                             ->required()
                             ->helperText('Shown in the partner portal.'),
-                        TextInput::make('tax_number')
-                            ->default(null),
-                        TextInput::make('registration_number')
-                            ->default(null),
                         Select::make('status')
                             ->options([
-                                'pending' => 'Pending',
                                 'active' => 'Active',
                                 'inactive' => 'Inactive',
                                 'suspended' => 'Suspended',
                             ])
                             ->required()
-                            ->default('pending')
+                            ->default('active')
                             ->native(false),
                     ]),
                 Section::make('Contact')
@@ -47,17 +41,6 @@ class PartnerForm
                         TextInput::make('phone')
                             ->tel()
                             ->default(null),
-                        Select::make('country_id')
-                            ->relationship('country', 'name')
-                            ->searchable()
-                            ->default(null),
-                        Select::make('city_id')
-                            ->relationship('city', 'name')
-                            ->searchable()
-                            ->default(null),
-                        TextInput::make('address')
-                            ->default(null)
-                            ->columnSpanFull(),
                     ]),
                 Section::make('Commercial — partner fee on guest bookings')
                     ->description('Fee is merged into the guest total (no separate line on their receipt). Partners see it in their portal; only completed rides earn it.')
@@ -85,16 +68,6 @@ class PartnerForm
                             ->helperText(fn (callable $get): string => $get('commission_type') === 'flat'
                                 ? 'Added to booking fees in the booking currency.'
                                 : 'e.g. 10 = 10% of trip subtotal (before tax).'),
-                    ]),
-                Section::make('Approval')
-                    ->columns(2)
-                    ->collapsed()
-                    ->schema([
-                        DateTimePicker::make('approved_at'),
-                        Select::make('approved_by')
-                            ->relationship('approvedBy', 'name')
-                            ->searchable()
-                            ->default(null),
                     ]),
             ]);
     }

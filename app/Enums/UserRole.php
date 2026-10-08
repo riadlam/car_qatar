@@ -47,6 +47,14 @@ enum UserRole: string
         ], true);
     }
 
+    public function canManagePartners(): bool
+    {
+        return in_array($this, [
+            self::Admin,
+            self::SuperAdmin,
+        ], true);
+    }
+
     /**
      * @return list<self>
      */
