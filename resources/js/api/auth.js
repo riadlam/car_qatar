@@ -55,7 +55,7 @@ export async function logout(token) {
 }
 
 export async function me() {
-    const { data } = await api.get('/auth/me');
+    const { data } = await api.get('/auth/me', { timeout: 8000 });
 
     return unwrapUser(data);
 }

@@ -10,6 +10,8 @@ import {
 import { ToastProvider } from './context/ToastContext';
 import LocaleSync from './components/LocaleSync';
 import Skeleton from './components/ui/Skeleton';
+// Eager: avoid Suspense page-skeleton if the partner chunk fails/stalls on mobile.
+import PartnerPortal from './pages/PartnerPortal';
 
 const Home = lazy(() => import('./pages/Home'));
 const Chauffeurs = lazy(() => import('./pages/Chauffeurs'));
@@ -32,7 +34,6 @@ const Account = lazy(() => import('./pages/Account'));
 const Journeys = lazy(() => import('./pages/Journeys'));
 const JourneyRide = lazy(() => import('./pages/JourneyRide'));
 const ChauffeurPortal = lazy(() => import('./pages/ChauffeurPortal'));
-const PartnerPortal = lazy(() => import('./pages/PartnerPortal'));
 const GuestPay = lazy(() => import('./pages/GuestPay'));
 const Booking = lazy(() => import('./pages/Booking'));
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -73,6 +74,12 @@ function RoleRoute({ allow, redirectTo, children }) {
             setReturnTo(from);
         }
     }, [loading, isAuthenticated, from, setReturnTo]);
+
+    // Cached session already matches — render portal while /auth/me refreshes.
+    // Without this, phones sat on a full-page skeleton until me() finished (or hung).
+    if (loading && user && allow(user)) {
+        return children;
+    }
 
     if (loading) {
         return <Skeleton variant="page" />;

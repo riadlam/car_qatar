@@ -53,29 +53,31 @@ export function AuthProvider({ children }) {
                 clearSession();
             }
             setLoading(false);
-            return;
+            return undefined;
         }
 
         let cancelled = false;
+        // Always clear the gate — never leave RoleRoute on an infinite skeleton.
         const hardTimeout = window.setTimeout(() => {
-            if (cancelled) return;
-            clearSession();
             setLoading(false);
-        }, 12000);
+        }, 6000);
 
         authApi
             .me()
             .then((data) => {
                 if (cancelled) return;
-                persistUser(data.user);
+                if (data?.user) {
+                    persistUser(data.user);
+                }
             })
             .catch(() => {
                 if (cancelled) return;
                 clearSession();
             })
             .finally(() => {
-                if (cancelled) return;
                 window.clearTimeout(hardTimeout);
+                // Clear loading even if this effect was cleaned up (StrictMode remount).
+                // A newer effect will set loading true only when it needs to refetch.
                 setLoading(false);
             });
 

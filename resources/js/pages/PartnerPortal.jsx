@@ -79,10 +79,13 @@ export default function PartnerPortal() {
         }
     };
 
-    // Load once on mount. Do not depend on `t` — i18n identity churn was re-triggering
-    // setLoading(true) forever and leaving the partner panel on skeletons.
+    // Load once on mount. Always clear loading (even after StrictMode cleanup) so
+    // phones never sit on skeletons forever when a request is cancelled/remounted.
     useEffect(() => {
         let cancelled = false;
+        const hardStop = window.setTimeout(() => {
+            setLoading(false);
+        }, 8000);
 
         (async () => {
             setLoading(true);
@@ -101,33 +104,35 @@ export default function PartnerPortal() {
                     getWallet().catch(() => null),
                 ]);
 
-                if (cancelled) return;
+                if (!cancelled) {
+                    if (!profileResult.ok) {
+                        throw profileResult.err;
+                    }
 
-                if (!profileResult.ok) {
-                    throw profileResult.err;
-                }
+                    setMe(profileResult.profile);
+                    setBookings(ridesResult.ok ? ridesResult.rides?.data || [] : []);
+                    setEarnings(earnResult.ok ? earnResult.earn : null);
+                    setWallet(walletData);
 
-                setMe(profileResult.profile);
-                setBookings(ridesResult.ok ? ridesResult.rides?.data || [] : []);
-                setEarnings(earnResult.ok ? earnResult.earn : null);
-                setWallet(walletData);
-
-                if (!ridesResult.ok || !earnResult.ok) {
-                    const fail = !ridesResult.ok ? ridesResult.err : earnResult.err;
-                    setError(fail?.response?.data?.message || t('errors.load'));
+                    if (!ridesResult.ok || !earnResult.ok) {
+                        const fail = !ridesResult.ok ? ridesResult.err : earnResult.err;
+                        setError(fail?.response?.data?.message || t('errors.load'));
+                    }
                 }
             } catch (err) {
-                if (cancelled) return;
-                setError(err?.response?.data?.message || t('errors.load'));
-            } finally {
                 if (!cancelled) {
-                    setLoading(false);
+                    setError(err?.response?.data?.message || t('errors.load'));
                 }
+            } finally {
+                window.clearTimeout(hardStop);
+                setLoading(false);
             }
         })();
 
         return () => {
             cancelled = true;
+            window.clearTimeout(hardStop);
+            setLoading(false);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-once
     }, []);
@@ -220,10 +225,17 @@ export default function PartnerPortal() {
                         <div className="h-28 w-full animate-pulse rounded-2xl bg-[#eceae6]" />
                         <div className="h-48 w-full animate-pulse rounded-2xl bg-[#eceae6]" />
                     </div>
-                ) : error ? (
-                    <p className="font-geist mt-8 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800" role="alert">
-                        {error}
-                    </p>
+                ) : error && !me ? (
+                    <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-5" role="alert">
+                        <p className="font-geist m-0 text-red-800">{error}</p>
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="font-geist mt-4 cursor-pointer rounded-full border border-red-300 bg-white px-4 py-2 text-[14px] font-500 text-red-900"
+                        >
+                            {t('actions.retry', { defaultValue: 'Retry' })}
+                        </button>
+                    </div>
                 ) : (
                     <div className="mt-8">
                         {active.id === 'overview' && (
