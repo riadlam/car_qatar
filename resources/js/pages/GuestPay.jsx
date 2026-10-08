@@ -121,17 +121,25 @@ export default function GuestPay() {
 
                         <div className="rounded-2xl border border-[#e8e8ea] bg-white p-5 sm:p-6">
                             <div className="flex items-center justify-between gap-3 py-2">
-                                <span className="font-geist text-[15px] text-ink-text/80">Price excluding tax</span>
+                                <span className="font-geist text-[15px] text-ink-text/80">
+                                    {Number(booking.tax_amount) > 0
+                                        ? t('sidebar.priceExTax')
+                                        : t('sidebar.price')}
+                                </span>
                                 <span className="font-geist text-[15px] text-ink-text">
                                     {money(booking.subtotal, booking.currency)}
                                 </span>
                             </div>
-                            <div className="flex items-center justify-between gap-3 border-t border-[#f0f0f2] py-2">
-                                <span className="font-geist text-[15px] text-ink-text/80">Estimated tax</span>
-                                <span className="font-geist text-[15px] text-ink-text">
-                                    {money(booking.tax_amount, booking.currency)}
-                                </span>
-                            </div>
+                            {Number(booking.tax_amount) > 0 ? (
+                                <div className="flex items-center justify-between gap-3 border-t border-[#f0f0f2] py-2">
+                                    <span className="font-geist text-[15px] text-ink-text/80">
+                                        {t('sidebar.estimatedTax')}
+                                    </span>
+                                    <span className="font-geist text-[15px] text-ink-text">
+                                        {money(booking.tax_amount, booking.currency)}
+                                    </span>
+                                </div>
+                            ) : null}
                             <div className="flex items-center justify-between gap-3 border-t border-[#f0f0f2] pt-3">
                                 <span className="font-geist text-[16px] font-500 text-ink-text">{t('checkout.sidebar.total')}</span>
                                 <span className="font-geist text-[18px] font-500 text-ink-text">

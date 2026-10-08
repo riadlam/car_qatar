@@ -39,7 +39,9 @@ export default function CheckoutSidebar({
 
                 <div className="mt-4 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-3">
-                        <span className="font-geist text-[14px] text-muted">{t('sidebar.priceExTax')}</span>
+                        <span className="font-geist text-[14px] text-muted">
+                            {Number(vehicle.tax) > 0 ? t('sidebar.priceExTax') : t('sidebar.price')}
+                        </span>
                         <span className="font-geist text-[14px] text-ink-text">
                             {currency}
                             {Number(vehicle.base).toFixed(2)}

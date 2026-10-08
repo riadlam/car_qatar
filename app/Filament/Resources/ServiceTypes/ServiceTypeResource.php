@@ -29,6 +29,13 @@ class ServiceTypeResource extends Resource
 
     protected static ?string $navigationLabel = 'Hero booking services';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $modelLabel = 'Booking service';
 
     protected static ?string $pluralModelLabel = 'Booking services';

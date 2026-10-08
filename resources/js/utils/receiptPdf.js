@@ -10,9 +10,8 @@ const PAGE = [251, 248, 242];
 
 function estimateBreakdown(total) {
     const t = Number(total) || 0;
-    const tax = Math.round(t * 0.1525 * 100) / 100;
-    const base = Math.round((t - tax) * 100) / 100;
-    return { base, tax, total: t };
+    // Taxes are not charged at the moment — show the full amount as base fare.
+    return { base: t, tax: 0, total: t };
 }
 
 /**
@@ -183,7 +182,9 @@ export function buildReceiptPdf(journey) {
     };
 
     row('Base fare', formatMoney(base, currency));
-    row('Taxes & fees', formatMoney(tax, currency));
+    if (tax > 0) {
+        row('Taxes & fees', formatMoney(tax, currency));
+    }
 
     y += 4;
     doc.setDrawColor(...LINE);

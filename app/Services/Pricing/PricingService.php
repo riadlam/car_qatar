@@ -11,7 +11,8 @@ use InvalidArgumentException;
 
 class PricingService
 {
-    public const TAX_RATE = 0.1525;
+    /** Taxes disabled for now — keep bills tax-free until finance turns them back on. */
+    public const TAX_RATE = 0.0;
 
     /**
      * @param  array<string, mixed>  $params
@@ -214,13 +215,8 @@ class PricingService
 
     private function taxRate(PricingRule $rule): float
     {
-        if ($rule->tax_rate === null) {
-            return self::TAX_RATE;
-        }
-
-        $rate = (float) $rule->tax_rate;
-
-        return $rate > 1 ? $rate / 100 : $rate;
+        // Force 0 while taxes are not included on customer bills.
+        return self::TAX_RATE;
     }
 
     /**
