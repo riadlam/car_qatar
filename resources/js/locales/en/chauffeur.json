@@ -22,6 +22,7 @@
   "empty": {
     "offersTitle": "No nearby offers",
     "offersBody": "Enable location to see rides closest to you. New bookings in your area will appear here.",
+    "offersBodyReady": "No bookings in your area right now. New offers will appear here live.",
     "ridesTitle": "No rides yet",
     "ridesBody": "Accepted and completed rides will show up in this list.",
     "loadOffers": "Could not load offers",
@@ -31,7 +32,8 @@
     "pausedTitle": "Account paused",
     "pausedBody": "Your account is paused. You cannot receive or accept ride offers until an admin resumes you.",
     "locationNeeded": "Location needed",
-    "locationBody": "Turn on GPS so we can show rides nearest to you. New offers appear live — no need to refresh."
+    "locationBody": "Turn on GPS so we can show rides nearest to you. New offers appear live — no need to refresh.",
+    "locationHint": "On iPhone: tap Allow when Safari asks. If you blocked it earlier, open Settings → Safari → Location."
   },
   "paused": {
     "bannerTitle": "Account paused",

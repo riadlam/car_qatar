@@ -102,14 +102,14 @@ function EmptyState({ title, body, actionLabel, onAction, actionBusy, note }) {
             {note ? (
                 <p className="font-geist mt-2 m-0 max-w-md text-[13px] leading-5 text-ink-text">{note}</p>
             ) : null}
-            {actionLabel && onAction ? (
+            {actionLabel && typeof onAction === 'function' ? (
                 <button
                     type="button"
                     onClick={onAction}
                     disabled={actionBusy}
-                    className="font-geist mt-6 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 text-[14px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-70"
+                    className="font-geist mt-6 inline-flex min-h-12 w-full max-w-xs cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 text-[15px] font-600 text-white shadow-sm transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-70"
                 >
-                    {actionBusy ? '…' : actionLabel}
+                    {actionBusy ? `${actionLabel}…` : actionLabel}
                 </button>
             ) : null}
         </div>
@@ -429,8 +429,14 @@ export default function ChauffeurPortal() {
         { onLocationPosted: refreshOffersAfterGps },
     );
 
+    // Show the GPS button whenever we do not have a fresh fix — not only when
+    // the API sets location_required (otherwise users only saw the text).
     const needsLocation =
-        Boolean(offersMeta?.location_required) && !offersMeta?.location_fresh && !accountPaused;
+        !accountPaused &&
+        !offersBlocked &&
+        !offersError &&
+        offersReady &&
+        (offersMeta == null || offersMeta.location_fresh !== true);
 
     const enableLocation = async () => {
         const ok = await requestLocation();
@@ -953,14 +959,13 @@ export default function ChauffeurPortal() {
                                             offersBlocked ||
                                             (needsLocation
                                                 ? offersMeta?.message || t('empty.locationBody')
-                                                : null) ||
-                                            activeTab.emptyBody
+                                                : t('empty.offersBodyReady'))
                                         }
-                                        note={needsLocation ? gpsNote : ''}
+                                        note={needsLocation ? gpsNote || t('empty.locationHint') : ''}
                                         actionLabel={
                                             needsLocation ? t('actions.enableLocation') : null
                                         }
-                                        onAction={needsLocation ? enableLocation : null}
+                                        onAction={needsLocation ? enableLocation : undefined}
                                         actionBusy={gpsBusy}
                                     />
                                 ) : (
