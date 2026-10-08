@@ -20,15 +20,23 @@ const fieldClass =
     'font-geist w-full rounded-lg border border-[#d8d8dc] bg-white px-4 py-3 text-[16px] leading-6 text-ink-text outline-none transition focus:border-wine-700';
 
 /**
- * Step 2 — Account type + profile details, then redirect to previous page.
+ * Step 3 — Account type + profile details (after email OTP), then redirect.
  */
 export default function CompleteProfile() {
     const { t } = useTranslation('auth');
     const { t: tCommon } = useTranslation('common');
     const navigate = useNavigate();
-    const { getPendingEmail, completeProfile, consumeReturnTo, isAuthenticated, loading } = useAuth();
+    const {
+        getPendingEmail,
+        getEmailOtpToken,
+        completeProfile,
+        consumeReturnTo,
+        isAuthenticated,
+        loading,
+    } = useAuth();
     const { showToast } = useToast();
     const email = getPendingEmail();
+    const emailOtpToken = getEmailOtpToken();
 
     const [accountType, setAccountType] = useState('individual');
     const [form, setForm] = useState({
@@ -46,17 +54,19 @@ export default function CompleteProfile() {
 
     useEffect(() => {
         if (loading) return;
-        if (!email && !isAuthenticated) {
-            navigate('/login', { replace: true });
-        }
-    }, [email, navigate, isAuthenticated, loading]);
-
-    useEffect(() => {
-        if (loading) return;
         if (isAuthenticated && !email) {
             navigate(consumeReturnTo(), { replace: true });
+            return;
         }
-    }, [isAuthenticated, email, consumeReturnTo, navigate, loading]);
+        if (!email && !isAuthenticated) {
+            navigate('/login', { replace: true });
+            return;
+        }
+        // Customer signup must have verified email OTP first (chauffeur pending path has no token).
+        if (email && !emailOtpToken && !isAuthenticated) {
+            navigate('/verify-email', { replace: true });
+        }
+    }, [email, emailOtpToken, navigate, isAuthenticated, loading, consumeReturnTo]);
 
     const firstApiError = (err) => {
         const errors = err?.response?.data?.errors;
@@ -104,6 +114,7 @@ export default function CompleteProfile() {
                 preferredLanguage: form.preferredLanguage,
                 phone: form.phone,
                 email,
+                emailOtpToken,
                 password: form.password,
                 passwordConfirm: form.passwordConfirm,
             });
@@ -143,7 +154,7 @@ export default function CompleteProfile() {
                 </Link>
                 <button
                     type="button"
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate(emailOtpToken ? '/verify-email' : '/login')}
                     className="font-geist cursor-pointer text-[14px] font-500 text-muted transition hover:text-ink-text"
                 >
                     {t('completeProfile.back')}

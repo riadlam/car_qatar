@@ -8,6 +8,7 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\Auth\EmailOtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,21 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly EmailOtpService $emailOtp,
+    ) {}
+
     public function register(RegisterRequest $request): JsonResponse
     {
         $data = $request->validated();
         $accountType = $data['account_type'];
         $isPerson = $accountType === 'individual';
+
+        if (! $this->emailOtp->consumeRegistrationToken($data['email_otp_token'], $data['email'])) {
+            throw ValidationException::withMessages([
+                'email_otp_token' => [__('api.auth.otp_token_invalid')],
+            ]);
+        }
 
         // Individual and company signups are both customers who can book.
         // account_type=company only stores the company name — it is not a Partner.
@@ -51,6 +62,7 @@ class AuthController extends Controller
             ]);
             $user->forceFill([
                 'role' => UserRole::Customer,
+                'email_verified_at' => now(),
             ])->save();
 
             return $user;

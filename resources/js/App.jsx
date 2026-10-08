@@ -22,6 +22,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Account = lazy(() => import('./pages/Account'));
 const Journeys = lazy(() => import('./pages/Journeys'));
 const JourneyRide = lazy(() => import('./pages/JourneyRide'));
@@ -114,6 +115,14 @@ export default function App() {
                             />
                             <Route path="/oauth/callback" element={<OAuthCallback />} />
                             <Route path="/register" element={<Register />} />
+                            <Route
+                                path="/verify-email"
+                                element={
+                                    <GuestRoute>
+                                        <VerifyEmail />
+                                    </GuestRoute>
+                                }
+                            />
                             <Route path="/complete-profile" element={<CompleteProfile />} />
                             <Route path="/account" element={<Account />} />
                             <Route

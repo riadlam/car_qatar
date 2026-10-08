@@ -14,6 +14,21 @@ export async function register(payload) {
     return unwrapUser(data);
 }
 
+export async function sendEmailOtp(email) {
+    const { data } = await api.post('/auth/email/otp/send', { email });
+    return data;
+}
+
+export async function resendEmailOtp(email) {
+    const { data } = await api.post('/auth/email/otp/resend', { email });
+    return data;
+}
+
+export async function verifyEmailOtp({ email, code }) {
+    const { data } = await api.post('/auth/email/otp/verify', { email, code });
+    return data;
+}
+
 export async function login(payload) {
     const { data } = await api.post('/auth/login', {
         ...payload,

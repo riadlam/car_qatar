@@ -5,6 +5,7 @@ const AuthContext = createContext(null);
 
 const RETURN_KEY = 'auth_return_to';
 const PENDING_EMAIL_KEY = 'auth_pending_email';
+const EMAIL_OTP_TOKEN_KEY = 'auth_email_otp_token';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
@@ -84,7 +85,13 @@ export function AuthProvider({ children }) {
     }, [clearSession, persistUser]);
 
     const setReturnTo = useCallback((path) => {
-        if (path && path !== '/login' && path !== '/register' && path !== '/complete-profile') {
+        if (
+            path &&
+            path !== '/login' &&
+            path !== '/register' &&
+            path !== '/complete-profile' &&
+            path !== '/verify-email'
+        ) {
             sessionStorage.setItem(RETURN_KEY, path);
         }
     }, []);
@@ -97,9 +104,25 @@ export function AuthProvider({ children }) {
 
     const setPendingEmail = useCallback((email) => {
         sessionStorage.setItem(PENDING_EMAIL_KEY, email);
+        sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
     }, []);
 
     const getPendingEmail = useCallback(() => sessionStorage.getItem(PENDING_EMAIL_KEY) || '', []);
+
+    const setEmailOtpToken = useCallback((token) => {
+        if (token) {
+            sessionStorage.setItem(EMAIL_OTP_TOKEN_KEY, token);
+        } else {
+            sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
+        }
+    }, []);
+
+    const getEmailOtpToken = useCallback(() => sessionStorage.getItem(EMAIL_OTP_TOKEN_KEY) || '', []);
+
+    const clearSignupDraft = useCallback(() => {
+        sessionStorage.removeItem(PENDING_EMAIL_KEY);
+        sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
+    }, []);
 
     const login = useCallback(
         async (credentials) => {
@@ -123,20 +146,22 @@ export function AuthProvider({ children }) {
         async (payload) => {
             const data = await authApi.register(payload);
             persistSession(data.user, data.token);
-            sessionStorage.removeItem(PENDING_EMAIL_KEY);
+            clearSignupDraft();
             return data.user;
         },
-        [persistSession],
+        [persistSession, clearSignupDraft],
     );
 
-    /** Signup step 2 — maps CompleteProfile form → API register */
+    /** Signup step 3 — maps CompleteProfile form → API register (requires email OTP token) */
     const completeProfile = useCallback(
         async (profile) => {
             const email = profile.email || getPendingEmail();
+            const emailOtpToken = profile.emailOtpToken || getEmailOtpToken();
             const isCompany = profile.accountType === 'company';
 
             const payload = {
                 email,
+                email_otp_token: emailOtpToken,
                 password: profile.password,
                 password_confirmation: profile.passwordConfirm || profile.password,
                 account_type: isCompany ? 'company' : 'individual',
@@ -150,7 +175,7 @@ export function AuthProvider({ children }) {
 
             return register(payload);
         },
-        [getPendingEmail, register],
+        [getPendingEmail, getEmailOtpToken, register],
     );
 
     /** Profile fields go to the API. Cards are saved through /payment-methods. */
@@ -237,6 +262,9 @@ export function AuthProvider({ children }) {
             consumeReturnTo,
             setPendingEmail,
             getPendingEmail,
+            setEmailOtpToken,
+            getEmailOtpToken,
+            clearSignupDraft,
         }),
         [
             user,
@@ -255,6 +283,9 @@ export function AuthProvider({ children }) {
             consumeReturnTo,
             setPendingEmail,
             getPendingEmail,
+            setEmailOtpToken,
+            getEmailOtpToken,
+            clearSignupDraft,
         ],
     );
 

@@ -3,10 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { sendEmailOtp } from '../api/auth';
 import Logo from '../components/landing/Logo';
 
 /**
- * Sign in with email + password, or start create-account (email → complete-profile).
+ * Sign in with email + password, or start create-account (email → verify OTP → complete-profile).
  */
 export default function Login() {
     const { t } = useTranslation('auth');
@@ -70,7 +71,7 @@ export default function Login() {
         }
     };
 
-    const onCreateAccount = (e) => {
+    const onCreateAccount = async (e) => {
         e.preventDefault();
         setError('');
         const trimmed = email.trim();
@@ -78,8 +79,20 @@ export default function Login() {
             setError(t('login.errors.emailRequired'));
             return;
         }
-        setPendingEmail(trimmed);
-        navigate('/complete-profile');
+        setSubmitting(true);
+        try {
+            await sendEmailOtp(trimmed);
+            setPendingEmail(trimmed);
+            navigate('/verify-email');
+        } catch (err) {
+            setError(
+                err?.response?.data?.errors?.email?.[0] ||
+                    err?.response?.data?.message ||
+                    t('login.errors.otpSendFailed'),
+            );
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const fieldClass =
@@ -210,9 +223,10 @@ export default function Login() {
                             </label>
                             <button
                                 type="submit"
-                                className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600"
+                                disabled={submitting}
+                                className="font-geist inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-full bg-wine-700 px-6 py-3 text-[16px] font-500 text-white transition hover:bg-wine-600 disabled:opacity-60"
                             >
-                                {t('login.continue')}
+                                {submitting ? t('login.sendingCode') : t('login.continue')}
                             </button>
                         </form>
                     )}

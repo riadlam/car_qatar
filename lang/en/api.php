@@ -6,6 +6,17 @@ return [
         'credentials_incorrect' => 'The provided credentials are incorrect.',
         'chauffeur_declined' => 'Your chauffeur application was not approved.',
         'logged_out' => 'Logged out successfully.',
+        'otp_sent' => 'A confirmation code has been sent to your email.',
+        'otp_resent' => 'A new confirmation code has been sent to your email.',
+        'otp_verified' => 'Email confirmed. Continue creating your account.',
+        'otp_invalid' => 'That confirmation code is incorrect.',
+        'otp_expired' => 'That confirmation code has expired. Request a new one.',
+        'otp_locked' => 'Too many incorrect attempts. Request a new code.',
+        'otp_cooldown' => 'Please wait :seconds seconds before requesting another code.',
+        'otp_send_limit' => 'Too many codes sent. Try again in an hour.',
+        'otp_email_taken' => 'An account with this email already exists. Sign in instead.',
+        'otp_token_required' => 'Confirm your email before creating an account.',
+        'otp_token_invalid' => 'Email confirmation expired. Please verify your email again.',
     ],
 
     'profile' => [

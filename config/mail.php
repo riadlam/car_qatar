@@ -111,8 +111,9 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        // Empty MAIL_FROM_ADDRESS falls back so log mailer / OTP still works before SMTP is wired.
+        'address' => env('MAIL_FROM_ADDRESS') ?: 'noreply@almajdluxurytransport.com',
+        'name' => env('MAIL_FROM_NAME') ?: 'AL MAJD',
     ],
 
 ];
