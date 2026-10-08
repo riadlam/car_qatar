@@ -194,65 +194,66 @@ export default function CheckoutMobile({
                 </h1>
             </header>
 
-            {/* Map grows to fill leftover viewport space — kept under UI via z-0 */}
-            <div className="relative z-0 min-h-0 flex-1 overflow-hidden">
-                <RouteMap
-                    pickupLabel={trip.pickup}
-                    dropoffLabel={dropLabel}
-                    lat={trip.lat}
-                    lng={trip.lng}
-                    dropLat={trip.dropLat}
-                    dropLng={trip.dropLng}
-                    className="pointer-events-auto absolute inset-0 z-0 h-full w-full"
-                />
+            {/* Scrollable body: capped map + form. Parent is overflow-hidden so this must scroll. */}
+            <div className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+                <div className="relative h-[36dvh] min-h-[200px] max-h-[320px] shrink-0 overflow-hidden">
+                    <RouteMap
+                        pickupLabel={trip.pickup}
+                        dropoffLabel={dropLabel}
+                        lat={trip.lat}
+                        lng={trip.lng}
+                        dropLat={trip.dropLat}
+                        dropLng={trip.dropLng}
+                        className="pointer-events-auto absolute inset-0 z-0 h-full w-full"
+                    />
 
-                <div className="pointer-events-auto absolute inset-x-3 bottom-3 z-30 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-[0_12px_40px_rgba(15,19,25,0.18)] backdrop-blur-md">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                        <p className="font-geist m-0 text-[14px] font-500 text-ink-text">{dateLabel}</p>
-                        <button
-                            type="button"
-                            onClick={() => setPassengerOpen(true)}
-                            aria-haspopup="dialog"
-                            aria-expanded={passengerOpen}
-                            className="inline-flex max-w-[55%] cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-ink-text"
-                        >
-                            <IconPerson className="h-4 w-4 shrink-0" />
-                            <span className="font-geist truncate text-[13px] font-500">
-                                {resolvedPassengerLabel}
-                            </span>
-                            <IconChevronDown />
-                        </button>
-                    </div>
-                    <hr className="mb-3 border-0 border-t border-[#e8e6e1]" />
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                        <div className="min-w-0">
-                            <p className="font-geist m-0 truncate text-[13px] font-500 text-ink-text" title={trip.pickup}>
-                                {trip.pickup || t('checkout.defaults.pickup')}
-                            </p>
-                            <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">{formatClock(trip.time)}</p>
+                    <div className="pointer-events-auto absolute inset-x-3 bottom-3 z-30 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-[0_12px_40px_rgba(15,19,25,0.18)] backdrop-blur-md">
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                            <p className="font-geist m-0 text-[14px] font-500 text-ink-text">{dateLabel}</p>
+                            <button
+                                type="button"
+                                onClick={() => setPassengerOpen(true)}
+                                aria-haspopup="dialog"
+                                aria-expanded={passengerOpen}
+                                className="inline-flex max-w-[55%] cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-ink-text"
+                            >
+                                <IconPerson className="h-4 w-4 shrink-0" />
+                                <span className="font-geist truncate text-[13px] font-500">
+                                    {resolvedPassengerLabel}
+                                </span>
+                                <IconChevronDown />
+                            </button>
                         </div>
-                        <div className="flex flex-col items-center px-1">
-                            <span className="font-geist mb-1 text-[11px] font-500 text-wine-700">{etaLabel}</span>
-                            <div className="flex items-center gap-1">
-                                <span className="h-px w-4 border-t border-dashed border-wine-400" />
-                                <CarIcon />
-                                <span className="h-px w-4 border-t border-dashed border-wine-400" />
+                        <hr className="mb-3 border-0 border-t border-[#e8e6e1]" />
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                            <div className="min-w-0">
+                                <p className="font-geist m-0 truncate text-[13px] font-500 text-ink-text" title={trip.pickup}>
+                                    {trip.pickup || t('checkout.defaults.pickup')}
+                                </p>
+                                <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">{formatClock(trip.time)}</p>
                             </div>
-                        </div>
-                        <div className="min-w-0 text-right">
-                            <p className="font-geist m-0 truncate text-[13px] font-500 text-ink-text" title={dropLabel}>
-                                {dropLabel}
-                            </p>
-                            <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">
-                                {isHourly ? t('mobile.hourly') : formatClock(arriveTime)}
-                            </p>
+                            <div className="flex flex-col items-center px-1">
+                                <span className="font-geist mb-1 text-[11px] font-500 text-wine-700">{etaLabel}</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="h-px w-4 border-t border-dashed border-wine-400" />
+                                    <CarIcon />
+                                    <span className="h-px w-4 border-t border-dashed border-wine-400" />
+                                </div>
+                            </div>
+                            <div className="min-w-0 text-right">
+                                <p className="font-geist m-0 truncate text-[13px] font-500 text-ink-text" title={dropLabel}>
+                                    {dropLabel}
+                                </p>
+                                <p className="font-geist m-0 mt-0.5 text-[12px] text-muted">
+                                    {isHourly ? t('mobile.hourly') : formatClock(arriveTime)}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Class / payment / extras — above map */}
-            <div className="relative z-40 shrink-0 border-t border-[#eeebe4] bg-white px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-4">
+                {/* Class / payment / extras */}
+                <div className="relative z-40 border-t border-[#eeebe4] bg-white px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4">
                 <h2 className="font-geist m-0 text-[24px] font-600 tracking-[-0.02em] text-ink-text">
                     {vehicle.name}
                 </h2>
@@ -408,6 +409,7 @@ export default function CheckoutMobile({
                         {bookError}
                     </p>
                 ) : null}
+                </div>
             </div>
 
             {/* Sticky footer */}
