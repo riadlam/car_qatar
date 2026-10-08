@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Chauffeurs\Tables;
 
+use App\Filament\Resources\Chauffeurs\ChauffeurResource;
 use App\Models\Chauffeur;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -9,6 +10,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -21,29 +23,22 @@ class ChauffeursTable
     {
         return $table
             ->striped()
+            ->defaultSort('created_at', 'desc')
+            ->recordUrl(fn (Chauffeur $record): string => ChauffeurResource::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('medium'),
                 TextColumn::make('user.email')
                     ->label('Email')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(),
                 TextColumn::make('user.phone')
                     ->label('Phone')
-                    ->searchable(),
-                TextColumn::make('partner.id')
-                    ->label('Partner')
                     ->searchable()
-                    ->toggleable(),
-                TextColumn::make('license_number')
-                    ->searchable(),
-                TextColumn::make('license_country')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('license_expires_at')
-                    ->date()
-                    ->sortable()
                     ->toggleable(),
                 TextColumn::make('gender')
                     ->badge()
@@ -52,40 +47,45 @@ class ChauffeursTable
                         'female' => 'Female',
                         default => '—',
                     })
-                    ->sortable()
-                    ->toggleable(),
+                    ->sortable(),
                 TextColumn::make('status')
                     ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'active' => 'success',
+                        'pending' => 'warning',
+                        'declined', 'suspended' => 'danger',
+                        'inactive' => 'gray',
+                        default => 'gray',
+                    })
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('rating')
-                    ->numeric()
+                    ->numeric(decimalPlaces: 2)
                     ->sortable()
-                    ->toggleable(),
-                TextColumn::make('ratings_count')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->placeholder('—'),
                 TextColumn::make('completed_rides')
+                    ->label('Completed')
                     ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('current_latitude')
-                    ->numeric()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('current_longitude')
-                    ->numeric()
-                    ->sortable()
+                    ->sortable(),
+                TextColumn::make('partner.display_name')
+                    ->label('Partner')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('—'),
+                TextColumn::make('license_number')
+                    ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('last_location_at')
+                    ->label('Last GPS')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('—'),
                 TextColumn::make('created_at')
                     ->label('Submitted')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
@@ -102,13 +102,17 @@ class ChauffeursTable
                         'active' => 'Active',
                         'declined' => 'Declined',
                         'inactive' => 'Inactive',
-                        'available' => 'Available',
-                        'busy' => 'Busy',
-                        'offline' => 'Offline',
+                        'suspended' => 'Suspended',
+                    ]),
+                SelectFilter::make('gender')
+                    ->options([
+                        'male' => 'Male',
+                        'female' => 'Female',
                     ]),
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                ViewAction::make(),
                 Action::make('accept')
                     ->label('Accept')
                     ->color('success')

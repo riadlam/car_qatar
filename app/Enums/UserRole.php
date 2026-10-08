@@ -39,6 +39,14 @@ enum UserRole: string
         return $this === self::SuperAdmin;
     }
 
+    public function canManageChauffeurs(): bool
+    {
+        return in_array($this, [
+            self::Admin,
+            self::SuperAdmin,
+        ], true);
+    }
+
     /**
      * @return list<self>
      */

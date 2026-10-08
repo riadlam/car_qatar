@@ -55,9 +55,14 @@ class CreateChauffeurAccount extends Page
     /**
      * Shown once after create so ops can hand credentials to the chauffeur.
      *
-     * @var array{name: string, email: string, password: string}|null
+     * @var array{name: string, email: string, password: string, chauffeur_id?: int|null}|null
      */
     public ?array $handedCredentials = null;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canManageChauffeurs() ?? false;
+    }
 
     public function getHeading(): string|Htmlable
     {
@@ -75,9 +80,14 @@ class CreateChauffeurAccount extends Page
             return null;
         }
 
+        $chauffeurId = $this->handedCredentials['chauffeur_id'] ?? null;
+
         return view('filament.create-chauffeur-credentials', [
             'credentials' => $this->handedCredentials,
             'listUrl' => ChauffeurResource::getUrl('index'),
+            'viewUrl' => $chauffeurId
+                ? ChauffeurResource::getUrl('view', ['record' => $chauffeurId])
+                : null,
         ]);
     }
 
@@ -193,7 +203,7 @@ class CreateChauffeurAccount extends Page
         $password = (string) $data['password'];
         $fullName = trim($firstName.' '.$lastName);
 
-        $user = DB::transaction(function () use ($firstName, $lastName, $email, $phone, $gender, $password, $fullName): User {
+        [$user, $chauffeur] = DB::transaction(function () use ($firstName, $lastName, $email, $phone, $gender, $password, $fullName): array {
             $user = User::query()->create([
                 'name' => $fullName,
                 'email' => $email,
@@ -210,19 +220,20 @@ class CreateChauffeurAccount extends Page
                 'email_verified_at' => now(),
             ]);
 
-            Chauffeur::query()->create([
+            $chauffeur = Chauffeur::query()->create([
                 'user_id' => $user->id,
                 'status' => 'active',
                 'gender' => $gender,
             ]);
 
-            return $user;
+            return [$user, $chauffeur];
         });
 
         $this->handedCredentials = [
             'name' => $user->name,
             'email' => $user->email,
             'password' => $password,
+            'chauffeur_id' => $chauffeur->id,
         ];
 
         $this->form->fill(['gender' => 'male']);

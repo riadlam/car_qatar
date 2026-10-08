@@ -2,6 +2,7 @@
     /** @var array{name?: string, email?: string, password?: string}|null $credentials */
     $credentials = $credentials ?? null;
     $listUrl = $listUrl ?? '#';
+    $viewUrl = $viewUrl ?? null;
 @endphp
 
 @if (is_array($credentials))
@@ -39,6 +40,14 @@
             </div>
 
             <div class="mt-4 flex flex-wrap gap-3">
+                @if ($viewUrl)
+                    <a
+                        href="{{ $viewUrl }}"
+                        class="fi-btn fi-btn-color-primary fi-btn-size-md inline-flex items-center justify-center gap-1 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white outline-none"
+                    >
+                        Open chauffeur
+                    </a>
+                @endif
                 <a
                     href="{{ $listUrl }}"
                     class="fi-btn fi-btn-color-gray fi-btn-size-md fi-btn-outline inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold outline-none"
@@ -48,7 +57,7 @@
                 <button
                     type="button"
                     wire:click="clearHandedCredentials"
-                    class="fi-btn fi-btn-color-primary fi-btn-size-md fi-btn-outline inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold outline-none"
+                    class="fi-btn fi-btn-color-gray fi-btn-size-md fi-btn-outline inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold outline-none"
                 >
                     Create another
                 </button>

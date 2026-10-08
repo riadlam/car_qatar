@@ -89,6 +89,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->role?->canManageStaffRoles() ?? false;
     }
 
+    public function canManageChauffeurs(): bool
+    {
+        return $this->role?->canManageChauffeurs() ?? false;
+    }
+
     /**
      * Public signup "Company" profile — still a booking customer, not a Partner.
      */

@@ -5,25 +5,30 @@ namespace App\Filament\Resources\Chauffeurs;
 use App\Filament\Resources\Chauffeurs\Pages\CreateChauffeur;
 use App\Filament\Resources\Chauffeurs\Pages\EditChauffeur;
 use App\Filament\Resources\Chauffeurs\Pages\ListChauffeurs;
+use App\Filament\Resources\Chauffeurs\Pages\ViewChauffeur;
+use App\Filament\Resources\Chauffeurs\RelationManagers\RideAssignmentsRelationManager;
+use App\Filament\Resources\Chauffeurs\RelationManagers\RideOffersRelationManager;
 use App\Filament\Resources\Chauffeurs\Schemas\ChauffeurForm;
+use App\Filament\Resources\Chauffeurs\Schemas\ChauffeurInfolist;
 use App\Filament\Resources\Chauffeurs\Tables\ChauffeursTable;
 use App\Models\Chauffeur;
 use BackedEnum;
-use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class ChauffeurResource extends Resource
 {
     protected static ?string $model = Chauffeur::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Fleet';
+    protected static string|UnitEnum|null $navigationGroup = 'People';
 
-    protected static ?int $navigationSort = 21;
+    protected static ?int $navigationSort = 12;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
@@ -33,8 +38,33 @@ class ChauffeurResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Chauffeurs';
 
+    protected static ?string $recordTitleAttribute = null;
+
+    public static function getRecordTitle(?Model $record): string|null
+    {
+        if (! $record instanceof Chauffeur) {
+            return null;
+        }
+
+        return $record->user?->name ?: 'Chauffeur #'.$record->getKey();
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canManageChauffeurs() ?? false;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function getNavigationBadge(): ?string
     {
+        if (! static::canAccess()) {
+            return null;
+        }
+
         $count = Chauffeur::query()->where('status', 'pending')->count();
 
         return $count > 0 ? (string) $count : null;
@@ -50,6 +80,11 @@ class ChauffeurResource extends Resource
         return ChauffeurForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return ChauffeurInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return ChauffeursTable::configure($table);
@@ -58,13 +93,14 @@ class ChauffeurResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RideAssignmentsRelationManager::class,
+            RideOffersRelationManager::class,
         ];
     }
 
     public static function canCreate(): bool
     {
-        // Use Fleet → Create Chauffeur (creates login user + active chauffeur profile).
+        // Use People → Create Chauffeur (creates login user + active chauffeur profile).
         return false;
     }
 
@@ -73,8 +109,15 @@ class ChauffeurResource extends Resource
         return [
             'index' => ListChauffeurs::route('/'),
             'create' => CreateChauffeur::route('/create'),
+            'view' => ViewChauffeur::route('/{record}'),
             'edit' => EditChauffeur::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['user', 'partner']);
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

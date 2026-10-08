@@ -21,7 +21,8 @@ class ListChauffeurs extends ListRecords
             Action::make('createChauffeurAccount')
                 ->label('Create Chauffeur')
                 ->icon(Heroicon::OutlinedUserPlus)
-                ->url(CreateChauffeurAccount::getUrl()),
+                ->url(CreateChauffeurAccount::getUrl())
+                ->visible(fn (): bool => auth()->user()?->canManageChauffeurs() ?? false),
         ];
     }
 
@@ -30,12 +31,18 @@ class ListChauffeurs extends ListRecords
         return [
             'pending' => Tab::make('Pending')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending'))
-                ->badge(Chauffeur::query()->where('status', 'pending')->count()),
-            'all' => Tab::make('All'),
+                ->badge(Chauffeur::query()->where('status', 'pending')->count())
+                ->badgeColor('warning'),
+            'all' => Tab::make('All')
+                ->badge(Chauffeur::query()->count()),
             'active' => Tab::make('Active')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active'))
+                ->badge(Chauffeur::query()->where('status', 'active')->count())
+                ->badgeColor('success'),
             'declined' => Tab::make('Declined')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'declined')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'declined'))
+                ->badge(Chauffeur::query()->where('status', 'declined')->count())
+                ->badgeColor('danger'),
         ];
     }
 }

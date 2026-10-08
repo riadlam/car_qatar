@@ -17,22 +17,22 @@ class ChauffeurForm
         return $schema
             ->components([
                 Section::make('Account')
+                    ->description('Linked login user cannot be changed here. Edit status, gender, and partner as needed.')
                     ->columns(2)
                     ->schema([
-                        Select::make('user_id')
-                            ->relationship('user', 'name')
-                            ->searchable()
-                            ->required(),
-                        Select::make('partner_id')
-                            ->relationship('partner', 'display_name')
-                            ->searchable()
-                            ->default(null),
+                        Placeholder::make('linked_user')
+                            ->label('Chauffeur')
+                            ->content(fn ($record) => $record?->user?->name ?: '—'),
                         Placeholder::make('applicant_email')
                             ->label('Email')
                             ->content(fn ($record) => $record?->user?->email ?: '—'),
                         Placeholder::make('applicant_phone')
                             ->label('Phone')
                             ->content(fn ($record) => $record?->user?->phone ?: '—'),
+                        Select::make('partner_id')
+                            ->relationship('partner', 'display_name')
+                            ->searchable()
+                            ->default(null),
                         Select::make('status')
                             ->options([
                                 'pending' => 'Pending',
@@ -63,7 +63,7 @@ class ChauffeurForm
                     ]),
                 Section::make('Performance')
                     ->description('Updated by the system from completed rides and ratings.')
-                    ->columns(2)
+                    ->columns(3)
                     ->schema([
                         TextInput::make('rating')
                             ->numeric()

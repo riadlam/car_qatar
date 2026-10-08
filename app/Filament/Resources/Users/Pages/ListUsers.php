@@ -20,7 +20,8 @@ class ListUsers extends ListRecords
                 ->label('Create Chauffeur')
                 ->icon(Heroicon::OutlinedUserPlus)
                 ->url(CreateChauffeurAccount::getUrl())
-                ->color('gray'),
+                ->color('gray')
+                ->visible(fn (): bool => auth()->user()?->canManageChauffeurs() ?? false),
             CreateAction::make()
                 ->label('Create User'),
         ];
