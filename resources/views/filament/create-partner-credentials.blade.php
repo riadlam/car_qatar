@@ -37,6 +37,12 @@
                         </code>
                     </div>
                 </div>
+                @if (! empty($credentials['fee_label']))
+                    <p class="m-0 text-xs text-gray-600 dark:text-gray-300">
+                        Partner fee: <span class="font-medium">{{ $credentials['fee_label'] }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">(added into the guest total on each booking)</span>
+                    </p>
+                @endif
                 <p class="m-0 text-xs text-gray-600 dark:text-gray-300">
                     Login URL: <span class="font-medium">{{ url('/login') }}</span>
                     · Partner portal: <span class="font-medium">{{ url('/partner') }}</span>

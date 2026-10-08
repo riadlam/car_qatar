@@ -8,6 +8,7 @@ use App\Models\Partner;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -54,7 +55,7 @@ class CreatePartnerAccount extends Page
     /**
      * Shown once after create so ops can hand credentials to the partner admin.
      *
-     * @var array{name: string, email: string, password: string, partner_id?: int|null, company?: string}|null
+     * @var array{name: string, email: string, password: string, partner_id?: int|null, company?: string, fee_label?: string}|null
      */
     public ?array $handedCredentials = null;
 
@@ -92,7 +93,10 @@ class CreatePartnerAccount extends Page
 
     public function mount(): void
     {
-        $this->form->fill([]);
+        $this->form->fill([
+            'commission_type' => 'percent',
+            'commission_value' => 0,
+        ]);
     }
 
     public function defaultForm(Schema $schema): Schema
@@ -104,7 +108,7 @@ class CreatePartnerAccount extends Page
     {
         return $schema->components([
             Section::make('Partner')
-                ->description('Organization shown in the partner portal. Fee settings can be edited later by finance.')
+                ->description('Organization shown in the partner portal.')
                 ->schema([
                     TextInput::make('company_name')
                         ->label('Company name')
@@ -112,6 +116,32 @@ class CreatePartnerAccount extends Page
                         ->maxLength(160)
                         ->helperText('Used as both legal and display name.')
                         ->autocomplete(false),
+                ]),
+            Section::make('Partner fee on guest bookings')
+                ->description('This fee is added into the guest total when the partner books a ride (charged to the end client). Partners see it in their portal; only completed rides earn it.')
+                ->columns(2)
+                ->schema([
+                    Select::make('commission_type')
+                        ->label('Fee type')
+                        ->options([
+                            'percent' => 'Percentage of fare (subtotal)',
+                            'flat' => 'Fixed flat fee per ride',
+                        ])
+                        ->required()
+                        ->default('percent')
+                        ->live()
+                        ->native(false),
+                    TextInput::make('commission_value')
+                        ->label(fn (callable $get): string => $get('commission_type') === 'flat'
+                            ? 'Flat fee amount'
+                            : 'Percent value')
+                        ->required()
+                        ->numeric()
+                        ->minValue(0)
+                        ->default(0)
+                        ->helperText(fn (callable $get): string => $get('commission_type') === 'flat'
+                            ? 'Added on top of the ride price in the booking currency (e.g. 25 = 25 QAR per ride).'
+                            : 'e.g. 10 = 10% of trip subtotal, added on top for the guest to pay.'),
                 ]),
             Section::make('Portal admin login')
                 ->description('Only what they need to sign in. Account is created as active.')
@@ -201,6 +231,8 @@ class CreatePartnerAccount extends Page
         $email = Str::lower(trim((string) $data['email']));
         $phone = trim((string) $data['phone']);
         $password = (string) $data['password'];
+        $commissionType = ($data['commission_type'] ?? 'percent') === 'flat' ? 'flat' : 'percent';
+        $commissionValue = round(max(0, (float) ($data['commission_value'] ?? 0)), 2);
         $fullName = trim($firstName.' '.$lastName);
         $admin = auth()->user();
 
@@ -211,6 +243,8 @@ class CreatePartnerAccount extends Page
             $email,
             $phone,
             $password,
+            $commissionType,
+            $commissionValue,
             $fullName,
             $admin,
         ): array {
@@ -236,8 +270,8 @@ class CreatePartnerAccount extends Page
                 'display_name' => $companyName,
                 'email' => $email,
                 'phone' => $phone,
-                'commission_type' => 'percent',
-                'commission_value' => 0,
+                'commission_type' => $commissionType,
+                'commission_value' => $commissionValue,
                 'status' => 'active',
                 'approved_at' => now(),
                 'approved_by' => $admin?->id,
@@ -251,15 +285,23 @@ class CreatePartnerAccount extends Page
             return [$user, $partner];
         });
 
+        $feeLabel = $commissionType === 'flat'
+            ? number_format($commissionValue, 2).' flat per ride'
+            : rtrim(rtrim(number_format($commissionValue, 2, '.', ''), '0'), '.').'% of fare';
+
         $this->handedCredentials = [
             'name' => $user->name,
             'email' => $user->email,
             'password' => $password,
             'partner_id' => $partner->id,
             'company' => $partner->display_name,
+            'fee_label' => $feeLabel,
         ];
 
-        $this->form->fill([]);
+        $this->form->fill([
+            'commission_type' => 'percent',
+            'commission_value' => 0,
+        ]);
 
         Notification::make()
             ->title('Partner account created')
