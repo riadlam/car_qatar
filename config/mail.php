@@ -49,6 +49,11 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        // HTTPS relay via Octenium mail-bridge (VPS cannot open SMTP to the mail host).
+        'cpanel_bridge' => [
+            'transport' => 'cpanel_bridge',
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

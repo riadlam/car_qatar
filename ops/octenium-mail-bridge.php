@@ -1,7 +1,7 @@
 <?php
 /**
  * Upload this file to Octenium cPanel → File Manager → public_html
- * Suggested path: public_html/mail-bridge.php
+ * Suggested path: public_html/mail-bridge.php (or the bridge subdomain docroot)
  *
  * Fill the CONFIG values below (cPanel username, API token, bridge secret).
  * Do not put this file on the VPS — it must run on Octenium where mail/cPanel lives.
@@ -15,6 +15,8 @@ const CPANEL_API_TOKEN = 'PUT_YOUR_CREATE_EMAIL_TOKEN_HERE';
 const BRIDGE_SECRET = 'PUT_A_LONG_RANDOM_SECRET_HERE';     // same value as CPANEL_BRIDGE_SECRET on VPS
 const EMAIL_DOMAIN = 'almajdluxurytransport.com';
 const UAPI_BASE = 'https://127.0.0.1:2083';               // local cPanel on this host
+const SMTP_HOST = '127.0.0.1';
+const SMTP_PORT = 465;
 // ────────────────────────────────────────────────────────────────────────────
 
 header('Content-Type: application/json; charset=utf-8');
@@ -95,6 +97,52 @@ try {
         exit;
     }
 
+    if ($action === 'send_mail') {
+        $to = strtolower(trim((string) ($body['to'] ?? '')));
+        $subject = trim((string) ($body['subject'] ?? ''));
+        $html = (string) ($body['html'] ?? '');
+        $text = (string) ($body['text'] ?? '');
+        $fromEmail = strtolower(trim((string) ($body['from_email'] ?? '')));
+        $fromName = trim((string) ($body['from_name'] ?? 'AL MAJD'));
+        $smtpUser = trim((string) ($body['smtp_username'] ?? $fromEmail));
+        $smtpPass = (string) ($body['smtp_password'] ?? '');
+
+        if ($to === '' || ! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'Valid recipient email is required.']);
+            exit;
+        }
+        if ($fromEmail === '' || ! filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'Valid from email is required.']);
+            exit;
+        }
+        if ($subject === '' || ($html === '' && $text === '')) {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'Subject and body are required.']);
+            exit;
+        }
+        if ($smtpUser === '' || $smtpPass === '') {
+            http_response_code(422);
+            echo json_encode(['ok' => false, 'error' => 'SMTP credentials are required.']);
+            exit;
+        }
+
+        sendSmtpMail([
+            'to' => $to,
+            'subject' => $subject,
+            'html' => $html,
+            'text' => $text !== '' ? $text : strip_tags($html),
+            'from_email' => $fromEmail,
+            'from_name' => $fromName !== '' ? $fromName : 'AL MAJD',
+            'smtp_username' => $smtpUser,
+            'smtp_password' => $smtpPass,
+        ]);
+
+        echo json_encode(['ok' => true, 'payload' => ['status' => 1, 'data' => ['sent' => true]]]);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'Unknown action']);
 } catch (Throwable $e) {
@@ -154,4 +202,132 @@ function uapi(string $module, string $function, array $params): array
     }
 
     return $json;
+}
+
+/**
+ * Send one email via local SMTPS (SSL 465) on the mail host.
+ *
+ * @param  array{
+ *   to: string,
+ *   subject: string,
+ *   html: string,
+ *   text: string,
+ *   from_email: string,
+ *   from_name: string,
+ *   smtp_username: string,
+ *   smtp_password: string
+ * }  $mail
+ */
+function sendSmtpMail(array $mail): void
+{
+    $errno = 0;
+    $errstr = '';
+    $socket = @stream_socket_client(
+        'ssl://'.SMTP_HOST.':'.SMTP_PORT,
+        $errno,
+        $errstr,
+        20,
+        STREAM_CLIENT_CONNECT,
+        stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true,
+            ],
+        ])
+    );
+
+    if ($socket === false) {
+        throw new RuntimeException('Unable to open local SMTP ('.$errstr.')');
+    }
+
+    stream_set_timeout($socket, 20);
+
+    try {
+        smtpExpect($socket, [220]);
+        smtpCommand($socket, 'EHLO almajdluxurytransport.com', [250]);
+        smtpCommand($socket, 'AUTH LOGIN', [334]);
+        smtpCommand($socket, base64_encode($mail['smtp_username']), [334]);
+        smtpCommand($socket, base64_encode($mail['smtp_password']), [235]);
+
+        smtpCommand($socket, 'MAIL FROM:<'.$mail['from_email'].'>', [250]);
+        smtpCommand($socket, 'RCPT TO:<'.$mail['to'].'>', [250, 251]);
+        smtpCommand($socket, 'DATA', [354]);
+
+        $boundary = 'b_'.bin2hex(random_bytes(12));
+        $fromName = addcslashes($mail['from_name'], '"\\');
+        $subject = smtpEncodeHeader($mail['subject']);
+
+        $data = [
+            'From: "'.$fromName.'" <'.$mail['from_email'].'>',
+            'To: <'.$mail['to'].'>',
+            'Subject: '.$subject,
+            'MIME-Version: 1.0',
+            'Content-Type: multipart/alternative; boundary="'.$boundary.'"',
+            'Date: '.date('r'),
+            'Message-ID: <'.bin2hex(random_bytes(16)).'@'.EMAIL_DOMAIN.'>',
+            '',
+            '--'.$boundary,
+            'Content-Type: text/plain; charset=UTF-8',
+            'Content-Transfer-Encoding: base64',
+            '',
+            chunk_split(base64_encode($mail['text'])),
+            '--'.$boundary,
+            'Content-Type: text/html; charset=UTF-8',
+            'Content-Transfer-Encoding: base64',
+            '',
+            chunk_split(base64_encode($mail['html'])),
+            '--'.$boundary.'--',
+            '',
+        ];
+
+        $payload = implode("\r\n", $data);
+        // Dot-stuff lines that start with '.'
+        $payload = preg_replace('/^\./m', '..', $payload) ?: $payload;
+        fwrite($socket, $payload."\r\n.\r\n");
+        smtpExpect($socket, [250]);
+        smtpCommand($socket, 'QUIT', [221, 250]);
+    } finally {
+        fclose($socket);
+    }
+}
+
+/**
+ * @param  resource  $socket
+ * @param  list<int>  $okCodes
+ */
+function smtpCommand($socket, string $command, array $okCodes): void
+{
+    fwrite($socket, $command."\r\n");
+    smtpExpect($socket, $okCodes);
+}
+
+/**
+ * @param  resource  $socket
+ * @param  list<int>  $okCodes
+ */
+function smtpExpect($socket, array $okCodes): void
+{
+    $response = '';
+    while (($line = fgets($socket, 515)) !== false) {
+        $response .= $line;
+        if (isset($line[3]) && $line[3] === ' ') {
+            break;
+        }
+    }
+
+    $code = (int) substr($response, 0, 3);
+    if (! in_array($code, $okCodes, true)) {
+        $snippet = trim(preg_replace('/\s+/', ' ', $response) ?: 'SMTP error');
+        throw new RuntimeException('SMTP '.$snippet);
+    }
+}
+
+function smtpEncodeHeader(string $value): string
+{
+    if (preg_match('/^[\x20-\x7E]+$/', $value)) {
+        return $value;
+    }
+
+    return '=?UTF-8?B?'.base64_encode($value).'?=';
 }
