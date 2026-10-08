@@ -421,7 +421,10 @@ export default function ChauffeurPortal() {
     const acceptOffer = async (offer) => {
         try {
             await acceptChauffeurOffer(offer.id);
-            setOffers((list) => list.filter((item) => item.id !== offer.id));
+            setOffers([]);
+            setOffersBlocked('');
+            setTripDialogDismissed(true);
+            navigate('/chauffeur/current', { replace: true });
             const ridesRes = await listChauffeurRides();
             const next = (ridesRes.data || [])[0];
             setCurrentRide(next ? assignmentToRide(next) : null);
