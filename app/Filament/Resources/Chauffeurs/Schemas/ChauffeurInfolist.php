@@ -38,23 +38,6 @@ class ChauffeurInfolist
                                 'paused' => 'warning',
                                 default => 'gray',
                             }),
-                        TextEntry::make('partner.display_name')
-                            ->label('Partner')
-                            ->placeholder('—'),
-                    ]),
-                Section::make('Work metrics')
-                    ->columns(3)
-                    ->schema([
-                        TextEntry::make('rating')
-                            ->numeric(decimalPlaces: 2)
-                            ->placeholder('—'),
-                        TextEntry::make('ratings_count')
-                            ->label('Ratings')
-                            ->numeric(),
-                        TextEntry::make('completed_rides')
-                            ->label('Completed rides')
-                            ->numeric()
-                            ->weight('bold'),
                     ]),
                 Section::make('License')
                     ->columns(3)
@@ -65,18 +48,6 @@ class ChauffeurInfolist
                             ->placeholder('—'),
                         TextEntry::make('license_expires_at')
                             ->date()
-                            ->placeholder('—'),
-                    ]),
-                Section::make('Last known location')
-                    ->columns(3)
-                    ->collapsed()
-                    ->schema([
-                        TextEntry::make('current_latitude')
-                            ->placeholder('—'),
-                        TextEntry::make('current_longitude')
-                            ->placeholder('—'),
-                        TextEntry::make('last_location_at')
-                            ->dateTime()
                             ->placeholder('—'),
                     ]),
             ]);

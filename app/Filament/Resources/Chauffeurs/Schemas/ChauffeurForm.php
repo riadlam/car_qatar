@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Chauffeurs\Schemas;
 
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -17,7 +16,7 @@ class ChauffeurForm
         return $schema
             ->components([
                 Section::make('Account')
-                    ->description('Linked login user cannot be changed here. Edit status, gender, and partner as needed.')
+                    ->description('Linked login user cannot be changed here. Edit status and gender as needed.')
                     ->columns(2)
                     ->schema([
                         Placeholder::make('linked_user')
@@ -29,10 +28,6 @@ class ChauffeurForm
                         Placeholder::make('applicant_phone')
                             ->label('Phone')
                             ->content(fn ($record) => $record?->user?->phone ?: '—'),
-                        Select::make('partner_id')
-                            ->relationship('partner', 'display_name')
-                            ->searchable()
-                            ->default(null),
                         Select::make('status')
                             ->options([
                                 'active' => 'Active',
@@ -58,40 +53,6 @@ class ChauffeurForm
                         TextInput::make('license_country')
                             ->default(null),
                         DatePicker::make('license_expires_at'),
-                    ]),
-                Section::make('Performance')
-                    ->description('Updated by the system from completed rides and ratings.')
-                    ->columns(3)
-                    ->schema([
-                        TextInput::make('rating')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false),
-                        TextInput::make('ratings_count')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false),
-                        TextInput::make('completed_rides')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false),
-                    ]),
-                Section::make('Location')
-                    ->description('Live GPS from the chauffeur app — read-only.')
-                    ->columns(2)
-                    ->collapsed()
-                    ->schema([
-                        TextInput::make('current_latitude')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false),
-                        TextInput::make('current_longitude')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated(false),
-                        DateTimePicker::make('last_location_at')
-                            ->disabled()
-                            ->dehydrated(false),
                     ]),
             ]);
     }

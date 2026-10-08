@@ -30,8 +30,6 @@ class ViewChauffeur extends ViewRecord
 
         $bits = array_filter([
             $record->status ? ucfirst(str_replace('_', ' ', (string) $record->status)) : null,
-            $record->completed_rides !== null ? $record->completed_rides.' completed rides' : null,
-            $record->rating !== null ? 'Rating '.$record->rating : null,
         ]);
 
         return $bits !== [] ? implode(' · ', $bits) : null;

@@ -58,28 +58,9 @@ class ChauffeursTable
                     })
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('rating')
-                    ->numeric(decimalPlaces: 2)
-                    ->sortable()
-                    ->placeholder('—'),
-                TextColumn::make('completed_rides')
-                    ->label('Completed')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('partner.display_name')
-                    ->label('Partner')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->placeholder('—'),
                 TextColumn::make('license_number')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('last_location_at')
-                    ->label('Last GPS')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->placeholder('—'),
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime()
