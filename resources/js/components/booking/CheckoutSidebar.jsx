@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import BookingMap from './BookingMap';
+import { normalizeCurrency } from '../../utils/currency';
 
 /**
  * Checkout right rail — map, class summary, price rows, offer, Book now.
@@ -16,7 +17,7 @@ export default function CheckoutSidebar({
     booking,
 }) {
     const { t } = useTranslation('booking');
-    const currency = vehicle.currency === 'US$' ? '$' : vehicle.currency;
+    const currency = normalizeCurrency(vehicle?.currency);
 
     return (
         <aside className="flex flex-col bg-page lg:sticky lg:top-[80px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto">

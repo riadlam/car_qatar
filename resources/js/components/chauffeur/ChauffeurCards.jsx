@@ -315,7 +315,7 @@ function HistoryRow({ ride }) {
 /**
  * Profile ride history — payouts + period / status / service filters.
  */
-export function RideHistorySection({ rides, currency = 'US$' }) {
+export function RideHistorySection({ rides, currency = 'QAR' }) {
     const { t } = useTranslation('chauffeur');
     const [period, setPeriod] = useState('all');
     const [status, setStatus] = useState('all');

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getWallet, getWalletTransactions } from '../../api/wallet';
+import { formatMoney, normalizeCurrency } from '../../utils/currency';
 import Skeleton from '../ui/Skeleton';
 
 function money(amount, currency = 'QAR') {
-    const n = Number(amount);
-    if (Number.isNaN(n)) return '—';
-    return `${currency} ${n.toFixed(2)}`;
+    return formatMoney(amount, normalizeCurrency(currency));
 }
 
 function formatWhen(value) {

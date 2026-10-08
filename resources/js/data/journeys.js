@@ -1,6 +1,8 @@
 import { VEHICLE_CATALOG } from './bookingVehicles';
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '../utils/currency';
 
 export const JOURNEYS_KEY = 'almajd_journeys';
+export { formatMoney, DEFAULT_CURRENCY };
 
 const CDN = 'https://service-catalog-assets.blacklane.com/Service+Catalog+Assets';
 
@@ -11,7 +13,7 @@ function vehicleMeta(id) {
         vehicle: v.name,
         vehicle_similar: v.similar,
         vehicle_image: v.main?.lg || v.main?.sm,
-        currency: v.currency || 'US$',
+        currency: normalizeCurrency(v.currency),
     };
 }
 
@@ -374,7 +376,7 @@ export function getAllJourneys() {
                   ? 'Canceled'
                   : 'Confirmed'),
         mode_label: j.mode_label || (j.mode === 'hourly' ? 'Hourly hire' : j.mode === 'airport' ? 'Airport transfer' : 'City transfer'),
-        currency: j.currency || 'US$',
+        currency: normalizeCurrency(j.currency),
         actions: j.actions || (j.status === 'upcoming' ? ['details', 'edit'] : ['details', 'rebook']),
         vehicle_image:
             j.vehicle_image ||
@@ -395,11 +397,6 @@ export function findJourney(idOrRef) {
             (j) => j.id === key || j.booking_number === key || j.booking_number?.replace(/^AM-/, '') === key,
         ) || null
     );
-}
-
-export function formatMoney(amount, currency = 'US$') {
-    if (amount == null || Number.isNaN(Number(amount))) return '—';
-    return `${currency}${Number(amount).toFixed(2)}`;
 }
 
 /** Build /booking query from a journey so Edit / Book again opens the booking screen prefilled. */

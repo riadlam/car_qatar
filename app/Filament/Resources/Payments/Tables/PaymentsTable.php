@@ -27,7 +27,7 @@ class PaymentsTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('amount')
-                    ->money(fn ($record) => $record->currency ?? 'USD')
+                    ->money(fn ($record) => $record->currency ?? 'QAR')
                     ->sortable(),
                 TextColumn::make('currency')
                     ->searchable()

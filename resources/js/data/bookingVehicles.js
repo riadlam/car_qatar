@@ -13,7 +13,7 @@ export const VEHICLE_CATALOG = [
         base: 334.62,
         leadTime: 0,
         tax: 60.23,
-        currency: 'US$',
+        currency: 'QAR',
         main: {
             lg: `${CDN}/Business+Van/Main/Mobile_Van_Class_Main%402x.png`,
             sm: `${CDN}/Business+Van/Main/Desktop_Web_Van_Class_Main%402x.png`,
@@ -115,6 +115,4 @@ export const SEAT_ADDONS = [
     { id: 'baby_seat', label: 'Baby seat' },
 ];
 
-export function formatMoney(amount, currency = 'US$') {
-    return `${currency} ${Number(amount).toFixed(2)}`;
-}
+export { formatMoney, DEFAULT_CURRENCY } from '../utils/currency';

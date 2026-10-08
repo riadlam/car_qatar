@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 import SiteLayout from '../components/landing/SiteLayout';
 import Skeleton from '../components/ui/Skeleton';
 import { confirmGuestPayment, fetchGuestPayment } from '../api/partner';
+import { formatMoney, normalizeCurrency } from '../utils/currency';
 
 function money(amount, currency = 'QAR') {
-    const n = Number(amount);
-    if (Number.isNaN(n)) return '—';
-    return `${currency} ${n.toFixed(2)}`;
+    return formatMoney(amount, normalizeCurrency(currency));
 }
 
 export default function GuestPay() {

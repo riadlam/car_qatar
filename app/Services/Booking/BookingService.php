@@ -546,7 +546,7 @@ class BookingService
             'student_count' => $data['students'] ?? $data['student_count'] ?? null,
             'school_term' => $data['school_term'] ?? null,
             'gulf_destination_id' => $gulfDestinationId,
-            'currency' => $priced['currency'] ?? 'USD',
+            'currency' => \App\Support\Currency::code($priced['currency'] ?? null),
             'expires_at' => now()->addHours(24),
             'metadata' => [
                 'pricing_rule_id' => $priced['pricing_rule_id'] ?? null,

@@ -113,7 +113,7 @@ class PricingService
         $total = round($subtotal + $tax + $fees - $discount, 2);
 
         return [
-            'currency' => $rule->currency ?: 'USD',
+            'currency' => \App\Support\Currency::code($rule->currency ?? null),
             'subtotal' => $subtotal,
             'tax_amount' => $tax,
             'tax' => $tax,

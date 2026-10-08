@@ -17,6 +17,7 @@ import Skeleton from '../components/ui/Skeleton';
 import { getBillingProfile, getPaymentMethods } from '../api/checkout';
 import { getWallet } from '../api/wallet';
 import { tripParamsToQuotePayload } from '../utils/bookingMappers';
+import { normalizeCurrency } from '../utils/currency';
 import { chauffeurGenderLabel } from '../components/booking/ChauffeurGenderPicker';
 import {
     fallbackVehicles,
@@ -148,7 +149,7 @@ export default function Checkout() {
             : null;
         const base = fromQuote || fallback;
         if (!quote) return base;
-        const currency = quote.currency === 'USD' ? 'US$' : quote.currency || base.currency;
+        const currency = normalizeCurrency(quote.currency || base.currency);
         return {
             ...base,
             total: Number(quote.total ?? base.total),
@@ -328,7 +329,7 @@ export default function Checkout() {
 
     const tripTotal = Number(vehicle?.total ?? 0);
     const walletBalance = Number(wallet?.balance ?? 0);
-    const bookingCurrency = vehicle?.currency === 'US$' ? 'USD' : vehicle?.currency || wallet?.currency || 'QAR';
+    const bookingCurrency = normalizeCurrency(vehicle?.currency || wallet?.currency);
     const walletSufficient =
         wallet?.status === 'active' &&
         tripTotal > 0 &&

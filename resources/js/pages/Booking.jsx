@@ -15,6 +15,7 @@ import {
     IncludedIcon,
 } from '../components/booking/icons';
 import { formatMoney } from '../data/bookingVehicles';
+import { normalizeCurrency } from '../utils/currency';
 import { createQuotes } from '../api/quotes';
 import { fetchSeatAddons, fetchVehicleClasses } from '../api/catalog';
 import Skeleton from '../components/ui/Skeleton';
@@ -144,7 +145,7 @@ export default function Booking() {
             if (!quote) {
                 return { ...v, total: null, quote_id: null };
             }
-            const currency = quote.currency === 'USD' ? 'US$' : quote.currency || v.currency;
+            const currency = normalizeCurrency(quote.currency || v.currency);
             return {
                 ...v,
                 total: Number(quote.total),
@@ -626,7 +627,7 @@ export default function Booking() {
                                         const on = opt.id === seatAddon;
                                         const priceLabel =
                                             opt.id !== 'none' && Number(opt.price) > 0
-                                                ? ` · ${formatMoney(opt.price, opt.currency || 'US$')}`
+                                                ? ` · ${formatMoney(opt.price, opt.currency || 'QAR')}`
                                                 : '';
                                         return (
                                             <label

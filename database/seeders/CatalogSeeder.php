@@ -482,7 +482,7 @@ class CatalogSeeder extends Seeder
             SeatAddon::updateOrCreate(
                 ['slug' => $addon['slug']],
                 array_merge($addon, [
-                    'currency' => 'USD',
+                    'currency' => 'QAR',
                     'status' => 'active',
                 ]),
             );
@@ -556,7 +556,7 @@ class CatalogSeeder extends Seeder
                     'city_id' => null,
                 ],
                 [
-                    'currency' => 'USD',
+                    'currency' => 'QAR',
                     'base_price' => $adjustedBase,
                     'per_km' => $isHourly ? 0 : round(2.00 * $multiplier, 2),
                     'per_minute' => $isHourly ? 0 : round(0.15 * $multiplier, 2),
@@ -594,7 +594,7 @@ class CatalogSeeder extends Seeder
                 'free_cancel_hours' => 1,
                 'fee_type' => 'percent',
                 'fee_value' => 100,
-                'currency' => 'USD',
+                'currency' => 'QAR',
                 'description' => 'Free to cancel up to 1 hour before pickup. Later cancellations may be charged in full.',
                 'status' => 'active',
             ],

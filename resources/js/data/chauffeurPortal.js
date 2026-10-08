@@ -1,5 +1,7 @@
 /** Demo data for the chauffeur partner portal */
 
+import { DEFAULT_CURRENCY, formatMoney } from '../utils/currency';
+
 export const CHAUFFEUR_PROFILE = {
     id: 'ch_amine',
     name: 'Amine K.',
@@ -27,7 +29,7 @@ export const CHAUFFEUR_PROFILE = {
     ],
     earnings_week: 1280.5,
     earnings_month: 4820.75,
-    currency: 'US$',
+    currency: 'QAR',
 };
 
 /** Active trip demo — chauffeur already picked up, en route to drop-off */
@@ -51,7 +53,7 @@ export const CHAUFFEUR_CURRENT_RIDE = {
     passenger_phone: '+213555014422',
     booking_number: 'AM-55019482',
     payout: 86.0,
-    currency: 'US$',
+    currency: 'QAR',
     notes: 'Quiet cabin · early flight',
     // Pickup area (started) → ALG airport
     lat: 36.7801,
@@ -79,7 +81,7 @@ export const CHAUFFEUR_OFFERS = [
         vehicle_class: 'Business Van',
         passenger_name: 'For guest',
         payout: 98.4,
-        currency: 'US$',
+        currency: 'QAR',
         expires_in: '12 min',
         flight: 'AF 1255',
         flight_status: 'On time',
@@ -106,7 +108,7 @@ export const CHAUFFEUR_OFFERS = [
         vehicle_class: 'Business Van',
         passenger_name: 'Mr. Karim Benali',
         payout: 246.0,
-        currency: 'US$',
+        currency: 'QAR',
         expires_in: '28 min',
         flight: null,
         flight_status: null,
@@ -132,7 +134,7 @@ export const CHAUFFEUR_OFFERS = [
         vehicle_class: 'Business Van',
         passenger_name: 'Mrs. Sara Mansouri',
         payout: 42.5,
-        currency: 'US$',
+        currency: 'QAR',
         expires_in: '45 min',
         flight: null,
         flight_status: null,
@@ -161,7 +163,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mr. Youcef Hadji',
         booking_number: 'AM-55019482',
         payout: 86.0,
-        currency: 'US$',
+        currency: 'QAR',
         actions: ['navigate', 'contact', 'details'],
     },
     {
@@ -181,7 +183,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'For myself',
         booking_number: 'AM-77120358',
         payout: 38.2,
-        currency: 'US$',
+        currency: 'QAR',
         actions: ['details'],
     },
     {
@@ -201,7 +203,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'For myself',
         booking_number: 'AM-22098411',
         payout: 92.0,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 5,
         actions: ['details'],
     },
@@ -222,7 +224,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mr. Youcef Hadji',
         booking_number: 'AM-88340129',
         payout: 310.0,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 4,
         actions: ['details'],
     },
@@ -243,7 +245,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mrs. Nora Bensalem',
         booking_number: 'AM-44102817',
         payout: 64.5,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 5,
         actions: ['details'],
     },
@@ -264,7 +266,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mr. Karim Benali',
         booking_number: 'AM-33918402',
         payout: 118.0,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 5,
         actions: ['details'],
     },
@@ -285,7 +287,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'For guest',
         booking_number: 'AM-55201994',
         payout: 186.75,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 4,
         actions: ['details'],
     },
@@ -306,7 +308,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mrs. Sara Mansouri',
         booking_number: 'AM-11847330',
         payout: 41.0,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 5,
         actions: ['details'],
     },
@@ -327,7 +329,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'Mr. Youcef Hadji',
         booking_number: 'AM-99021455',
         payout: 88.5,
-        currency: 'US$',
+        currency: 'QAR',
         rating: 5,
         actions: ['details'],
     },
@@ -348,7 +350,7 @@ export const CHAUFFEUR_RIDES = [
         passenger_name: 'For myself',
         booking_number: 'AM-77401922',
         payout: 0,
-        currency: 'US$',
+        currency: 'QAR',
         actions: ['details'],
     },
 ];
@@ -356,9 +358,8 @@ export const CHAUFFEUR_RIDES = [
 /** Reference “today” for demo period filters (matches sample ride dates). */
 export const CHAUFFEUR_TODAY = '2026-07-23';
 
-export function formatPayout(amount, currency = 'US$') {
-    if (amount == null || Number.isNaN(Number(amount))) return '—';
-    return `${currency}${Number(amount).toFixed(2)}`;
+export function formatPayout(amount, currency = DEFAULT_CURRENCY) {
+    return formatMoney(amount, currency);
 }
 
 export function sumPayouts(rides) {

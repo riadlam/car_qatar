@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { formatMoney } from '../data/journeys';
+import { normalizeCurrency } from './currency';
 
 const WINE = [91, 5, 32];
 const INK = [15, 19, 25];
@@ -27,7 +28,7 @@ export function buildReceiptPdf(journey) {
     let y = 48;
 
     const { base, tax, total } = estimateBreakdown(j.price);
-    const currency = j.currency || 'US$';
+    const currency = normalizeCurrency(j.currency);
     const issued = new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'long',

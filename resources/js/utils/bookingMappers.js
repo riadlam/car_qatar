@@ -1,3 +1,5 @@
+import { normalizeCurrency } from './currency';
+
 /**
  * Map API booking resource → JourneyCard / JourneyRide shape used by the UI.
  */
@@ -107,7 +109,7 @@ export function bookingToJourney(booking) {
         vehicle_passengers: vc.passengers,
         vehicle_luggage: vc.luggage,
         price: Number(booking.total_amount || 0),
-        currency: booking.currency === 'USD' ? 'US$' : booking.currency,
+        currency: normalizeCurrency(booking.currency),
         payment_label: booking.payment?.label || 'Not charged',
         chauffeur,
         chauffeur_eta: booking.chauffeur?.eta_label || (chauffeur ? 'Chauffeur assigned' : undefined),

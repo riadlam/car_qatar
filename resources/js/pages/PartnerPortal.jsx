@@ -12,6 +12,7 @@ import {
 } from '../api/partner';
 import { getWallet } from '../api/wallet';
 import WalletHistory from '../components/wallet/WalletHistory';
+import { formatMoney, normalizeCurrency } from '../utils/currency';
 
 const TAB_IDS = [
     { id: 'overview', path: '/partner' },
@@ -22,9 +23,7 @@ const TAB_IDS = [
 ];
 
 function money(amount, currency = 'QAR') {
-    const n = Number(amount);
-    if (Number.isNaN(n)) return '—';
-    return `${currency} ${n.toFixed(2)}`;
+    return formatMoney(amount, normalizeCurrency(currency));
 }
 
 const BOOKING_STATUS_KEYS = {

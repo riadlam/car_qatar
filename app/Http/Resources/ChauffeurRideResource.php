@@ -85,7 +85,7 @@ class ChauffeurRideResource extends JsonResource
             'passenger_phone' => $phone,
             'notes' => $booking?->customer_notes ?: '',
             'payout' => $booking?->total_amount !== null ? (float) $booking->total_amount : null,
-            'currency' => $booking?->currency ?: '',
+            'currency' => \App\Support\Currency::code($booking?->currency ?? null),
             'eta_minutes' => $eta !== null ? (int) $eta : null,
             'progress' => $progress !== null ? round((float) $progress, 3) : null,
             'lat' => self::coord($pickup?->latitude),

@@ -563,7 +563,7 @@ class DemoOpsSeeder extends Seeder
         );
 
         $booking = new Booking(array_merge($data, [
-            'currency' => 'USD',
+            'currency' => 'QAR',
         ]));
         $booking->forceFill(array_merge($money, [
             'status' => $status,

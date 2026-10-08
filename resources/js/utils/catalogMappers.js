@@ -8,9 +8,10 @@ import {
     SERVICE_TABS as FALLBACK_SERVICE_TABS,
 } from '../data/bookingServices';
 
+import { DEFAULT_CURRENCY, normalizeCurrency } from './currency';
+
 function formatCurrencySymbol(currency) {
-    if (!currency || currency === 'USD') return 'US$';
-    return currency;
+    return normalizeCurrency(currency);
 }
 
 function mediaByKind(media = [], kind) {
@@ -51,7 +52,7 @@ export function mapVehicleClassToCard(vc) {
         base: 0,
         leadTime: 0,
         tax: 0,
-        currency: 'US$',
+        currency: DEFAULT_CURRENCY,
         main: {
             lg: vc.image_lg,
             sm: vc.image_sm,
@@ -132,7 +133,7 @@ export function fallbackIncluded() {
 }
 
 export function fallbackSeatAddons() {
-    return FALLBACK_SEAT_ADDONS.map((s) => ({ ...s, price: 0, currency: 'US$' }));
+    return FALLBACK_SEAT_ADDONS.map((s) => ({ ...s, price: 0, currency: DEFAULT_CURRENCY }));
 }
 
 export function fallbackServiceTabs() {

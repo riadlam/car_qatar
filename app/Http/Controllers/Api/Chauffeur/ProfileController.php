@@ -58,7 +58,7 @@ class ProfileController extends Controller
             })
             ->sum(fn (RideAssignment $assignment) => (float) ($assignment->booking?->total_amount ?? 0));
 
-        $currency = $assignments->first()?->booking?->currency ?: 'USD';
+        $currency = \App\Support\Currency::code($assignments->first()?->booking?->currency ?? null);
 
         return response()->json([
             'profile' => $this->profilePayload($chauffeur, $rides, (float) $earnings, $currency),
@@ -149,7 +149,7 @@ class ProfileController extends Controller
             'vehicle_class' => $booking->vehicleClass?->name ?: '',
             'passenger_name' => $passenger,
             'payout' => $booking->total_amount !== null ? (float) $booking->total_amount : null,
-            'currency' => $booking->currency ?: '',
+            'currency' => \App\Support\Currency::code($booking->currency ?? null),
             'status' => $canceled || $completed ? 'past' : 'upcoming',
             'phase' => $canceled ? 'canceled' : ($completed ? 'completed' : 'upcoming'),
             'status_label' => $canceled ? 'Canceled' : ($completed ? 'Completed' : 'Accepted'),
