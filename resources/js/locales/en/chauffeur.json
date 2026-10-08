@@ -40,10 +40,25 @@
     "bannerBody": "You are signed in but disabled for dispatch. You cannot accept passenger offers until an admin resumes your account.",
     "badge": "Paused"
   },
+  "locationModal": {
+    "title": "Your GPS location",
+    "subtitle": "Check that this pin matches where you actually are. If it is wrong, tap Refresh location.",
+    "mapTitle": "Current chauffeur location map",
+    "noFix": "No GPS fix yet. Tap Refresh location and allow access when prompted.",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "accuracy": "Accuracy",
+    "accuracyMeters": "±{{meters}} m",
+    "updated": "Updated",
+    "openMaps": "Open in Google Maps",
+    "refresh": "Refresh location",
+    "refreshing": "Updating…"
+  },
   "actions": {
     "logOut": "Log out",
     "signingOut": "Signing out…",
     "enableLocation": "Enable location",
+    "myLocation": "My location",
     "accept": "Accept",
     "acceptOffer": "Accept offer",
     "decline": "Decline",

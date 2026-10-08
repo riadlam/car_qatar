@@ -7,6 +7,7 @@ import ChauffeurBottomNav from '../components/chauffeur/ChauffeurBottomNav';
 import CurrentRidePanel from '../components/chauffeur/CurrentRidePanel';
 import MobileOfferCard from '../components/chauffeur/MobileOfferCard';
 import OffersFilterBar, { DEFAULT_FILTERS, PAYOUT_CEILING, payoutQuery } from '../components/chauffeur/OffersFilterBar';
+import LocationStatusModal from '../components/chauffeur/LocationStatusModal';
 import { formatPayout } from '../data/chauffeurPortal';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +47,19 @@ function FilterIcon() {
                 strokeWidth="1.6"
                 strokeLinecap="round"
             />
+        </svg>
+    );
+}
+
+function LocationPinIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+                d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"
+                stroke="currentColor"
+                strokeWidth="1.6"
+            />
+            <circle cx="12" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.6" />
         </svg>
     );
 }
@@ -373,6 +387,7 @@ export default function ChauffeurPortal() {
     }, [currentRide?.booking_id]);
     const [toast, setToast] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
+    const [locationOpen, setLocationOpen] = useState(false);
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
     const filtersRef = useRef(filters);
     filtersRef.current = filters;
@@ -424,7 +439,7 @@ export default function ChauffeurPortal() {
     }, [accountPaused, currentRide, blockedMessage]);
 
     // Presence GPS while idle so offers are filtered to nearest pickups.
-    const { gpsBusy, gpsNote, requestLocation } = useChauffeurOfferPresence(
+    const { gpsBusy, gpsNote, lastFix, requestLocation } = useChauffeurOfferPresence(
         !currentRide && !paused && !offersPaused,
         { onLocationPosted: refreshOffersAfterGps },
     );
@@ -710,6 +725,18 @@ export default function ChauffeurPortal() {
                 <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 xl:px-14">
                     {/* Mobile app header */}
                     <div className="relative flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-2 lg:hidden">
+                        {activeTab.id === 'offers' ? (
+                            <button
+                                type="button"
+                                onClick={() => setLocationOpen(true)}
+                                aria-label={t('actions.myLocation')}
+                                className={`absolute left-0 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-black/5 transition ${
+                                    lastFix ? 'text-wine-700' : 'text-ink-text'
+                                }`}
+                            >
+                                <LocationPinIcon />
+                            </button>
+                        ) : null}
                         <h1 className="font-fragment m-0 text-center text-[28px] leading-9 font-400 tracking-[0.2px] text-ink-text">
                             {mobileTitle}
                         </h1>
@@ -778,6 +805,18 @@ export default function ChauffeurPortal() {
                         </div>
 
                         <div className="flex flex-wrap items-center justify-end gap-3">
+                        {activeTab.id === 'offers' ? (
+                            <button
+                                type="button"
+                                onClick={() => setLocationOpen(true)}
+                                aria-label={t('actions.myLocation')}
+                                className={`font-geist inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#d8d8dc] bg-white transition hover:bg-page ${
+                                    lastFix ? 'text-wine-700' : 'text-ink-text'
+                                }`}
+                            >
+                                <LocationPinIcon />
+                            </button>
+                        ) : null}
                         <button
                             type="button"
                             onClick={onLogout}
@@ -1025,6 +1064,17 @@ export default function ChauffeurPortal() {
                 open={tripDialogOpen}
                 message={offersBlocked}
                 onClose={() => setTripDialogDismissed(true)}
+            />
+
+            <LocationStatusModal
+                open={locationOpen}
+                fix={lastFix}
+                busy={gpsBusy}
+                note={gpsNote}
+                onClose={() => setLocationOpen(false)}
+                onRefresh={async () => {
+                    await requestLocation();
+                }}
             />
 
             {toast ? (

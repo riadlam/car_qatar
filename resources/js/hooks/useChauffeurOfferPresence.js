@@ -30,21 +30,27 @@ export default function useChauffeurOfferPresence(enabled, options = {}) {
     const [gpsStatus, setGpsStatus] = useState('idle'); // idle | watching | denied | unsupported | error
     const [gpsBusy, setGpsBusy] = useState(false);
     const [gpsNote, setGpsNote] = useState('');
+    const [lastFix, setLastFix] = useState(null);
 
     const send = useCallback((coords, force = false) => {
         if (!coords) return Promise.resolve(false);
         const fix = {
             lat: Number(coords.latitude),
             lng: Number(coords.longitude),
+            accuracy: Number.isFinite(Number(coords.accuracy)) ? Number(coords.accuracy) : null,
+            heading: Number.isFinite(Number(coords.heading)) ? Number(coords.heading) : null,
+            at: Date.now(),
         };
         if (!Number.isFinite(fix.lat) || !Number.isFinite(fix.lng)) return Promise.resolve(false);
+
+        setLastFix(fix);
 
         const prev = lastSent.current;
         const moved = prev ? metersBetween(prev, fix) : Infinity;
         const stale = prev ? Date.now() - prev.at >= INTERVAL_MS : true;
         if (!force && prev && moved < MOVE_METERS && !stale) return Promise.resolve(true);
 
-        lastSent.current = { ...fix, at: Date.now() };
+        lastSent.current = fix;
         return postChauffeurLocation({
             latitude: fix.lat,
             longitude: fix.lng,
@@ -155,6 +161,7 @@ export default function useChauffeurOfferPresence(enabled, options = {}) {
         gpsStatus,
         gpsBusy,
         gpsNote,
+        lastFix,
         requestLocation,
     };
 }
