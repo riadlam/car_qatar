@@ -96,6 +96,8 @@ export default function PartnerPortal() {
             setWallet(walletData);
         } catch (err) {
             setError(err?.response?.data?.message || t('errors.load'));
+        } finally {
+            setLoading(false);
         }
     }, [t]);
 
