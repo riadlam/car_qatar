@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Chauffeurs\Pages;
 
+use App\Filament\Pages\CreateChauffeurAccount;
 use App\Filament\Resources\Chauffeurs\ChauffeurResource;
 use App\Models\Chauffeur;
-use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListChauffeurs extends ListRecords
@@ -16,7 +18,10 @@ class ListChauffeurs extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            Action::make('createChauffeurAccount')
+                ->label('Create Chauffeur')
+                ->icon(Heroicon::OutlinedUserPlus)
+                ->url(CreateChauffeurAccount::getUrl()),
         ];
     }
 

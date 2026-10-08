@@ -62,6 +62,12 @@ class ChauffeurResource extends Resource
         ];
     }
 
+    public static function canCreate(): bool
+    {
+        // Use Fleet → Create Chauffeur (creates login user + active chauffeur profile).
+        return false;
+    }
+
     public static function getPages(): array
     {
         return [
