@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
-import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import {
     fetchPartnerBookings,
@@ -80,30 +79,58 @@ export default function PartnerPortal() {
         }
     };
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const [profile, rides, earn, walletData] = await Promise.all([
-                fetchPartnerMe(),
-                fetchPartnerBookings(1),
-                fetchPartnerEarnings(),
-                getWallet().catch(() => null),
-            ]);
-            setMe(profile);
-            setBookings(rides.data || []);
-            setEarnings(earn);
-            setWallet(walletData);
-        } catch (err) {
-            setError(err?.response?.data?.message || t('errors.load'));
-        } finally {
-            setLoading(false);
-        }
-    }, [t]);
-
+    // Load once on mount. Do not depend on `t` — i18n identity churn was re-triggering
+    // setLoading(true) forever and leaving the partner panel on skeletons.
     useEffect(() => {
-        load();
-    }, [load]);
+        let cancelled = false;
+
+        (async () => {
+            setLoading(true);
+            setError('');
+            try {
+                const [profileResult, ridesResult, earnResult, walletData] = await Promise.all([
+                    fetchPartnerMe()
+                        .then((profile) => ({ ok: true, profile }))
+                        .catch((err) => ({ ok: false, err })),
+                    fetchPartnerBookings(1)
+                        .then((rides) => ({ ok: true, rides }))
+                        .catch((err) => ({ ok: false, err })),
+                    fetchPartnerEarnings()
+                        .then((earn) => ({ ok: true, earn }))
+                        .catch((err) => ({ ok: false, err })),
+                    getWallet().catch(() => null),
+                ]);
+
+                if (cancelled) return;
+
+                if (!profileResult.ok) {
+                    throw profileResult.err;
+                }
+
+                setMe(profileResult.profile);
+                setBookings(ridesResult.ok ? ridesResult.rides?.data || [] : []);
+                setEarnings(earnResult.ok ? earnResult.earn : null);
+                setWallet(walletData);
+
+                if (!ridesResult.ok || !earnResult.ok) {
+                    const fail = !ridesResult.ok ? ridesResult.err : earnResult.err;
+                    setError(fail?.response?.data?.message || t('errors.load'));
+                }
+            } catch (err) {
+                if (cancelled) return;
+                setError(err?.response?.data?.message || t('errors.load'));
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-once
+    }, []);
 
     const onCopyLink = async (booking) => {
         setLinkBusy(booking.id);
@@ -188,9 +215,10 @@ export default function PartnerPortal() {
                 </nav>
 
                 {loading ? (
-                    <div className="mt-8 space-y-4">
-                        <Skeleton className="h-28 w-full rounded-2xl" />
-                        <Skeleton className="h-48 w-full rounded-2xl" />
+                    <div className="mt-8 space-y-4" role="status" aria-live="polite">
+                        <span className="sr-only">Loading</span>
+                        <div className="h-28 w-full animate-pulse rounded-2xl bg-[#eceae6]" />
+                        <div className="h-48 w-full animate-pulse rounded-2xl bg-[#eceae6]" />
                     </div>
                 ) : error ? (
                     <p className="font-geist mt-8 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800" role="alert">

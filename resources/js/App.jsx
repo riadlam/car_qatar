@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import {
@@ -66,14 +66,19 @@ function journeysRedirect(user) {
 
 function RoleRoute({ allow, redirectTo, children }) {
     const { isAuthenticated, loading, user, setReturnTo } = useAuth();
+    const from = `${typeof window !== 'undefined' ? window.location.pathname : ''}${typeof window !== 'undefined' ? window.location.search : ''}`;
+
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            setReturnTo(from);
+        }
+    }, [loading, isAuthenticated, from, setReturnTo]);
 
     if (loading) {
         return <Skeleton variant="page" />;
     }
 
     if (!isAuthenticated) {
-        const from = `${window.location.pathname}${window.location.search}`;
-        setReturnTo(from);
         return <Navigate to={`/login?from=${encodeURIComponent(from)}`} replace />;
     }
 
