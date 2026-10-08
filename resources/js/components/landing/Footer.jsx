@@ -4,15 +4,15 @@ import Logo from './Logo';
 import { IMG } from './motion';
 import { useSectionAnim } from './useSectionAnim';
 
+/** AL MAJD social profiles — same URLs encoded in ops/qr-codes */
+const SOCIAL_LINKS = {
+    instagram: 'https://www.instagram.com/almajd.luxury.car/',
+    facebook: 'https://www.facebook.com/share/1DAAgfkpHy/',
+    tiktok: 'https://www.tiktok.com/@almajd_luxury_car',
+    snapchat: 'https://www.snapchat.com/add/almajdluxurycar',
+};
+
 const SOCIAL_ICONS = {
-    linkedin: (
-        <svg width="1.5em" height="1.5em" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M21 8V16C21 18.7614 18.7614 21 16 21H8C5.23858 21 3 18.7614 3 16V8C3 5.23858 5.23858 3 8 3H16C18.7614 3 21 5.23858 21 8Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M7 17V13.5V10" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M11 17V13.75M11 10V13.75M11 13.75C11 10 17 10 17 13.75V17" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M7 7.01L7.01 6.99889" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    ),
     instagram: (
         <svg width="1.5em" height="1.5em" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
@@ -31,12 +31,13 @@ const SOCIAL_ICONS = {
             <path d="M10 12C8.34315 12 7 13.3431 7 15C7 16.6569 8.34315 18 10 18C11.6569 18 13 16.6569 13 15V6C13.3333 7 14.6 9 17 9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
     ),
-    youtube: (
+    snapchat: (
         <svg width="1.5em" height="1.5em" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M14 12L10.5 14V10L14 12Z" fill="currentColor" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
             <path
-                d="M2 12.7075V11.2924C2 8.39705 2 6.94939 2.90549 6.01792C3.81099 5.08645 5.23656 5.04613 8.08769 4.96549C9.43873 4.92728 10.8188 4.8999 12 4.8999C13.1812 4.8999 14.5613 4.92728 15.9123 4.96549C18.7634 5.04613 20.189 5.08645 21.0945 6.01792C22 6.94939 22 8.39705 22 11.2924V12.7075C22 15.6028 22 17.0505 21.0945 17.982C20.189 18.9134 18.7634 18.9538 15.9123 19.0344C14.5613 19.0726 13.1812 19.1 12 19.1C10.8188 19.1 9.43873 19.0726 8.08769 19.0344C5.23656 18.9538 3.81099 18.9134 2.90549 17.982C2 17.0505 2 15.6028 2 12.7075Z"
+                d="M12 3C9.2 3 7.5 5.1 7.5 7.6V9.2C7.5 10.1 7.2 11.5 6.2 12.2C5.5 12.7 4.8 13.1 4.5 13.5C4.1 14 4.2 14.6 4.7 14.9C5.4 15.3 6.3 15.1 7 15.5C7.5 15.8 7.7 16.5 7.9 17.1C8.2 18.1 8.6 19.2 10 19.7C10.6 19.9 11.3 20 12 20C12.7 20 13.4 19.9 14 19.7C15.4 19.2 15.8 18.1 16.1 17.1C16.3 16.5 16.5 15.8 17 15.5C17.7 15.1 18.6 15.3 19.3 14.9C19.8 14.6 19.9 14 19.5 13.5C19.2 13.1 18.5 12.7 17.8 12.2C16.8 11.5 16.5 10.1 16.5 9.2V7.6C16.5 5.1 14.8 3 12 3Z"
                 stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
             />
         </svg>
     ),
@@ -125,29 +126,24 @@ export default function Footer() {
     const social = useMemo(
         () => [
             {
-                label: t('footer.social.linkedin'),
-                href: 'https://www.linkedin.com/company/blacklane-gmbh/',
-                icon: SOCIAL_ICONS.linkedin,
-            },
-            {
                 label: t('footer.social.instagram'),
-                href: 'https://www.instagram.com/blacklane/',
+                href: SOCIAL_LINKS.instagram,
                 icon: SOCIAL_ICONS.instagram,
             },
             {
                 label: t('footer.social.facebook'),
-                href: 'https://www.facebook.com/Blacklane',
+                href: SOCIAL_LINKS.facebook,
                 icon: SOCIAL_ICONS.facebook,
             },
             {
                 label: t('footer.social.tiktok'),
-                href: 'https://www.tiktok.com/@blacklane',
+                href: SOCIAL_LINKS.tiktok,
                 icon: SOCIAL_ICONS.tiktok,
             },
             {
-                label: t('footer.social.youtube'),
-                href: 'https://www.youtube.com/user/blacklanelimo',
-                icon: SOCIAL_ICONS.youtube,
+                label: t('footer.social.snapchat'),
+                href: SOCIAL_LINKS.snapchat,
+                icon: SOCIAL_ICONS.snapchat,
             },
         ],
         [t],
