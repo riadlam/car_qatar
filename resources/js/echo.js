@@ -82,3 +82,18 @@ export function subscribePrivate(channelName, bindings, onReconnect) {
 export function realtimeAvailable() {
     return loadEcho().then((client) => Boolean(client));
 }
+
+/** Drop the websocket so logout does not leave an open chauffeur/customer channel. */
+export function disconnectEcho() {
+    if (!echo) {
+        loading = null;
+        return;
+    }
+    try {
+        echo.disconnect();
+    } catch {
+        // ignore
+    }
+    echo = null;
+    loading = null;
+}

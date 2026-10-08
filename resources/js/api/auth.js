@@ -47,8 +47,9 @@ export async function exchangeGoogleCode(code) {
     return unwrapUser(data);
 }
 
-export async function logout() {
-    const { data } = await api.post('/auth/logout');
+export async function logout(token) {
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const { data } = await api.post('/auth/logout', {}, { headers, timeout: 8000 });
 
     return data;
 }

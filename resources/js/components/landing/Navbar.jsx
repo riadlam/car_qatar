@@ -233,10 +233,8 @@ export default function Navbar() {
         setOpen(false);
         try {
             await logout();
-            navigate('/login', { replace: true });
-        } catch {
-            navigate('/login', { replace: true });
         } finally {
+            navigate('/login', { replace: true });
             setLoggingOut(false);
         }
     };

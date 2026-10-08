@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as authApi from '../api/auth';
+import { disconnectEcho } from '../echo';
 
 const AuthContext = createContext(null);
 
@@ -221,12 +222,11 @@ export function AuthProvider({ children }) {
 
     const logout = useCallback(async () => {
         const token = localStorage.getItem('auth_token');
-        try {
-            if (token && !String(token).startsWith('local_')) {
-                await authApi.logout();
-            }
-        } finally {
-            clearSession();
+        // Clear locally first so nav/UI update instantly; revoke token in the background.
+        clearSession();
+        disconnectEcho();
+        if (token && !String(token).startsWith('local_')) {
+            void authApi.logout(token).catch(() => {});
         }
     }, [clearSession]);
 
