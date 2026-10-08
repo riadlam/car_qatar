@@ -54,6 +54,11 @@ export function subscribePrivate(channelName, bindings, onReconnect) {
             channel.listen(`.${event}`, handler);
         });
 
+        // After auth, refresh once so offers/rides are not stuck until a manual reload.
+        channel.subscribed(() => {
+            if (!stopped) onReconnect?.();
+        });
+
         const connection = client.connector?.pusher?.connection;
         let dropped = false;
         const onState = (states) => {
@@ -66,6 +71,13 @@ export function subscribePrivate(channelName, bindings, onReconnect) {
             }
         };
         connection?.bind('state_change', onState);
+
+        // If the socket was already up, still sync once after bind.
+        if (connection?.state === 'connected') {
+            window.setTimeout(() => {
+                if (!stopped) onReconnect?.();
+            }, 0);
+        }
 
         teardown = () => {
             connection?.unbind('state_change', onState);

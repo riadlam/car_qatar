@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import SiteLayout from '../components/landing/SiteLayout';
@@ -89,7 +89,7 @@ function AssignedTripDialog({ open, message, onClose }) {
     );
 }
 
-function EmptyState({ title, body }) {
+function EmptyState({ title, body, actionLabel, onAction, actionBusy, note }) {
     return (
         <div className="flex w-full flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-wine-50 text-wine-700">
@@ -99,6 +99,19 @@ function EmptyState({ title, body }) {
                 {title}
             </p>
             <p className="font-geist mt-2 m-0 max-w-md text-[15px] leading-6 text-muted sm:text-[16px]">{body}</p>
+            {note ? (
+                <p className="font-geist mt-2 m-0 max-w-md text-[13px] leading-5 text-ink-text">{note}</p>
+            ) : null}
+            {actionLabel && onAction ? (
+                <button
+                    type="button"
+                    onClick={onAction}
+                    disabled={actionBusy}
+                    className="font-geist mt-6 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-wine-700 px-5 text-[14px] font-500 text-white transition hover:bg-wine-600 disabled:cursor-wait disabled:opacity-70"
+                >
+                    {actionBusy ? '…' : actionLabel}
+                </button>
+            ) : null}
         </div>
     );
 }
@@ -361,6 +374,8 @@ export default function ChauffeurPortal() {
     const [toast, setToast] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const filtersRef = useRef(filters);
+    filtersRef.current = filters;
 
     const activeTab = useMemo(() => {
         if (tabParam === 'current') return TABS[1];
@@ -369,8 +384,58 @@ export default function ChauffeurPortal() {
         return TABS[0];
     }, [tabParam, TABS]);
 
+    const accountPaused = offersPaused || (profile ? profile.status === 'paused' : paused);
+
+    const gpsRefreshTimer = useRef(null);
+    const refreshOffersAfterGps = useCallback(() => {
+        if (gpsRefreshTimer.current) window.clearTimeout(gpsRefreshTimer.current);
+        gpsRefreshTimer.current = window.setTimeout(() => {
+            listChauffeurOffers(payoutQuery(filtersRef.current))
+                .then((res) => {
+                    setOffers(res.data || []);
+                    setOffersMeta(res.meta || null);
+                    setOffersPaused(Boolean(res.paused));
+                    setOffersBlocked(
+                        res.blocked && !res.paused ? res.message || blockedMessage : '',
+                    );
+                    setOffersError('');
+                    setOffersReady(true);
+                })
+                .catch(() => {});
+        }, 350);
+    }, [blockedMessage]);
+
+    // Soft poll keeps offers fresh if the websocket drops without a reconnect event.
+    useEffect(() => {
+        if (accountPaused || currentRide) return undefined;
+        const id = window.setInterval(() => {
+            listChauffeurOffers(payoutQuery(filtersRef.current))
+                .then((res) => {
+                    setOffers(res.data || []);
+                    setOffersMeta(res.meta || null);
+                    setOffersPaused(Boolean(res.paused));
+                    setOffersBlocked(
+                        res.blocked && !res.paused ? res.message || blockedMessage : '',
+                    );
+                })
+                .catch(() => {});
+        }, 25000);
+        return () => window.clearInterval(id);
+    }, [accountPaused, currentRide, blockedMessage]);
+
     // Presence GPS while idle so offers are filtered to nearest pickups.
-    useChauffeurOfferPresence(!currentRide && !paused && !offersPaused);
+    const { gpsBusy, gpsNote, requestLocation } = useChauffeurOfferPresence(
+        !currentRide && !paused && !offersPaused,
+        { onLocationPosted: refreshOffersAfterGps },
+    );
+
+    const needsLocation =
+        Boolean(offersMeta?.location_required) && !offersMeta?.location_fresh && !accountPaused;
+
+    const enableLocation = async () => {
+        const ok = await requestLocation();
+        if (ok) refreshOffersAfterGps();
+    };
 
     const q = query.trim().toLowerCase();
     const rides = profile?.rides || [];
@@ -404,7 +469,6 @@ export default function ChauffeurPortal() {
         profile: null,
     };
 
-    const accountPaused = offersPaused || (profile ? profile.status === 'paused' : paused);
     const assignedTrip = Boolean(currentRide) || (Boolean(offersBlocked) && !accountPaused);
     const tripDialogOpen = activeTab.id === 'offers' && assignedTrip && !tripDialogDismissed;
 
@@ -472,9 +536,7 @@ export default function ChauffeurPortal() {
         window.setTimeout(() => setToast(''), 2000);
     };
 
-    const filtersRef = useRef(filters);
     const currentRideRef = useRef(null);
-    filtersRef.current = filters;
     currentRideRef.current = currentRide;
 
     useEffect(() => {
@@ -882,16 +944,24 @@ export default function ChauffeurPortal() {
                                                 ? t('empty.loadOffers')
                                                 : offersBlocked
                                                   ? t('empty.oneTripTitle')
-                                                  : offersMeta?.location_required && !offersMeta?.location_fresh
+                                                  : needsLocation
                                                     ? t('empty.locationNeeded')
                                                     : activeTab.emptyTitle
                                         }
                                         body={
                                             offersError ||
                                             offersBlocked ||
-                                            offersMeta?.message ||
+                                            (needsLocation
+                                                ? offersMeta?.message || t('empty.locationBody')
+                                                : null) ||
                                             activeTab.emptyBody
                                         }
+                                        note={needsLocation ? gpsNote : ''}
+                                        actionLabel={
+                                            needsLocation ? t('actions.enableLocation') : null
+                                        }
+                                        onAction={needsLocation ? enableLocation : null}
+                                        actionBusy={gpsBusy}
                                     />
                                 ) : (
                                     <>

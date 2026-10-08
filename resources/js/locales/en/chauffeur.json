@@ -30,7 +30,8 @@
     "oneTripBody": "Finish or cancel your current trip before taking another.",
     "pausedTitle": "Account paused",
     "pausedBody": "Your account is paused. You cannot receive or accept ride offers until an admin resumes you.",
-    "locationNeeded": "Location needed"
+    "locationNeeded": "Location needed",
+    "locationBody": "Turn on GPS so we can show rides nearest to you. New offers appear live — no need to refresh."
   },
   "paused": {
     "bannerTitle": "Account paused",
@@ -40,6 +41,7 @@
   "actions": {
     "logOut": "Log out",
     "signingOut": "Signing out…",
+    "enableLocation": "Enable location",
     "accept": "Accept",
     "acceptOffer": "Accept offer",
     "decline": "Decline",
