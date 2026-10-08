@@ -10,5 +10,6 @@ Use this code to continue creating your AL MAJD account:
 This code expires in {{ $expiresMinutes }} minutes. If you did not request it, you can ignore this email.
 
 Thanks,<br>
-{{ config('app.name') }}
+AL MAJD Luxury Transport<br>
+almajdluxurytransport.com
 </x-mail::message>
