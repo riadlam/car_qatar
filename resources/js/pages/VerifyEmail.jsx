@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { resendEmailOtp, verifyEmailOtp } from '../api/auth';
@@ -10,12 +10,30 @@ const COOLDOWN_DEFAULT = 60;
 
 /**
  * Signup step 2 — enter the 6-digit email confirmation code.
+ * Always required before complete-profile for guest signup.
  */
 export default function VerifyEmail() {
     const { t } = useTranslation('auth');
     const navigate = useNavigate();
-    const { getPendingEmail, setEmailOtpToken, loading, isAuthenticated, consumeReturnTo } = useAuth();
-    const email = getPendingEmail();
+    const location = useLocation();
+    const {
+        getPendingEmail,
+        setPendingEmail,
+        setEmailOtpToken,
+        getEmailOtpToken,
+        getSignupStep,
+        loading,
+        isAuthenticated,
+        consumeReturnTo,
+    } = useAuth();
+
+    const email = useMemo(() => {
+        const fromState = String(location.state?.email || '')
+            .trim()
+            .toLowerCase();
+        const fromSession = getPendingEmail();
+        return fromState || fromSession;
+    }, [location.state, getPendingEmail]);
 
     const [code, setCode] = useState('');
     const [error, setError] = useState('');
@@ -30,9 +48,31 @@ export default function VerifyEmail() {
             return;
         }
         if (!email) {
-            navigate('/login', { replace: true });
+            navigate('/login?mode=signup', { replace: true });
+            return;
         }
-    }, [loading, isAuthenticated, email, navigate, consumeReturnTo]);
+        // Keep session in sync when arriving via router state (do not reset if already set —
+        // setPendingEmail clears the OTP token).
+        if (email && email !== getPendingEmail()) {
+            setPendingEmail(email);
+            return;
+        }
+        // Resume only when OTP was already verified in this signup (step=profile + token).
+        // Fresh create-account always clears the token first, so OTP cannot be skipped.
+        if (getSignupStep() === 'profile' && getEmailOtpToken()) {
+            navigate('/complete-profile', { replace: true });
+        }
+    }, [
+        loading,
+        isAuthenticated,
+        email,
+        navigate,
+        consumeReturnTo,
+        getPendingEmail,
+        setPendingEmail,
+        getSignupStep,
+        getEmailOtpToken,
+    ]);
 
     useEffect(() => {
         if (cooldown <= 0) return undefined;
@@ -62,8 +102,16 @@ export default function VerifyEmail() {
         setSubmitting(true);
         try {
             const data = await verifyEmailOtp({ email, code: trimmed });
-            setEmailOtpToken(data.email_otp_token);
-            navigate('/complete-profile', { replace: true });
+            const token = data?.email_otp_token;
+            if (!token) {
+                setError(t('verifyEmail.errors.generic'));
+                return;
+            }
+            setEmailOtpToken(token);
+            navigate('/complete-profile', {
+                replace: true,
+                state: { fromVerified: true, email },
+            });
         } catch (err) {
             setError(firstError(err));
         } finally {
@@ -99,7 +147,7 @@ export default function VerifyEmail() {
                     <Logo compact inverted />
                 </Link>
                 <Link
-                    to="/login"
+                    to="/login?mode=signup"
                     className="font-geist text-[14px] font-500 text-muted transition hover:text-ink-text"
                 >
                     {t('verifyEmail.back')}
@@ -108,7 +156,10 @@ export default function VerifyEmail() {
 
             <div className="flex flex-1 items-start justify-center px-6 pt-10 pb-16 sm:items-center sm:pt-0">
                 <div className="w-full max-w-[420px]">
-                    <h1 className="font-fragment m-0 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
+                    <p className="font-geist m-0 text-[12px] font-500 tracking-[0.08em] text-muted uppercase">
+                        {t('verifyEmail.stepLabel', { defaultValue: 'Step 2 of 3' })}
+                    </p>
+                    <h1 className="font-fragment m-0 mt-2 text-[28px] leading-9 font-400 tracking-[0.25px] text-ink-text sm:text-[32px] sm:leading-10">
                         {t('verifyEmail.title')}
                     </h1>
                     <p className="font-geist mt-3 m-0 text-[15px] leading-6 text-muted">
@@ -136,6 +187,7 @@ export default function VerifyEmail() {
                                 placeholder="••••••"
                                 className={fieldClass}
                                 aria-label={t('verifyEmail.code')}
+                                autoFocus
                             />
                         </label>
                         <button

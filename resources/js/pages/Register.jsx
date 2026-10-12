@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 
-/** Register uses the same email-first auth flow as login. */
+/** Register uses the same email → OTP → profile flow as login (create tab). */
 export default function Register() {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login?mode=signup" replace />;
 }

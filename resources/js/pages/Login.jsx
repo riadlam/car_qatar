@@ -13,9 +13,12 @@ export default function Login() {
     const { t } = useTranslation('auth');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { setReturnTo, setPendingEmail, login, isAuthenticated, user, consumeReturnTo } = useAuth();
+    const { setReturnTo, setPendingEmail, clearSignupDraft, login, isAuthenticated, user, consumeReturnTo } =
+        useAuth();
     const { showToast } = useToast();
-    const [mode, setMode] = useState('signin');
+    const [mode, setMode] = useState(() =>
+        searchParams.get('mode') === 'signup' ? 'signup' : 'signin',
+    );
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -24,6 +27,10 @@ export default function Login() {
     useEffect(() => {
         const from = searchParams.get('from');
         if (from) setReturnTo(from);
+
+        if (searchParams.get('mode') === 'signup') {
+            setMode('signup');
+        }
 
         const oauthError = searchParams.get('error');
         if (oauthError === 'google' || oauthError === 'google_email') {
@@ -74,16 +81,21 @@ export default function Login() {
     const onCreateAccount = async (e) => {
         e.preventDefault();
         setError('');
-        const trimmed = email.trim();
+        const trimmed = email.trim().toLowerCase();
         if (!trimmed) {
             setError(t('login.errors.emailRequired'));
             return;
         }
         setSubmitting(true);
         try {
+            // Wipe any leftover signup draft so a stale OTP token cannot skip verify.
+            clearSignupDraft();
             await sendEmailOtp(trimmed);
             setPendingEmail(trimmed);
-            navigate('/verify-email');
+            navigate('/verify-email', {
+                replace: true,
+                state: { email: trimmed, otpSent: true },
+            });
         } catch (err) {
             setError(
                 err?.response?.data?.errors?.email?.[0] ||

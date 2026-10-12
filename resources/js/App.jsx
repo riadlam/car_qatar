@@ -12,6 +12,8 @@ import LocaleSync from './components/LocaleSync';
 import Skeleton from './components/ui/Skeleton';
 // Eager: avoid Suspense page-skeleton if the partner chunk fails/stalls on mobile.
 import PartnerPortal from './pages/PartnerPortal';
+// Eager: OTP step must not disappear behind a failed/slow lazy chunk.
+import VerifyEmail from './pages/VerifyEmail';
 
 const Home = lazy(() => import('./pages/Home'));
 const Chauffeurs = lazy(() => import('./pages/Chauffeurs'));
@@ -29,7 +31,6 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Account = lazy(() => import('./pages/Account'));
 const Journeys = lazy(() => import('./pages/Journeys'));
 const JourneyRide = lazy(() => import('./pages/JourneyRide'));

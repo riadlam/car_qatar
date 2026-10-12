@@ -29,14 +29,23 @@ export default function CompleteProfile() {
     const {
         getPendingEmail,
         getEmailOtpToken,
+        hasVerifiedSignupEmail,
         completeProfile,
         consumeReturnTo,
         isAuthenticated,
         loading,
+        user,
     } = useAuth();
     const { showToast } = useToast();
     const email = getPendingEmail();
     const emailOtpToken = getEmailOtpToken();
+    const verifiedSignup = hasVerifiedSignupEmail();
+    const isPendingChauffeur =
+        isAuthenticated &&
+        user?.account_type === 'chauffeur' &&
+        user?.chauffeur_status === 'pending';
+    // Guest signup form only after OTP proof; chauffeur pending can continue without OTP token.
+    const canShowProfileForm = isPendingChauffeur || verifiedSignup;
 
     const [accountType, setAccountType] = useState('individual');
     const [form, setForm] = useState({
@@ -54,19 +63,30 @@ export default function CompleteProfile() {
 
     useEffect(() => {
         if (loading) return;
-        if (isAuthenticated && !email) {
+        if (isAuthenticated && !email && !isPendingChauffeur) {
             navigate(consumeReturnTo(), { replace: true });
             return;
         }
-        if (!email && !isAuthenticated) {
-            navigate('/login', { replace: true });
+        if (!isAuthenticated && !email) {
+            navigate('/login?mode=signup', { replace: true });
             return;
         }
-        // Customer signup must have verified email OTP first (chauffeur pending path has no token).
-        if (email && !emailOtpToken && !isAuthenticated) {
-            navigate('/verify-email', { replace: true });
+        // Hard gate: never stay on profile without a verified OTP for guest signup.
+        if (!isAuthenticated && email && !verifiedSignup) {
+            navigate('/verify-email', {
+                replace: true,
+                state: { email, otpRequired: true },
+            });
         }
-    }, [email, emailOtpToken, navigate, isAuthenticated, loading, consumeReturnTo]);
+    }, [
+        email,
+        verifiedSignup,
+        navigate,
+        isAuthenticated,
+        isPendingChauffeur,
+        loading,
+        consumeReturnTo,
+    ]);
 
     const firstApiError = (err) => {
         const errors = err?.response?.data?.errors;
@@ -80,6 +100,14 @@ export default function CompleteProfile() {
     const onSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!isPendingChauffeur && !verifiedSignup) {
+            navigate('/verify-email', {
+                replace: true,
+                state: { email, otpRequired: true },
+            });
+            return;
+        }
 
         if (!form.phone || form.phone.replace(/\D/g, '').length < 8) {
             setError(t('completeProfile.errors.phone'));
@@ -135,11 +163,12 @@ export default function CompleteProfile() {
         }
     };
 
-    if (loading) {
+    if (loading || !canShowProfileForm) {
+        // Do not paint the profile form until OTP is verified (avoids mail validation errors).
         return <Skeleton variant="page" />;
     }
 
-    if (!email) return null;
+    if (!email && !isPendingChauffeur) return null;
 
     const accountTabs = [
         { id: 'individual', label: t('completeProfile.individual') },
@@ -154,7 +183,12 @@ export default function CompleteProfile() {
                 </Link>
                 <button
                     type="button"
-                    onClick={() => navigate(emailOtpToken ? '/verify-email' : '/login')}
+                    onClick={() =>
+                        navigate(verifiedSignup ? '/verify-email' : '/login?mode=signup', {
+                            replace: true,
+                            state: email ? { email } : undefined,
+                        })
+                    }
                     className="font-geist cursor-pointer text-[14px] font-500 text-muted transition hover:text-ink-text"
                 >
                     {t('completeProfile.back')}

@@ -7,6 +7,8 @@ const AuthContext = createContext(null);
 const RETURN_KEY = 'auth_return_to';
 const PENDING_EMAIL_KEY = 'auth_pending_email';
 const EMAIL_OTP_TOKEN_KEY = 'auth_email_otp_token';
+/** Signup wizard: email → otp → profile (prevents skipping OTP) */
+const SIGNUP_STEP_KEY = 'auth_signup_step';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
@@ -105,9 +107,22 @@ export function AuthProvider({ children }) {
         return path;
     }, []);
 
+    const setSignupStep = useCallback((step) => {
+        if (step === 'email' || step === 'otp' || step === 'profile') {
+            sessionStorage.setItem(SIGNUP_STEP_KEY, step);
+        } else {
+            sessionStorage.removeItem(SIGNUP_STEP_KEY);
+        }
+    }, []);
+
+    const getSignupStep = useCallback(() => sessionStorage.getItem(SIGNUP_STEP_KEY) || '', []);
+
     const setPendingEmail = useCallback((email) => {
-        sessionStorage.setItem(PENDING_EMAIL_KEY, email);
+        const normalized = String(email || '').trim().toLowerCase();
+        sessionStorage.setItem(PENDING_EMAIL_KEY, normalized);
+        // Starting / restarting signup always invalidates any prior OTP proof.
         sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
+        sessionStorage.setItem(SIGNUP_STEP_KEY, 'otp');
     }, []);
 
     const getPendingEmail = useCallback(() => sessionStorage.getItem(PENDING_EMAIL_KEY) || '', []);
@@ -115,16 +130,30 @@ export function AuthProvider({ children }) {
     const setEmailOtpToken = useCallback((token) => {
         if (token) {
             sessionStorage.setItem(EMAIL_OTP_TOKEN_KEY, token);
+            sessionStorage.setItem(SIGNUP_STEP_KEY, 'profile');
         } else {
             sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
+            const step = sessionStorage.getItem(SIGNUP_STEP_KEY);
+            if (step === 'profile') {
+                sessionStorage.setItem(SIGNUP_STEP_KEY, 'otp');
+            }
         }
     }, []);
 
     const getEmailOtpToken = useCallback(() => sessionStorage.getItem(EMAIL_OTP_TOKEN_KEY) || '', []);
 
+    /** True only after OTP verify for the current pending email. */
+    const hasVerifiedSignupEmail = useCallback(() => {
+        const email = sessionStorage.getItem(PENDING_EMAIL_KEY) || '';
+        const token = sessionStorage.getItem(EMAIL_OTP_TOKEN_KEY) || '';
+        const step = sessionStorage.getItem(SIGNUP_STEP_KEY) || '';
+        return Boolean(email && token && step === 'profile');
+    }, []);
+
     const clearSignupDraft = useCallback(() => {
         sessionStorage.removeItem(PENDING_EMAIL_KEY);
         sessionStorage.removeItem(EMAIL_OTP_TOKEN_KEY);
+        sessionStorage.removeItem(SIGNUP_STEP_KEY);
     }, []);
 
     const login = useCallback(
@@ -266,6 +295,9 @@ export function AuthProvider({ children }) {
             getPendingEmail,
             setEmailOtpToken,
             getEmailOtpToken,
+            setSignupStep,
+            getSignupStep,
+            hasVerifiedSignupEmail,
             clearSignupDraft,
         }),
         [
@@ -287,6 +319,9 @@ export function AuthProvider({ children }) {
             getPendingEmail,
             setEmailOtpToken,
             getEmailOtpToken,
+            setSignupStep,
+            getSignupStep,
+            hasVerifiedSignupEmail,
             clearSignupDraft,
         ],
     );
